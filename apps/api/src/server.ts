@@ -6,12 +6,15 @@ import {
   validatorCompiler,
 } from 'fastify-type-provider-zod';
 import AuthRoutes from './routes/auth';
-import { api_secrets } from 'packages/config/src/secrets';
+import { apiConfig } from './config';
+import 'dotenv/config';
+import { initDB } from '@dpg/db';
 
 const app = fastify({
   logger: true,
 });
 
+initDB();
 // Add schema validator and serializer
 app.setValidatorCompiler(validatorCompiler);
 app.setSerializerCompiler(serializerCompiler);
@@ -37,7 +40,7 @@ app.withTypeProvider<ZodTypeProvider>().route({
 
 await app
   .listen({
-    port: api_secrets.api_port,
+    port: apiConfig.port,
     host: '0.0.0.0',
   })
   .then((endpoint) => console.log('Server Endpoint: ', endpoint))

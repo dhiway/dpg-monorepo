@@ -6,7 +6,7 @@ export const surrealdb = new Surreal();
 
 // 2. Redis Singleton ioredis connects lazily by default, acting as a singleton when exported.
 
-export const redis = new Redis('redis://redis:6379');
+export const redis = new Redis('redis://127.0.0.1:6379');
 
 redis.on('error', (err) => {
   console.error('Redis error:', err);
@@ -20,13 +20,16 @@ redis.on('error', (err) => {
 export async function initDB() {
   try {
     // Connect SurrealDB
-    await surrealdb.connect('ws://localhost:8000/rpc', {
+    await surrealdb.connect('http://127.0.0.1:8000/rpc', {
       namespace: 'app',
       database: 'main',
     });
-    // Connect Redis
-    await redis.connect();
+    await surrealdb.signin({ username: 'root', password: 'root' });
 
+    await surrealdb.use({
+      namespace: 'app',
+      database: 'main',
+    });
     console.log('✅ Database connections established');
   } catch (err) {
     console.error('❌ Database connection failed', err);

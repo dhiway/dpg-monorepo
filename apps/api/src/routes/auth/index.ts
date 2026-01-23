@@ -1,11 +1,12 @@
-import { auth } from '@dpg/auth';
-import { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync } from 'fastify';
+import { authInstance } from './create_auth';
 
-const AuthRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
+const AuthRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.route({
     method: ['GET', 'POST', 'OPTIONS'],
-    url: '/api/v1/auth/*',
+    url: '/api/auth/*',
     config: { rateLimit: { max: 10, timeWindow: '10 seconds' } },
+
     handler: async (request, reply) => {
       if (request.method === 'OPTIONS') {
         return reply.status(204).send();
@@ -16,16 +17,21 @@ const AuthRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
         const headers = new Headers();
 
         for (const [key, value] of Object.entries(request.headers)) {
-          if (value) headers.append(key, String(value));
+          if (value !== undefined) {
+            headers.append(key, String(value));
+          }
         }
 
         const req = new Request(url.toString(), {
           method: request.method,
           headers,
-          body: request.body ? JSON.stringify(request.body) : undefined,
+          body:
+            request.body && request.method !== 'GET'
+              ? JSON.stringify(request.body)
+              : undefined,
         });
 
-        const response = await auth.handler(req);
+        const response = await authInstance.handler(req);
 
         response.headers.forEach((value, key) => {
           reply.header(key, value);
@@ -33,11 +39,11 @@ const AuthRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
 
         reply.status(response.status);
         reply.send(response.body ? await response.text() : null);
-      } catch (err: any) {
+      } catch (err) {
+        fastify.log.error(err);
         reply.status(500).send({
           error: 'Internal authentication error',
           code: 'AUTH_FAILURE',
-          message: err.message,
         });
       }
     },

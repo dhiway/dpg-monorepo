@@ -5,9 +5,9 @@ services:
     container_name: dpg-surrealdb
     ports:
       - '8000:8000'
-    command: start --user root --pass root --bind 0.0.0.0:8000 file://surreal_data
+    command: start --user root --pass root --bind 0.0.0.0:8000 file:///data
     volumes:
-      - dpg-surrealdb:/surreal_data
+      - ./data/surrealdb:/data
     networks:
       - dpg_internal
   redis:
