@@ -25,3 +25,19 @@ All exports should be exported in index.ts
   "dependencies": {}
 }
 ```
+
+### surrealdb setup
+
+create a namespace and database in surrealdb and add the following tables: use:
+(surrealdb ui)[https://app.surrealdb.com/]
+
+```sql
+
+DEFINE TABLE user SCHEMALESS PERMISSIONS FULL;
+DEFINE TABLE session SCHEMALESS PERMISSIONS FULL;
+DEFINE TABLE verification SCHEMALESS PERMISSIONS FULL;
+DEFINE TABLE account SCHEMALESS PERMISSIONS FULL;
+DEFINE TABLE organization SCHEMALESS PERMISSIONS FULL;
+DEFINE TABLE api_key SCHEMALESS PERMISSIONS FULL;
+
+```

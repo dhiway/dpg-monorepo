@@ -9,7 +9,7 @@ out/
 
 # Environment Variables
 # .env
-# .env.local
+.env.local
 
 # System Files
 .DS_Store
