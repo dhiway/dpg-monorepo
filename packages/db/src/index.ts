@@ -1,0 +1,35 @@
+import { Surreal } from 'surrealdb';
+import Redis from 'ioredis';
+
+// 1. SurrealDB Singleton must be connected before use.
+export const surrealdb = new Surreal();
+
+// 2. Redis Singleton ioredis connects lazily by default, acting as a singleton when exported.
+
+export const redis = new Redis('redis://redis:6379');
+
+redis.on('error', (err) => {
+  console.error('Redis error:', err);
+});
+
+/**
+ * Global initializer to be called at the start of Fastify server.
+ * This ensures all DB connections are ready before the app accepts traffic.
+ */
+
+export async function initDB() {
+  try {
+    // Connect SurrealDB
+    await surrealdb.connect('ws://localhost:8000/rpc', {
+      namespace: 'app',
+      database: 'main',
+    });
+    // Connect Redis
+    await redis.connect();
+
+    console.log('✅ Database connections established');
+  } catch (err) {
+    console.error('❌ Database connection failed', err);
+    process.exit(1);
+  }
+}

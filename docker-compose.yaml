@@ -1,0 +1,17 @@
+version: '3.8'
+services:
+  surrealdb:
+    image: surrealdb/surrealdb:latest
+    ports:
+      - '8000:8000'
+    command:
+      start --user root --pass root --bind 0.0.0.0:8000 file://surreal_data
+    volumes:
+      - ./data/surreal:/surreal_data
+
+  redis:
+    image: redis:alpine
+    ports:
+      - '6379:6379'
+    volumes:
+      - ./data/redis:/data
