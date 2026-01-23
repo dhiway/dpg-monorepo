@@ -2,16 +2,29 @@ version: '3.8'
 services:
   surrealdb:
     image: surrealdb/surrealdb:latest
+    container_name: dpg-surrealdb
     ports:
       - '8000:8000'
-    command:
-      start --user root --pass root --bind 0.0.0.0:8000 file://surreal_data
+    command: start --user root --pass root --bind 0.0.0.0:8000 file://surreal_data
     volumes:
-      - ./data/surreal:/surreal_data
-
+      - dpg-surrealdb:/surreal_data
+    networks:
+      - dpg_internal
   redis:
     image: redis:alpine
+    container_name: dpg-redis
     ports:
       - '6379:6379'
     volumes:
-      - ./data/redis:/data
+      - dpg-redis:/data
+    networks:
+      - dpg_internal
+networks:
+  dpg_internal:
+    name: dpg_internal
+    internal: false
+volumes:
+  dpg-surrealdb:
+    name: dpg-surrealdb
+  dpg-redis:
+    name: dpg-redis
