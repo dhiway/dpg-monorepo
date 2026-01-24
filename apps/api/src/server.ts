@@ -8,13 +8,13 @@ import {
 import AuthRoutes from './routes/auth';
 import { apiConfig } from './config';
 import 'dotenv/config';
-import { initDB } from '@dpg/db';
+import { initDB, redis, surrealdb } from '@dpg/db';
 
 const app = fastify({
   logger: true,
 });
 
-initDB();
+await initDB();
 // Add schema validator and serializer
 app.setValidatorCompiler(validatorCompiler);
 app.setSerializerCompiler(serializerCompiler);
@@ -48,3 +48,25 @@ await app
     console.error(err);
     process.exit(1);
   });
+
+let shuttingDown = false;
+
+async function shutdown(signal: string) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+
+  app.log.info(`Shutting down (${signal})`);
+
+  try {
+    await app.close();
+    await surrealdb.close();
+    await redis.quit();
+  } catch (err) {
+    app.log.error(err);
+  } finally {
+    process.exit(0);
+  }
+}
+
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
