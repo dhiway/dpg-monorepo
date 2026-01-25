@@ -11,4 +11,6 @@ export interface AuthRuntimeConfig {
 
   trustedOrigins: string[];
   adminDomains: string[];
+  db: DrizzleDatabase;
+  redis: Redis;
 }

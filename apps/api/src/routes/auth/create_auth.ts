@@ -1,6 +1,8 @@
 import { createAuth } from '@dpg/auth';
 import { allowed_origins, admin_domains } from '@dpg/config';
 import { api, instance, auth } from '../../config';
+import { db } from 'apps/api/db/postgres/drizzle_config';
+import { redis } from 'apps/api/db/secondary/redis';
 
 export const authInstance = createAuth({
   appName: instance.INSTANCE_NAME ?? 'DPG',
@@ -16,4 +18,7 @@ export const authInstance = createAuth({
 
   trustedOrigins: allowed_origins,
   adminDomains: admin_domains,
+
+  db: db,
+  redis: redis,
 });

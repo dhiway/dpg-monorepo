@@ -1,4 +1,3 @@
-import { redis, surrealdb } from '@dpg/db';
 import { betterAuth } from 'better-auth/minimal';
 import {
   admin,
@@ -7,11 +6,12 @@ import {
   openAPI,
   organization,
 } from 'better-auth/plugins';
-import { surrealdbAdapter } from 'surreal-better-auth';
 import { unifiedOtp } from '../plugins/unified_otp';
 import type { AuthRuntimeConfig } from './types';
+import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 
 export function createAuth(config: AuthRuntimeConfig) {
+  const redis = config.redis;
   return betterAuth({
     appName: config.appName,
     baseURL: config.baseURL,
@@ -58,7 +58,7 @@ export function createAuth(config: AuthRuntimeConfig) {
       enabled: false,
     },
 
-    database: surrealdbAdapter(surrealdb),
+    database: drizzleAdapter(config.db, { provider: 'pg' }),
 
     secondaryStorage: {
       get: async (key) => {

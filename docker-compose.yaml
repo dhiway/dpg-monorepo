@@ -1,22 +1,47 @@
 version: '3.8'
 services:
-  surrealdb:
-    image: surrealdb/surrealdb:latest
-    container_name: dpg-surrealdb
+  db:
+    image: postgres:18-alpine
+    container_name: dpg-db
+    restart: always
     ports:
-      - '8000:8000'
-    command: start --user root --pass root --bind 0.0.0.0:8000 file:///data
+      - '${DATABASE_PORT}:5432'
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
-      - ./data/surrealdb:/data
+      - dpg-postgresdb:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB} -p 5432']
+      interval: 5s
+      timeout: 3s
+      retries: 20
     networks:
       - dpg_internal
   redis:
-    image: redis:alpine
+    image: redis:7.2-alpine
     container_name: dpg-redis
-    ports:
-      - '6379:6379'
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    env_file:
+      - .env
+    restart: always
+    command:
+      - sh
+      - -c
+      - >
+        exec redis-server --appendonly yes --appendfsync everysec --save "" --maxmemory ${REDIS_MAXMEMORY:-256mb} --maxmemory-policy ${REDIS_MAXMEMORY_POLICY:-allkeys-lru} ${REDIS_PASSWORD:+--requirepass ${REDIS_PASSWORD}}
+
     volumes:
       - dpg-redis:/data
+    healthcheck:
+      test: ['CMD-SHELL', 'redis-cli ${REDIS_PASSWORD:+-a ${REDIS_PASSWORD}} ping | grep PONG']
+      interval: 5s
+      timeout: 3s
+      retries: 20
     networks:
       - dpg_internal
 networks:
@@ -24,7 +49,7 @@ networks:
     name: dpg_internal
     internal: false
 volumes:
-  dpg-surrealdb:
-    name: dpg-surrealdb
+  dpg-postgresdb:
+    name: dpg-postgresdb
   dpg-redis:
     name: dpg-redis

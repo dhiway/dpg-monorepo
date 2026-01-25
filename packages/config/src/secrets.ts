@@ -13,3 +13,11 @@ export const ApiSecretsSchema = z.object({
 export const AuthSecretsSchema = z.object({
   AUTH_SECRET: z.string().min(32),
 });
+
+export const DatabaseSecretsSchema = z.object({
+  POSTGRES_USER: z.string(),
+  POSTGRES_PASSWORD: z.string(),
+  POSTGRES_DB: z.string(),
+  DATABASE_PORT: z.coerce.number().default(5432),
+  REDIS_PASSWORD: z.string(),
+});
