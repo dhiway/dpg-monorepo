@@ -16,6 +16,7 @@ export const authConfig = {
 };
 
 export const databasesConfig = {
-  pg_url: `postgres://${databases.POSTGRES_USER}:${databases.POSTGRES_PASSWORD}@db:5432/${databases.POSTGRES_DB}`,
+  pg_url: `postgres://${databases.POSTGRES_USER}:${databases.POSTGRES_PASSWORD}@127.0.0.1:5432/${databases.POSTGRES_DB}`,
   redis_password: databases.REDIS_PASSWORD,
+  redis_port: databases.REDIS_PORT,
 };
