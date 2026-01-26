@@ -21,4 +21,6 @@ export const authInstance = createAuth({
 
   db: db,
   redis: redis,
+
+  createTestOTP: auth.CREATE_TEST_OTP,
 });

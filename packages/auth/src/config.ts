@@ -119,6 +119,7 @@ export function createAuth(config: AuthRuntimeConfig) {
         },
 
         afterUserCreate: async (payload) => payload,
+        createTestOtp: config.createTestOTP,
       }),
 
       apiKey({

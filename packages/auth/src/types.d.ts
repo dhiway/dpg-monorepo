@@ -13,4 +13,6 @@ export interface AuthRuntimeConfig {
   adminDomains: string[];
   db: DrizzleDatabase;
   redis: Redis;
+
+  createTestOTP?: boolean;
 }

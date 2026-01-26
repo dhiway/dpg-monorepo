@@ -113,16 +113,20 @@ export interface unifiedOtpOptions {
    * use with caution
    */
   adminByDomain?: string[];
+  createTestOtp?: boolean;
 }
 
-export const generateOtp = () =>
-  Math.floor(100000 + Math.random() * 900000).toString();
-
+export const generateOtp = (is_test: boolean) => {
+  return is_test
+    ? '000000'
+    : Math.floor(100000 + Math.random() * 900000).toString();
+};
 export const unifiedOtp = ({
   sendPhoneOtp,
   sendEmailOtp,
   afterUserCreate,
   adminByDomain,
+  createTestOtp,
 }: unifiedOtpOptions): BetterAuthPlugin => ({
   id: 'unified-otp',
   schema: {
@@ -335,7 +339,7 @@ export const unifiedOtp = ({
           }
         }
 
-        const otp = generateOtp();
+        const otp = generateOtp(createTestOtp || false);
         const expiresInSec = 5 * 60; // 5 mins
 
         const key = phoneNumber

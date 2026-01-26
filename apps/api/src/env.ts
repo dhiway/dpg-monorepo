@@ -10,6 +10,7 @@ export function loadEnv() {
   const api = ApiSecretsSchema.parse(process.env);
   const auth = AuthSecretsSchema.parse(process.env);
   const databases = DatabaseSecretsSchema.parse(process.env);
+  console.log('env: ', auth.CREATE_TEST_OTP);
   return {
     instance,
     api,

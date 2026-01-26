@@ -13,6 +13,7 @@ export const authConfig = {
     instance.INSTANCE_ENV === 'development'
       ? `${apiConfig.domain}:${apiConfig.port}/api/auth`
       : `${apiConfig.domain}/api/auth`,
+  create_test_otp: auth.CREATE_TEST_OTP,
 };
 
 export const databasesConfig = {

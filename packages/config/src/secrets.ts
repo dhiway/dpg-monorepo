@@ -12,6 +12,7 @@ export const ApiSecretsSchema = z.object({
 
 export const AuthSecretsSchema = z.object({
   AUTH_SECRET: z.string().min(8),
+  CREATE_TEST_OTP: z.coerce.boolean().default(false),
 });
 
 export const DatabaseSecretsSchema = z.object({
