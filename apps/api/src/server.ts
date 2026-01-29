@@ -1,4 +1,3 @@
-import z from '@dpg/schemas';
 import fastify from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import {
@@ -7,35 +6,43 @@ import {
 } from 'fastify-type-provider-zod';
 import AuthRoutes from './routes/auth';
 import { apiConfig } from './config';
+import cors from '@fastify/cors';
 import 'dotenv/config';
+import { allowed_origins } from '@dpg/config';
 
 const app = fastify({
   logger: true,
+  trustProxy: true,
 });
 
 // Add schema validator and serializer
 app.setValidatorCompiler(validatorCompiler);
 app.setSerializerCompiler(serializerCompiler);
 
-app.register(AuthRoutes);
+// CORS
+await app.register(cors, {
+  origin: (origin, cb) => {
+    if (!origin || allowed_origins.includes(origin)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Not allowed'), false);
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+});
 
+// Routes
 app.withTypeProvider<ZodTypeProvider>().route({
   method: 'GET',
   url: '/',
-  // Define your schema
-  schema: {
-    querystring: z.object({
-      name: z.string().min(4),
-    }),
-    response: {
-      200: z.string(),
-    },
-  },
-  handler: (req, res) => {
-    res.send(req.query.name);
+  handler: (_, res) => {
+    res.send('welcome');
   },
 });
+app.register(AuthRoutes);
 
+// setup
 await app
   .listen({
     port: apiConfig.port,
