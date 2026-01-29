@@ -4,9 +4,8 @@ import { db } from 'apps/api/db/postgres/drizzle_config';
 import { items } from 'apps/api/db/postgres/utils/items_ref_table';
 import { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { auth_middleware } from 'apps/api/utils/auth/auth_middleware';
-import { FetchItemsQuerySchema } from './item_schemas';
+import { FetchItemsQuerySchema, ItemSelectSchema } from './item_schemas';
 import { and, eq, sql } from 'drizzle-orm';
-import { createSelectSchema } from 'drizzle-zod';
 
 type FetchItemsRequest = FastifyRequest<{
   Querystring: z.infer<typeof FetchItemsQuerySchema>;
@@ -27,7 +26,7 @@ export const fetch_item: FastifyPluginAsyncZod = async function (fastify) {
             limit: z.number(),
             offset: z.number(),
           }),
-          items: createSelectSchema(items).array(),
+          items: ItemSelectSchema.array(),
         }),
       },
     },

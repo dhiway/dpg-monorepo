@@ -99,7 +99,7 @@ export const create_item_handler = async (
     }
 
     request.log.error(
-      { err, item_type: body.item_type, item_id: body.item_id },
+      { err, item_type: body.item_type },
       'Failed to create item'
     );
 
