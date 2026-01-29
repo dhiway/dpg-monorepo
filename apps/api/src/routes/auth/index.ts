@@ -1,9 +1,10 @@
-import type { FastifyPluginAsync } from 'fastify';
 import { authInstance } from './create_auth';
+import { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 
-const AuthRoutes: FastifyPluginAsync = async (fastify) => {
+const AuthRoutes: FastifyPluginAsyncZod = async (fastify) => {
   fastify.route({
     method: ['GET', 'POST', 'OPTIONS'],
+    schema: { hide: true },
     url: '/api/auth/*',
     config: { rateLimit: { max: 10, timeWindow: '10 seconds' } },
 

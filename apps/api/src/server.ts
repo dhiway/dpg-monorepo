@@ -1,14 +1,17 @@
 import fastify from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import {
+  createJsonSchemaTransform,
   serializerCompiler,
   validatorCompiler,
 } from 'fastify-type-provider-zod';
 import AuthRoutes from './routes/auth';
 import { apiConfig } from './config';
 import cors from '@fastify/cors';
+import fastifySwagger from '@fastify/swagger';
 import 'dotenv/config';
 import { allowed_origins } from '@dpg/config';
+import v1_routes from './routes/v1/v1_routes';
 
 const app = fastify({
   logger: true,
@@ -32,6 +35,29 @@ await app.register(cors, {
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 });
 
+// Documentation
+
+await app.register(fastifySwagger, {
+  openapi: {
+    info: {
+      title: 'DPG',
+      description: 'DPG API Service',
+      version: '1.0.0',
+    },
+    servers: [
+      {
+        url: `http://localhost:${apiConfig.port}`,
+        description: 'Local development server',
+      },
+    ],
+  },
+  transform: createJsonSchemaTransform({}),
+});
+/**/
+await app.register(import('@scalar/fastify-api-reference'), {
+  routePrefix: '/api/reference',
+});
+
 // Routes
 app.withTypeProvider<ZodTypeProvider>().route({
   method: 'GET',
@@ -41,6 +67,7 @@ app.withTypeProvider<ZodTypeProvider>().route({
   },
 });
 app.register(AuthRoutes);
+app.register(v1_routes, { prefix: '/api/v1' });
 
 // setup
 await app
