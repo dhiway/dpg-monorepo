@@ -79,7 +79,7 @@ export function createAuth(config: AuthRuntimeConfig) {
     },
 
     plugins: [
-      openAPI(),
+      openAPI({ theme: 'none' }),
       bearer(),
 
       admin({
