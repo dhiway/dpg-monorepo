@@ -35,6 +35,9 @@ importers:
       drizzle-orm:
         specifier: ^0.45.1
         version: 0.45.1(@types/pg@8.16.0)(kysely@0.28.10)(pg@8.17.2)
+      drizzle-zod:
+        specifier: ^0.8.3
+        version: 0.8.3(drizzle-orm@0.45.1(@types/pg@8.16.0)(kysely@0.28.10)(pg@8.17.2))(zod@4.3.6)
       fastify:
         specifier: ^5.7.1
         version: 5.7.1
@@ -1054,6 +1057,12 @@ packages:
         optional: true
       sqlite3:
         optional: true
+
+  drizzle-zod@0.8.3:
+    resolution: {integrity: sha512-66yVOuvGhKJnTdiqj1/Xaaz9/qzOdRJADpDa68enqS6g3t0kpNkwNYjUuaeXgZfO/UWuIM9HIhSlJ6C5ZraMww==}
+    peerDependencies:
+      drizzle-orm: '>=0.36.0'
+      zod: ^3.25.0 || ^4.0.0
 
   esbuild-register@3.6.0:
     resolution: {integrity: sha512-H2/S7Pm8a9CL1uhp9OvjwrBh5Pvx0H8qVOxNu8Wed9Y7qv56MPtq+GGM8RJpq6glYJn9Wspr8uw7l55uyinNeg==}
@@ -2099,6 +2108,11 @@ snapshots:
       '@types/pg': 8.16.0
       kysely: 0.28.10
       pg: 8.17.2
+
+  drizzle-zod@0.8.3(drizzle-orm@0.45.1(@types/pg@8.16.0)(kysely@0.28.10)(pg@8.17.2))(zod@4.3.6):
+    dependencies:
+      drizzle-orm: 0.45.1(@types/pg@8.16.0)(kysely@0.28.10)(pg@8.17.2)
+      zod: 4.3.6
 
   esbuild-register@3.6.0(esbuild@0.25.12):
     dependencies:
