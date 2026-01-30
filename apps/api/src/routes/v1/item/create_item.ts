@@ -1,12 +1,11 @@
 import { auth_middleware } from 'apps/api/utils/auth/auth_middleware';
 import { type FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
-import { CreateItemBodySchema } from './item_schemas';
 import z from '@dpg/schemas';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { db } from 'apps/api/db/postgres/drizzle_config';
-import { items } from 'apps/api/db/postgres/utils/items_ref_table';
 import { DrizzleQueryError } from 'drizzle-orm';
-import { DatabaseError } from 'pg';
+import { CreateItemBodySchema } from 'packages/schemas/src/api/item_schemas';
+import { DatabaseError, ensureItemPartition, items } from '@dpg/database';
 
 type CreateItemRequest = FastifyRequest<{
   Body: z.infer<typeof CreateItemBodySchema>;
@@ -36,6 +35,20 @@ export const create_item_handler = async (
   reply: FastifyReply
 ) => {
   const body = request.body;
+
+  try {
+    await ensureItemPartition(db, body.item_type);
+  } catch (err) {
+    request.log.error(
+      { err, item_type: body.item_type },
+      'Failed to ensure item partition'
+    );
+
+    return reply.code(500).send({
+      error: 'PARTITION_SETUP_FAILED',
+      message: 'Failed to prepare storage for item type',
+    });
+  }
 
   try {
     const result = await db

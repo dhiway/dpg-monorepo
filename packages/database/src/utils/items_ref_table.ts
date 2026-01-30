@@ -19,7 +19,7 @@ export const items = pgTable(
 
     itemDomain: text('item_domain').notNull(),
     itemDomainUrl: text('item_domain_url'),
-    itemSchemaId: text('item_schema_id').notNull(),
+    itemSchemaId: text('item_schema_id').default(''),
     itemSchemaUrl: text('item_schema_url'),
 
     itemState: jsonb('item_state')

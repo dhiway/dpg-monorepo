@@ -1,16 +1,16 @@
 import { auth_middleware } from 'apps/api/utils/auth/auth_middleware';
 import { type FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import z from '@dpg/schemas';
+import { FastifyReply, FastifyRequest } from 'fastify';
+import { db } from 'apps/api/db/postgres/drizzle_config';
+import { and, DrizzleQueryError, eq, sql } from 'drizzle-orm';
+import { DatabaseError } from '@dpg/database';
 import {
   ItemSelectSchema,
   UpdateItemBodySchema,
   UpdateItemParamsSchema,
-} from './item_schemas';
-import z from '@dpg/schemas';
-import { FastifyReply, FastifyRequest } from 'fastify';
-import { db } from 'apps/api/db/postgres/drizzle_config';
-import { items } from 'apps/api/db/postgres/utils/items_ref_table';
-import { and, DrizzleQueryError, eq, sql } from 'drizzle-orm';
-import { DatabaseError } from 'pg';
+} from 'packages/schemas/src/api/item_schemas';
+import { items } from '@dpg/database';
 
 type UpdateItemRequest = FastifyRequest<{
   Params: z.infer<typeof UpdateItemParamsSchema>;

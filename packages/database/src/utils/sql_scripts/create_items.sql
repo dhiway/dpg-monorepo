@@ -5,7 +5,7 @@ CREATE TABLE items (
   item_domain TEXT NOT NULL,
   item_domain_url TEXT,
 
-  item_schema_id TEXT NOT NULL,
+  item_schema_id TEXT,
   item_schema_url TEXT,
 
   item_state JSONB NOT NULL,

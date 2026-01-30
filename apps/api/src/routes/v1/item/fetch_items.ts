@@ -1,11 +1,14 @@
 import z from '@dpg/schemas';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { db } from 'apps/api/db/postgres/drizzle_config';
-import { items } from 'apps/api/db/postgres/utils/items_ref_table';
 import { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { auth_middleware } from 'apps/api/utils/auth/auth_middleware';
-import { FetchItemsQuerySchema, ItemSelectSchema } from './item_schemas';
 import { and, eq, sql } from 'drizzle-orm';
+import {
+  FetchItemsQuerySchema,
+  ItemSelectSchema,
+} from 'packages/schemas/src/api/item_schemas';
+import { items } from '@dpg/database';
 
 type FetchItemsRequest = FastifyRequest<{
   Querystring: z.infer<typeof FetchItemsQuerySchema>;

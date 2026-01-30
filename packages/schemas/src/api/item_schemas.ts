@@ -1,7 +1,6 @@
-import z from '@dpg/schemas';
-import { items } from 'apps/api/db/postgres/utils/items_ref_table';
+import { items } from '@dpg/database';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
-
+import z from 'zod';
 export const ItemSelectSchema = createSelectSchema(items);
 export const ItemInsertSchema = createInsertSchema(items);
 
@@ -11,7 +10,7 @@ export const CreateItemBodySchema = z.object({
   item_domain: z.string().min(1),
   item_domain_url: z.url().nullable().optional(),
 
-  item_schema_id: z.string().min(1),
+  item_schema_id: z.string().optional().default(''),
   item_schema_url: z.url().nullable().optional(),
 
   item_state: z.record(z.string(), z.unknown()),
@@ -23,7 +22,7 @@ export const FetchItemsQuerySchema = z.object({
   itemType: z.string().min(1).optional(),
   itemDomain: z.string().min(1).optional(),
   itemDomainUrl: z.url().optional(),
-  itemSchemaId: z.string().min(1).optional(),
+  itemSchemaId: z.string().optional().default(''),
   itemSchemaUrl: z.url().optional(),
   // JSONB partial match
   itemState: z.record(z.string(), z.unknown()).optional(),
