@@ -8,6 +8,7 @@ import {
 import AuthRoutes from './routes/auth';
 import { apiConfig } from './config';
 import cors from '@fastify/cors';
+import fastifyQs from 'fastify-qs';
 import fastifySwagger from '@fastify/swagger';
 import 'dotenv/config';
 import { allowed_origins } from '@dpg/config';
@@ -32,8 +33,11 @@ await app.register(cors, {
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS','PATCH'],
 });
+
+// Query string parser - supports bracket notation (e.g. itemState[userId]=value)
+await app.register(fastifyQs, {});
 
 // Documentation
 
