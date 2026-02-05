@@ -14,33 +14,33 @@ import { sql } from 'drizzle-orm';
 export const items = pgTable(
   'items',
   {
-    itemId: uuid('item_id').defaultRandom().notNull(),
-    itemType: text('item_type').notNull(),
+    item_id: uuid('item_id').defaultRandom().notNull(),
+    item_type: text('item_type').notNull(),
 
-    itemDomain: text('item_domain').notNull(),
-    itemDomainUrl: text('item_domain_url'),
-    itemSchemaId: text('item_schema_id').default(''),
-    itemSchemaUrl: text('item_schema_url'),
+    item_domain: text('item_domain').notNull(),
+    item_domain_url: text('item_domain_url'),
+    item_schema_id: text('item_schema_id').default(''),
+    item_schema_url: text('item_schema_url'),
 
-    itemState: jsonb('item_state')
+    item_state: jsonb('item_state')
       .$type<Record<string, unknown>>()
       .notNull()
       .default(sql`'{}'::jsonb`),
-    itemRequirements: jsonb('item_requirements')
+    item_requirements: jsonb('item_requirements')
       .$type<Record<string, unknown>>()
       .notNull()
       .default(sql`'{}'::jsonb`),
-    itemFilters: jsonb('item_filters')
+    item_filters: jsonb('item_filters')
       .$type<Record<string, unknown>>()
       .notNull()
       .default(sql`'{}'::jsonb`),
 
-    createdAt: timestamp('created_at')
+    created_at: timestamp('created_at')
       .$defaultFn(() => /* @__PURE__ */ new Date())
       .notNull(),
-    updatedAt: timestamp('updated_at')
+    updated_at: timestamp('updated_at')
       .$defaultFn(() => /* @__PURE__ */ new Date())
       .notNull(),
   },
-  (table) => [primaryKey({ columns: [table.itemId, table.itemType] })]
+  (table) => [primaryKey({ columns: [table.item_id, table.item_type] })]
 );

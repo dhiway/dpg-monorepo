@@ -4,18 +4,10 @@ import z from 'zod';
 export const ItemSelectSchema = createSelectSchema(items);
 export const ItemInsertSchema = createInsertSchema(items);
 
-export const CreateItemBodySchema = z.object({
-  item_type: z.string().min(1),
-
-  item_domain: z.string().min(1),
-  item_domain_url: z.url().nullable().optional(),
-
-  item_schema_id: z.string().optional().default(''),
-  item_schema_url: z.url().nullable().optional(),
-
-  item_state: z.record(z.string(), z.unknown()),
-  item_requirements: z.record(z.string(), z.unknown()),
-  item_filters: z.record(z.string(), z.unknown()),
+export const CreateItemBodySchema = ItemInsertSchema.omit({
+  item_id: true,
+  created_at: true,
+  updated_at: true,
 });
 
 export const FetchItemsQuerySchema = z.object({
@@ -39,10 +31,10 @@ export const UpdateItemParamsSchema = z.object({
 });
 
 export const UpdateItemBodySchema = ItemInsertSchema.omit({
-  itemType: true,
-  itemId: true,
-  createdAt: true,
-  updatedAt: true,
+  item_type: true,
+  item_id: true,
+  created_at: true,
+  updated_at: true,
 })
   .partial()
   .refine((data) => Object.keys(data).length > 0, {
