@@ -54,24 +54,24 @@ export const create_item_handler = async (
     const result = await db
       .insert(items)
       .values({
-        itemType: body.item_type,
+        item_type: body.item_type,
 
-        itemDomain: body.item_domain,
-        itemDomainUrl: body.item_domain_url ?? null,
+        item_domain: body.item_domain,
+        item_domain_url: body.item_domain_url ?? null,
 
-        itemSchemaId: body.item_schema_id,
-        itemSchemaUrl: body.item_schema_url ?? null,
+        item_schema_id: body.item_schema_id,
+        item_schema_url: body.item_schema_url ?? null,
 
-        itemState: body.item_state,
-        itemRequirements: body.item_requirements,
-        itemFilters: body.item_filters,
+        item_state: body.item_state,
+        item_requirements: body.item_requirements,
+        item_filters: body.item_filters,
       })
       .onConflictDoNothing({
-        target: [items.itemType, items.itemId],
+        target: [items.item_type, items.item_id],
       })
       .returning({
-        itemType: items.itemType,
-        itemId: items.itemId,
+        itemType: items.item_type,
+        itemId: items.item_id,
       });
 
     if (result.length === 0) {

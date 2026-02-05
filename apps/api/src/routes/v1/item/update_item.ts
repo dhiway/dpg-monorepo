@@ -48,9 +48,9 @@ export const update_item_handler = async (
       .update(items)
       .set({
         ...body,
-        updatedAt: sql`now()`,
+        updated_at: sql`now()`,
       })
-      .where(and(eq(items.itemType, itemType), eq(items.itemId, itemId)))
+      .where(and(eq(items.item_type, itemType), eq(items.item_id, itemId)))
       .returning();
 
     if (result.length === 0) {

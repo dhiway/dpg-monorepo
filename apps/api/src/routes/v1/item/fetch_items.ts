@@ -42,12 +42,12 @@ const fetch_items_handler = async (
   reply: FastifyReply
 ) => {
   const {
-    itemType,
-    itemDomain,
-    itemDomainUrl,
-    itemSchemaId,
-    itemSchemaUrl,
-    itemState,
+    item_type,
+    item_domain,
+    item_domain_url,
+    item_schema_id,
+    item_schema_url,
+    item_state,
     limit,
     offset,
   } = request.query;
@@ -55,30 +55,30 @@ const fetch_items_handler = async (
   const conditions = [];
 
   // IMPORTANT: this enables partition pruning
-  if (itemType) {
-    conditions.push(eq(items.itemType, itemType));
+  if (item_type) {
+    conditions.push(eq(items.item_type, item_type));
   }
 
-  if (itemDomain) {
-    conditions.push(eq(items.itemDomain, itemDomain));
+  if (item_domain) {
+    conditions.push(eq(items.item_domain, item_domain));
   }
 
-  if (itemDomainUrl) {
-    conditions.push(eq(items.itemDomainUrl, itemDomainUrl));
+  if (item_domain_url) {
+    conditions.push(eq(items.item_domain_url, item_domain_url));
   }
 
-  if (itemSchemaId) {
-    conditions.push(eq(items.itemSchemaId, itemSchemaId));
+  if (item_schema_id) {
+    conditions.push(eq(items.item_schema_id, item_schema_id));
   }
 
-  if (itemSchemaUrl) {
-    conditions.push(eq(items.itemSchemaUrl, itemSchemaUrl));
+  if (item_schema_url) {
+    conditions.push(eq(items.item_schema_url, item_schema_url));
   }
 
-  if (itemState) {
+  if (item_state) {
     // JSONB containment: item_state @> {...}
     conditions.push(
-      sql`${items.itemState} @> ${JSON.stringify(itemState)}::jsonb`
+      sql`${items.item_state} @> ${JSON.stringify(item_state)}::jsonb`
     );
   }
   const whereClause = conditions.length ? and(...conditions) : undefined;
@@ -94,7 +94,7 @@ const fetch_items_handler = async (
       .select()
       .from(items)
       .where(whereClause)
-      .orderBy(sql`${items.createdAt} DESC`)
+      .orderBy(sql`${items.created_at} DESC`)
       .limit(limit)
       .offset(offset);
 

@@ -129,7 +129,7 @@ export function createAuth(config: AuthRuntimeConfig) {
         },
         requireName: true,
         apiKeyHeaders: 'x-api-key',
-        defaultPrefix: 'dpg_',
+        defaultPrefix: `${config.appName.toLowerCase()}_`,
         enableMetadata: true,
       }),
     ],
