@@ -19,14 +19,16 @@ export const CreateItemBodySchema = z.object({
 });
 
 export const FetchItemsQuerySchema = z.object({
-  itemType: z.string().min(1).optional(),
-  itemDomain: z.string().min(1).optional(),
-  itemDomainUrl: z.url().optional(),
-  itemSchemaId: z.string().optional().default(''),
-  itemSchemaUrl: z.url().optional(),
-  // JSONB partial match
-  itemState: z.record(z.string(), z.unknown()).optional(),
-  // Pagination
+  item_type: z.string().min(1),
+
+  item_domain: z.string().min(1),
+  item_domain_url: z.url().nullable().optional(),
+
+  item_schema_id: z.string().optional().default(''),
+  item_schema_url: z.url().nullable().optional(),
+
+  item_state: z.record(z.string(), z.unknown()).optional(),
+
   limit: z.coerce.number().int().min(1).max(100).default(20),
   offset: z.coerce.number().int().min(0).default(0),
 });
