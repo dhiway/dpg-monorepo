@@ -11,9 +11,10 @@ export const CreateItemBodySchema = ItemInsertSchema.omit({
 });
 
 export const FetchItemsQuerySchema = z.object({
-  item_type: z.string().min(1),
+  item_id: z.uuid().optional(),
+  item_type: z.string().min(1).optional(),
 
-  item_domain: z.string().min(1),
+  item_domain: z.string().min(1).optional(),
   item_domain_url: z.url().nullable().optional(),
 
   item_schema_id: z.string().optional().default(''),
