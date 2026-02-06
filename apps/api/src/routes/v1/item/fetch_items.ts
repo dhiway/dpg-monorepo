@@ -2,7 +2,7 @@ import z from '@dpg/schemas';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { db } from 'apps/api/db/postgres/drizzle_config';
 import { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
-import { auth_middleware } from 'apps/api/utils/auth/auth_middleware';
+import { auth_middleware } from 'apps/api/plugins/auth/auth_middleware';
 import { and, eq, sql } from 'drizzle-orm';
 import {
   FetchItemsQuerySchema,

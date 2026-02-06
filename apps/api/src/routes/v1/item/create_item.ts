@@ -1,4 +1,3 @@
-import { auth_middleware } from 'apps/api/utils/auth/auth_middleware';
 import { type FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import z from '@dpg/schemas';
 import { FastifyReply, FastifyRequest } from 'fastify';
@@ -6,6 +5,7 @@ import { db } from 'apps/api/db/postgres/drizzle_config';
 import { DrizzleQueryError } from 'drizzle-orm';
 import { CreateItemBodySchema } from 'packages/schemas/src/api/item_schemas';
 import { DatabaseError, ensureItemPartition, items } from '@dpg/database';
+import { auth_middleware } from 'apps/api/plugins/auth/auth_middleware';
 
 type CreateItemRequest = FastifyRequest<{
   Body: z.infer<typeof CreateItemBodySchema>;

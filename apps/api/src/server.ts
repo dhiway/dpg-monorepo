@@ -33,14 +33,13 @@ await app.register(cors, {
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS','PATCH'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
 });
 
 // Query string parser - supports bracket notation (e.g. itemState[userId]=value)
 await app.register(fastifyQs, {});
 
 // Documentation
-
 await app.register(fastifySwagger, {
   openapi: {
     info: {
