@@ -42,6 +42,7 @@ const fetch_items_handler = async (
   reply: FastifyReply
 ) => {
   const {
+    item_id,
     item_type,
     item_domain,
     item_domain_url,
@@ -55,6 +56,10 @@ const fetch_items_handler = async (
   const conditions = [];
 
   // IMPORTANT: this enables partition pruning
+  if (item_id) {
+    conditions.push(eq(items.item_id, item_id));
+  }
+
   if (item_type) {
     conditions.push(eq(items.item_type, item_type));
   }
