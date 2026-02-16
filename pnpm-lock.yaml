@@ -47,6 +47,9 @@ importers:
       ioredis:
         specifier: ^5.9.2
         version: 5.9.2
+      notification:
+        specifier: workspace:*
+        version: link:../../packages/notification
     devDependencies:
       drizzle-kit:
         specifier: ^0.31.8
@@ -77,6 +80,8 @@ importers:
       pg:
         specifier: ^8.17.2
         version: 8.17.2
+
+  packages/notification: {}
 
   packages/schemas:
     dependencies:

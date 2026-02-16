@@ -1,6 +1,6 @@
 import { loadEnv } from './env';
 
-export const { instance, api, auth, databases } = loadEnv();
+export const { instance, api, auth, databases, notification } = loadEnv();
 
 export const apiConfig = {
   domain: api.API_DOMAIN,

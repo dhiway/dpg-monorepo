@@ -12,7 +12,17 @@ export const ApiSecretsSchema = z.object({
 
 export const AuthSecretsSchema = z.object({
   AUTH_SECRET: z.string().min(8),
-  CREATE_TEST_OTP: z.coerce.boolean().default(false),
+  CREATE_TEST_OTP: z
+    .string()
+    .default('false')
+    .transform((val) => val === 'true'),
+});
+
+export const NotificationSecretsSchema = z.object({
+  NOTIFICATION_SERVICE_ENDPOINT: z.string().optional(),
+  NOTIFICATION_SERVICE_KEY_ID: z.string().optional(),
+  NOTIFICATION_SERVICE_SECRET: z.string().optional(),
+  SMS_TEMPLATE_ID: z.string().optional(),
 });
 
 export const DatabaseSecretsSchema = z.object({
