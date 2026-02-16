@@ -567,7 +567,10 @@ export const unifiedOtp = ({
           });
         }
 
+        let isNewUser = false;
+
         if (!user) {
+          isNewUser = true;
           let domain: string | undefined,
             isAdmin = false;
           if (createAdmin && Array.isArray(adminByDomain)) {
@@ -721,7 +724,9 @@ export const unifiedOtp = ({
           throw new APIError('SERVICE_UNAVAILABLE');
         }
 
-        const afterUser = await afterUserCreate({ user });
+        const afterUser = isNewUser
+          ? await afterUserCreate({ user })
+          : null;
 
         try {
           const session = await ctx.context.internalAdapter.createSession(
@@ -742,7 +747,7 @@ export const unifiedOtp = ({
             redirect: false,
             token: session.token,
             user: { ...updatedUser },
-            afterUserCreate: afterUser,
+            ...(afterUser ? { afterUserCreate: afterUser } : {}),
           };
         } catch (error: any) {
           throw new APIError('SERVICE_UNAVAILABLE', error.message);

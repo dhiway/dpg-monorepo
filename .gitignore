@@ -16,3 +16,7 @@ drizzle/
 .DS_Store
 Thumbs.db
 data/
+
+
+#Ignore cursor AI rules
+.cursor/rules/codacy.mdc

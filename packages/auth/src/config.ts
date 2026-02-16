@@ -9,9 +9,12 @@ import {
 import { unifiedOtp } from '../plugins/unified_otp';
 import type { AuthRuntimeConfig } from './types';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { emailOtpHtmlTemplate } from './templates/otp_email';
 
 export function createAuth(config: AuthRuntimeConfig) {
   const redis = config.redis;
+  const nc = config.notificationClient;
+
   return betterAuth({
     appName: config.appName,
     baseURL: config.baseURL,
@@ -107,18 +110,98 @@ export function createAuth(config: AuthRuntimeConfig) {
         adminByDomain: config.adminDomains,
 
         sendPhoneOtp: async ({ phoneNumber, otp }) => {
-          console.log({ phoneNumber, message: `Your OTP: ${otp}` });
+          if (nc) {
+            try {
+              await nc.notify({
+                channel: 'sms',
+                template_id: config.smsTemplateId || 'login_otp',
+                to: phoneNumber,
+                priority: 'realtime',
+                variables: { message: otp },
+              });
+            } catch (err) {
+              console.error('Failed to send phone OTP via notification service:', err);
+            }
+          } else {
+            console.log({ phoneNumber, message: `Your OTP: ${otp}` });
+          }
         },
 
         sendEmailOtp: async ({ email, otp, user }) => {
-          console.log({
-            to: email,
-            subject: 'Your One-Time Password',
-            html: otp || user,
-          });
+          if (nc) {
+            try {
+              await nc.notify({
+                channel: 'email',
+                template_id: 'basic_email',
+                to: email,
+                priority: 'realtime',
+                variables: {
+                  fromName: config.appName,
+                  fromEmail: 'support@onest.network',
+                  replyTo: 'support@onest.network',
+                  subject: `Your One-Time Password (OTP) for ${config.appName}`,
+                  html: emailOtpHtmlTemplate(otp, user, config.appName),
+                },
+              });
+            } catch (err) {
+              console.error('Failed to send email OTP via notification service:', err);
+            }
+          } else {
+            console.log({
+              to: email,
+              subject: 'Your One-Time Password',
+              html: otp || user,
+            });
+          }
         },
 
-        afterUserCreate: async (payload) => payload,
+        afterUserCreate: async (payload) => {
+          if (!nc) return payload;
+
+          if (payload.user.email) {
+            try {
+              await nc.notify({
+                channel: 'email',
+                template_id: 'basic_email',
+                to: payload.user.email,
+                priority: 'realtime',
+                variables: {
+                  fromName: `Welcome to ${config.appName}`,
+                  fromEmail: 'support@onest.network',
+                  replyTo: 'support@onest.network',
+                  subject: 'Welcome!',
+                  html: `<div>
+                    <p>Congratulations ${payload.user.name}! You just went live with an account on ${config.appName}.</p>
+                  </div>`,
+                },
+              });
+            } catch (err) {
+              console.error('Failed to send welcome email:', err);
+            }
+          }
+
+          if (payload.user.phoneNumber) {
+            try {
+              await nc.notify({
+                channel: 'whatsapp',
+                template_id: 'other',
+                to: payload.user.phoneNumber,
+                priority: 'realtime',
+                variables: {
+                  contentSid: 'HX3f2a5d7e4a18e5664124592a12a154eb',
+                  contentVariables: {
+                    '1': payload.user.name,
+                  },
+                },
+              });
+            } catch (err) {
+              console.error('Failed to send welcome WhatsApp:', err);
+            }
+          }
+
+          return payload;
+        },
+
         createTestOtp: config.createTestOTP,
       }),
 
