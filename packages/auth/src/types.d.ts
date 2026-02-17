@@ -1,16 +1,6 @@
-export type NodeEnv = 'development' | 'production';
+import type { NotificationClient } from 'notification';
 
-export interface NotificationClientInterface {
-  notify<TVariables extends Record<string, unknown>>(
-    payload: {
-      channel: string;
-      template_id: string;
-      to: string;
-      priority: 'realtime' | 'other';
-      variables: TVariables;
-    }
-  ): Promise<void>;
-}
+export type NodeEnv = 'development' | 'production';
 
 export interface AuthRuntimeConfig {
   appName: string;
@@ -27,6 +17,6 @@ export interface AuthRuntimeConfig {
   redis: Redis;
 
   createTestOTP?: boolean;
-  notificationClient?: NotificationClientInterface;
+  notificationClient?: NotificationClient;
   smsTemplateId?: string;
 }
