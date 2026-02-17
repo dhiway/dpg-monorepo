@@ -9,5 +9,18 @@ export default defineConfig({
   clean: true,
   sourcemap: true,
   dts: false,
-  external: ['fastify'],
+  external: [
+    'fastify',
+    '@fastify/cors',
+    '@fastify/swagger',
+    '@scalar/fastify-api-reference',
+    'fastify-qs',
+    'fastify-type-provider-zod',
+    'drizzle-orm',
+    'drizzle-orm/*',
+    'pg',
+    'pg/*',
+    'ioredis',
+    'dotenv'
+  ],
 });
