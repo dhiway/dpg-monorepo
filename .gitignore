@@ -11,7 +11,7 @@ drizzle/
 *.tsbuildinfo
 
 # Environment Variables
-# .env
+.env
 .env.local
 
 # System Files
