@@ -7,7 +7,7 @@ dist/
 build/
 out/
 drizzle/
-tsconfig.tsbuildinfo
+*.tsbuildinfo
 
 # Environment Variables
 # .env
