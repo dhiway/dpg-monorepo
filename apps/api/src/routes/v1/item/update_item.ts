@@ -11,6 +11,9 @@ import {
 } from 'packages/schemas/src/api/item_schemas';
 import { items } from '@dpg/database';
 import { auth_middleware } from 'apps/api/plugins/auth/auth_middleware';
+import { getNotificationPublisher } from '../../../websocket/setup';
+import { saveNotification } from '../../../utils/notification_helper';
+import { ConnectionItemState } from '../connection/fetch_connections_helper';
 
 type UpdateItemRequest = FastifyRequest<{
   Params: z.infer<typeof UpdateItemParamsSchema>;
@@ -43,6 +46,24 @@ export const update_item_handler = async (
   const { itemType, itemId } = request.params;
   const body = request.body;
 
+  // Fetch the current item to compare old vs new state
+  let currentItem: any = null;
+  if (itemType === 'connection' && body.item_state) {
+    try {
+      const existing = await db
+        .select()
+        .from(items)
+        .where(and(eq(items.item_type, itemType), eq(items.item_id, itemId)))
+        .limit(1);
+      
+      if (existing.length > 0) {
+        currentItem = existing[0];
+      }
+    } catch (err) {
+      request.log.warn({ err }, 'Failed to fetch current item for comparison');
+    }
+  }
+
   try {
     const result = await db
       .update(items)
@@ -60,8 +81,74 @@ export const update_item_handler = async (
       });
     }
 
+    const updatedItem = result[0];
+
+    // Special handling for connection status changes
+    if (itemType === 'connection' && currentItem && body.item_state) {
+      const oldState = currentItem.item_state as ConnectionItemState;
+      const newState = body.item_state as Partial<ConnectionItemState>;
+      
+      // If status changed, send notification to the requester
+      if (newState.status && newState.status !== oldState.status) {
+        try {
+          const publisher = getNotificationPublisher();
+          if (publisher) {
+            const recipientId = newState.status === 'cancelled' 
+              ? oldState.recipientId 
+              : oldState.requesterId;
+            
+            const fromUserName = newState.respondDetails?.name || oldState.requesterName;
+            
+            const event = await publisher.publishConnectionStatusChange(recipientId, {
+              connectionId: itemId,
+              status: newState.status as 'accepted' | 'rejected' | 'cancelled',
+              fromUserId: (request as any).session?.userId || 'system',
+              fromUserName,
+              respondDetails: newState.respondDetails || undefined,
+              message: newState.status === 'accepted' 
+                ? 'Your connection request was accepted'
+                : newState.status === 'rejected'
+                ? 'Your connection request was declined'
+                : 'Connection request was cancelled',
+            });
+            
+            // Save notification to database
+            await saveNotification({
+              userId: recipientId,
+              type: 'connection_status_change',
+              data: event.data,
+            });
+          }
+        } catch (err) {
+          request.log.error({ err }, 'Failed to send connection status change notification');
+          // Don't fail the request if notification fails
+        }
+      }
+    }
+
+    // Send WebSocket notification for item update (generic)
+    try {
+      const publisher = getNotificationPublisher();
+      
+      // Determine which user(s) to notify
+      // If the item has a user_id field, notify that user
+      if (updatedItem.item_state && typeof updatedItem.item_state === 'object' && 'userId' in updatedItem.item_state) {
+        const userId = (updatedItem.item_state as any).userId;
+        
+        await publisher.publishItemUpdate(userId, {
+          itemId: updatedItem.item_id,
+          itemType: updatedItem.item_type,
+          action: 'updated',
+          changes: body,
+        });
+      }
+    } catch (wsError) {
+      // Log WebSocket error but don't fail the request
+      request.log.warn({ wsError, itemId, itemType }, 'Failed to send WebSocket notification');
+    }
+
     return reply.code(200).send({
-      item: result[0],
+      item: updatedItem,
     });
   } catch (err) {
     if (err instanceof DrizzleQueryError) {

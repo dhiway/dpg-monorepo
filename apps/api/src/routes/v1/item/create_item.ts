@@ -6,6 +6,9 @@ import { DrizzleQueryError } from 'drizzle-orm';
 import { CreateItemBodySchema } from 'packages/schemas/src/api/item_schemas';
 import { DatabaseError, ensureItemPartition, items } from '@dpg/database';
 import { auth_middleware } from 'apps/api/plugins/auth/auth_middleware';
+import { checkExistingConnection } from '../connection/fetch_connections_helper';
+import { getNotificationPublisher } from '../../../websocket/setup';
+import { saveNotification } from '../../../utils/notification_helper';
 
 type CreateItemRequest = FastifyRequest<{
   Body: z.infer<typeof CreateItemBodySchema>;
@@ -35,6 +38,30 @@ export const create_item_handler = async (
   reply: FastifyReply
 ) => {
   const body = request.body;
+
+  // Special handling for connection items: check for duplicates
+  if (body.item_type === 'connection') {
+    const state = body.item_state as any;
+    if (state?.requesterId && state?.recipientId) {
+      try {
+        const existingConnection = await checkExistingConnection(
+          state.requesterId,
+          state.recipientId
+        );
+        
+        if (existingConnection) {
+          return reply.code(400).send({
+            error: 'DUPLICATE_CONNECTION',
+            message: 'A connection already exists with this user',
+            existingConnection,
+          });
+        }
+      } catch (err) {
+        request.log.error({ err }, 'Failed to check for duplicate connection');
+        // Continue with creation if check fails - better to allow than block
+      }
+    }
+  }
 
   try {
     await ensureItemPartition(db, body.item_type);
@@ -79,6 +106,37 @@ export const create_item_handler = async (
         error: 'ITEM_ALREADY_EXISTS',
         message: 'An item with the same type and id already exists',
       });
+    }
+
+    // Send WebSocket notification for connection requests
+    if (body.item_type === 'connection') {
+      const state = body.item_state as any;
+      if (state?.recipientId && state?.requesterId && state?.requesterName) {
+        try {
+          const publisher = getNotificationPublisher();
+          if (publisher) {
+            const event = await publisher.publishConnectionRequest(state.recipientId, {
+              connectionId: result[0].itemId,
+              fromUserId: state.requesterId,
+              fromUserName: state.requesterName,
+              fromUserContact: state.requesterContact,
+              fromUserDomain: state.requesterDomain,
+              broadcastDetails: state.broadcastDetails || {},
+              message: state.message,
+            });
+            
+            // Save notification to database
+            await saveNotification({
+              userId: state.recipientId,
+              type: 'connection_request',
+              data: event.data,
+            });
+          }
+        } catch (err) {
+          request.log.error({ err }, 'Failed to send connection request notification');
+          // Don't fail the request if notification fails
+        }
+      }
     }
 
     return reply.code(201).send({

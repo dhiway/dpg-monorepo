@@ -13,6 +13,7 @@ import fastifySwagger from '@fastify/swagger';
 import 'dotenv/config';
 import { allowed_origins } from '@dpg/config';
 import v1_routes from './routes/v1/v1_routes';
+import { initializeWebSocket, shutdownWebSocket } from './websocket/setup';
 
 const app = fastify({
   logger: true,
@@ -78,7 +79,19 @@ await app
     port: apiConfig.port,
     host: '0.0.0.0',
   })
-  .then((endpoint) => console.log('Server Endpoint: ', endpoint))
+  .then(async (endpoint) => {
+    console.log('Server Endpoint: ', endpoint);
+    
+    // Initialize WebSocket server if enabled
+    if (process.env.WEBSOCKET_ENABLED === 'true') {
+      try {
+        await initializeWebSocket(app.server);
+        console.log('WebSocket server ready');
+      } catch (error) {
+        console.error('Failed to initialize WebSocket:', error);
+      }
+    }
+  })
   .catch((err) => {
     console.error(err);
     process.exit(1);
@@ -93,6 +106,10 @@ async function shutdown(signal: string) {
   app.log.info(`Shutting down (${signal})`);
 
   try {
+    // Shutdown WebSocket server first
+    await shutdownWebSocket();
+    
+    // Then close HTTP server
     await app.close();
   } catch (err) {
     app.log.error(err);
