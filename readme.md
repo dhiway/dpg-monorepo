@@ -9,6 +9,7 @@ This monorepo adds support for managing multiple apps with shared basic configs.
 - clean env control and setup
 - per app database setup
 - pnpm workspace flow
+- turborepo task orchestration
 
 ## Adding Apps / Packages
 
@@ -57,8 +58,32 @@ All exports should be exported in index.ts
 
 ## APPS / API
 
-1. Run postgres and redis db (running docker compose:
-   `docker compose up --build -d` at root loads pg 18 and redis 7)
-2. API will pick variables from .env. the current setup picks env from
-   localhost.
-3. For initial setup run `db:generate` and then `db:migrate` scripts
+### Turbo commands (root)
+
+- `pnpm dev:api` start API in watch mode
+- `pnpm build:api` build API
+- `pnpm preview:api` run built API
+- `pnpm start:api` run production entry for API
+- `pnpm db:generate:api` generate migrations
+- `pnpm db:migrate:api` run migrations
+- `pnpm db:studio:api` open drizzle studio
+
+### Local mode (host API + docker DBs)
+
+1. Start databases from root:
+   `docker compose up -d db redis`
+2. Keep `.env` using local values (`POSTGRES_HOST=127.0.0.1`,
+   `REDIS_HOST=127.0.0.1`, with matching ports).
+3. Run API from root:
+   `pnpm dev:api`
+
+### External DB mode (Dokploy or other hosted DBs)
+
+Use URL overrides in `.env`:
+
+```bash
+POSTGRES_URL='postgres://user:password@host:5432/dbname'
+REDIS_URL='redis://:password@host:6379'
+```
+
+When these are set, API and drizzle-kit use them automatically.

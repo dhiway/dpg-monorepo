@@ -1,3 +1,5 @@
+import type { NotificationClient } from 'notification';
+
 export type NodeEnv = 'development' | 'production';
 
 export interface AuthRuntimeConfig {
@@ -15,4 +17,6 @@ export interface AuthRuntimeConfig {
   redis: Redis;
 
   createTestOTP?: boolean;
+  notificationClient?: NotificationClient;
+  smsTemplateId?: string;
 }

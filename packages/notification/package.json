@@ -1,7 +1,7 @@
 {
-  "name": "auth",
+  "name": "notification",
   "version": "1.0.0",
-  "description": "",
+  "description": "Notification service client for DPG",
   "type": "module",
   "private": true,
   "main": "index.js",
@@ -14,8 +14,5 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.28.1",
-  "dependencies": {
-    "better-auth": "^1.4.17"
-  }
+  "packageManager": "pnpm@10.28.1"
 }
