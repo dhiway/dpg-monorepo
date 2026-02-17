@@ -4,6 +4,15 @@
   "description": "Monorepo for DPG",
   "main": "index.js",
   "scripts": {
+    "dev:api": "node scripts/turbo-with-root-env.mjs run dev --filter=api",
+    "build:api": "node scripts/turbo-with-root-env.mjs run build --filter=api",
+    "preview:api": "node scripts/turbo-with-root-env.mjs run preview --filter=api",
+    "start:api": "node scripts/turbo-with-root-env.mjs run start --filter=api",
+    "db:pull:api": "node scripts/turbo-with-root-env.mjs run db:pull --filter=api",
+    "db:push:api": "node scripts/turbo-with-root-env.mjs run db:push --filter=api",
+    "db:generate:api": "node scripts/turbo-with-root-env.mjs run db:generate --filter=api",
+    "db:migrate:api": "node scripts/turbo-with-root-env.mjs run db:migrate --filter=api",
+    "db:studio:api": "node scripts/turbo-with-root-env.mjs run db:studio --filter=api",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -11,7 +20,8 @@
   "license": "MIT",
   "packageManager": "pnpm@10.28.1",
   "devDependencies": {
-    "@types/node": "^25.0.10",
+    "@types/node": "^25.2.3",
+    "turbo": "^2.5.6",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   }

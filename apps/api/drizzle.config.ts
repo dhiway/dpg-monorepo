@@ -5,6 +5,10 @@ dotenv.config({
   path: '../../.env',
 });
 
+const pgUrl =
+  process.env.POSTGRES_URL ??
+  `postgres://${process.env.POSTGRES_USER}:${process.env.POSTGRES_PASSWORD}@${process.env.POSTGRES_HOST ?? '127.0.0.1'}:${process.env.POSTGRES_PORT ?? process.env.DATABASE_PORT ?? '5432'}/${process.env.POSTGRES_DB}`;
+
 export default defineConfig({
   out: './drizzle',
   schema: './db/postgres/schema',
@@ -12,6 +16,6 @@ export default defineConfig({
   verbose: true,
   strict: true,
   dbCredentials: {
-    url: `postgres://${process.env.POSTGRES_USER}:${process.env.POSTGRES_PASSWORD}@127.0.0.1:${process.env.DATABASE_PORT}/${process.env.POSTGRES_DB}`,
+    url: pgUrl,
   },
 });
