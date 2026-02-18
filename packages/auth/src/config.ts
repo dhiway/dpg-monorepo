@@ -10,6 +10,7 @@ import { unifiedOtp } from '../plugins/unified_otp';
 import type { AuthRuntimeConfig } from './types';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { emailOtpHtmlTemplate } from './templates/otp_email';
+import { randomUUID } from 'crypto';
 
 export function createAuth(config: AuthRuntimeConfig) {
   const redis = config.redis;
@@ -23,7 +24,7 @@ export function createAuth(config: AuthRuntimeConfig) {
 
     advanced: {
       database: {
-        generateId: () => crypto.randomUUID(),
+        generateId: () => randomUUID(),
       },
       disableCSRFCheck: config.nodeEnv !== 'production',
       disableOriginCheck: config.nodeEnv !== 'production',
