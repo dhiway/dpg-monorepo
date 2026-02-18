@@ -16,24 +16,28 @@ let notificationPublisher: NotificationPublisher | null = null;
  */
 const sessionVerifier: SessionAuthConfig['verifySession'] = async (headers) => {
   try {
-    // Extract token from query string if present and inject as Authorization header.
-    // Browsers cannot send custom headers on WebSocket upgrades, so the token
-    // is appended as a URL query parameter by the frontend.
-    const url = headers[':path'] as string | undefined
-      || headers['x-original-uri'] as string | undefined;
-    let authHeaders = { ...headers } as Record<string, string>;
-
-    if (url) {
-      const queryString = url.includes('?') ? url.split('?')[1] : '';
-      const params = new URLSearchParams(queryString);
-      const token = params.get('token');
-      if (token) {
-        authHeaders['authorization'] = `Bearer ${token}`;
+    // Build a plain headers object, excluding pseudo-headers like :path
+    const safeHeaders: Record<string, string> = {};
+    for (const [key, value] of Object.entries(headers)) {
+      if (!key.startsWith(':') && typeof value === 'string') {
+        safeHeaders[key] = value;
       }
     }
 
-    // Convert headers to Headers object for auth API
-    const headersObj = new Headers(authHeaders);
+    // Extract token from the raw request URL query string (?token=...) and
+    // inject it as an Authorization header. Browsers cannot send custom headers
+    // on WebSocket upgrades, so the frontend appends the token as a query param.
+    const rawUrl = headers[':path'] as string | undefined;
+    if (rawUrl) {
+      const queryString = rawUrl.includes('?') ? rawUrl.split('?')[1] : '';
+      const token = new URLSearchParams(queryString).get('token');
+      if (token) {
+        safeHeaders['authorization'] = `Bearer ${token}`;
+      }
+    }
+
+    // Convert to Headers object for auth API
+    const headersObj = new Headers(safeHeaders);
 
     // Use existing auth instance to get session
     const session = await authInstance.api.getSession({
