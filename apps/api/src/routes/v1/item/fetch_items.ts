@@ -18,7 +18,7 @@ export const fetch_items: FastifyPluginAsyncZod = async function (fastify) {
   fastify.route({
     url: '/fetch',
     method: 'GET',
-    preHandler: auth_middleware as any,
+    // preHandler: auth_middleware as any,
     schema: {
       tags: ['item'],
       query: FetchItemsQuerySchema,
