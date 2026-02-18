@@ -11,12 +11,30 @@ let notificationPublisher: NotificationPublisher | null = null;
 
 /**
  * Session verifier that integrates with the existing auth system.
+ * Supports both session cookies and Bearer tokens passed as ?token= query param
+ * (used by WebSocket clients which cannot send custom headers).
  */
 const sessionVerifier: SessionAuthConfig['verifySession'] = async (headers) => {
   try {
+    // Extract token from query string if present and inject as Authorization header.
+    // Browsers cannot send custom headers on WebSocket upgrades, so the token
+    // is appended as a URL query parameter by the frontend.
+    const url = headers[':path'] as string | undefined
+      || headers['x-original-uri'] as string | undefined;
+    let authHeaders = { ...headers } as Record<string, string>;
+
+    if (url) {
+      const queryString = url.includes('?') ? url.split('?')[1] : '';
+      const params = new URLSearchParams(queryString);
+      const token = params.get('token');
+      if (token) {
+        authHeaders['authorization'] = `Bearer ${token}`;
+      }
+    }
+
     // Convert headers to Headers object for auth API
-    const headersObj = new Headers(headers as Record<string, string>);
-    
+    const headersObj = new Headers(authHeaders);
+
     // Use existing auth instance to get session
     const session = await authInstance.api.getSession({
       headers: headersObj,

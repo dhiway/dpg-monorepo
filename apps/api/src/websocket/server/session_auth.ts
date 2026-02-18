@@ -36,6 +36,11 @@ export async function authenticateSession(
       headers[key] = req.headers[key];
     });
 
+    // Pass the raw request URL so the verifier can extract query params (e.g. ?token=)
+    if (req.url) {
+      headers[':path'] = req.url;
+    }
+
     // Verify session using provided function
     const session = await config.verifySession(headers);
 
