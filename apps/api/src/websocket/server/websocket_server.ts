@@ -155,14 +155,14 @@ export class NotificationWebSocketServer {
       this.connectionManager.updateActivity(connectionId);
 
       // Parse message
-      const message = JSON.parse(data.toString()) as ClientMessage;
+      const message = JSON.parse((data as Buffer | string).toString()) as ClientMessage;
 
       // Handle different message types
       switch (message.type) {
         case 'ping':
           this.handlePing(connectionId);
           break;
-        
+
         default:
           console.warn(`Unknown message type from client: ${message.type}`);
       }

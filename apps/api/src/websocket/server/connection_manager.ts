@@ -8,13 +8,13 @@ import type { Connection } from '../types/connection';
 export class ConnectionManager {
   /** Map of connection ID to Connection object */
   private connections = new Map<string, Connection>();
-  
+
   /** Map of user ID to Set of connection IDs (supports multiple connections per user) */
   private userConnections = new Map<string, Set<string>>();
 
   /**
    * Add a new WebSocket connection for a user.
-   * 
+   *
    * @param userId - User ID who owns this connection
    * @param ws - WebSocket instance
    * @returns Connection ID
@@ -45,7 +45,7 @@ export class ConnectionManager {
 
   /**
    * Remove a connection.
-   * 
+   *
    * @param connectionId - Connection ID to remove
    * @returns true if connection was found and removed
    */
@@ -64,7 +64,7 @@ export class ConnectionManager {
     const userConns = this.userConnections.get(userId);
     if (userConns) {
       userConns.delete(connectionId);
-      
+
       // Clean up empty sets
       if (userConns.size === 0) {
         this.userConnections.delete(userId);
@@ -76,7 +76,7 @@ export class ConnectionManager {
 
   /**
    * Get a specific connection by ID.
-   * 
+   *
    * @param connectionId - Connection ID
    * @returns Connection object or undefined
    */
@@ -86,7 +86,7 @@ export class ConnectionManager {
 
   /**
    * Get all active WebSocket instances for a user.
-   * 
+   *
    * @param userId - User ID
    * @returns Array of WebSocket instances
    */
@@ -104,7 +104,7 @@ export class ConnectionManager {
 
   /**
    * Get all connection IDs for a user.
-   * 
+   *
    * @param userId - User ID
    * @returns Array of connection IDs
    */
@@ -115,7 +115,7 @@ export class ConnectionManager {
 
   /**
    * Update last activity timestamp for a connection.
-   * 
+   *
    * @param connectionId - Connection ID
    */
   updateActivity(connectionId: string): void {
@@ -127,7 +127,7 @@ export class ConnectionManager {
 
   /**
    * Check if a user has any active connections.
-   * 
+   *
    * @param userId - User ID
    * @returns true if user has at least one connection
    */
@@ -138,7 +138,7 @@ export class ConnectionManager {
 
   /**
    * Get total number of active connections.
-   * 
+   *
    * @returns Number of connections
    */
   getConnectionCount(): number {
@@ -147,7 +147,7 @@ export class ConnectionManager {
 
   /**
    * Get total number of connected users.
-   * 
+   *
    * @returns Number of unique users
    */
   getUserCount(): number {
@@ -157,7 +157,7 @@ export class ConnectionManager {
   /**
    * Get all active connections.
    * Useful for debugging or monitoring.
-   * 
+   *
    * @returns Array of all connections
    */
   getAllConnections(): Connection[] {
@@ -166,14 +166,14 @@ export class ConnectionManager {
 
   /**
    * Close and remove all connections for a user.
-   * 
+   *
    * @param userId - User ID
    * @param code - WebSocket close code (default: 1000 - normal closure)
    * @param reason - Close reason
    */
   closeUserConnections(userId: string, code = 1000, reason?: string): void {
     const connectionIds = this.getUserConnectionIds(userId);
-    
+
     connectionIds.forEach((connectionId) => {
       const connection = this.connections.get(connectionId);
       if (connection) {
@@ -185,7 +185,7 @@ export class ConnectionManager {
 
   /**
    * Generate a unique connection ID.
-   * 
+   *
    * @returns Connection ID
    */
   private generateConnectionId(): string {

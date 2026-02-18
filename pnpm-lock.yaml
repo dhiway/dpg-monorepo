@@ -32,6 +32,9 @@ importers:
       '@scalar/fastify-api-reference':
         specifier: ^1.44.14
         version: 1.44.14
+      cookie:
+        specifier: ^0.7.2
+        version: 0.7.2
       dotenv:
         specifier: ^17.2.4
         version: 17.2.4
@@ -56,10 +59,16 @@ importers:
       pg:
         specifier: ^8.17.2
         version: 8.17.2
-      websocket:
-        specifier: workspace:*
-        version: link:../../packages/websocket
+      ws:
+        specifier: ^8.18.0
+        version: 8.19.0
     devDependencies:
+      '@types/cookie':
+        specifier: ^0.6.0
+        version: 0.6.0
+      '@types/ws':
+        specifier: ^8.5.13
+        version: 8.18.1
       drizzle-kit:
         specifier: ^0.31.8
         version: 0.31.8
@@ -100,25 +109,6 @@ importers:
       zod:
         specifier: ^4.3.6
         version: 4.3.6
-
-  packages/websocket:
-    dependencies:
-      cookie:
-        specifier: ^0.7.2
-        version: 0.7.2
-      ioredis:
-        specifier: ^5.4.1
-        version: 5.9.2
-      ws:
-        specifier: ^8.18.0
-        version: 8.19.0
-    devDependencies:
-      '@types/cookie':
-        specifier: ^0.6.0
-        version: 0.6.0
-      '@types/ws':
-        specifier: ^8.5.13
-        version: 8.18.1
 
 packages:
 

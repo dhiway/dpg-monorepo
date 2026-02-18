@@ -1,12 +1,9 @@
 import { Server as HTTPServer } from 'http';
-import {
-  NotificationWebSocketServer,
-  createNotificationPublisher,
-  NotificationPublisher,
-  type SessionAuthConfig,
-} from 'websocket';
+import { NotificationWebSocketServer } from './server/websocket_server';
+import { createNotificationPublisher, NotificationPublisher } from './publisher/notification_publisher';
+import type { SessionAuthConfig } from './server/session_auth';
 import { authInstance } from '../routes/auth/create_auth';
-import type { UserSession } from 'websocket';
+import type { UserSession } from './types/connection';
 
 // Global WebSocket server and publisher instances
 let wsServer: NotificationWebSocketServer | null = null;
@@ -68,7 +65,7 @@ export async function initializeWebSocket(httpServer: HTTPServer): Promise<void>
     // Initialize notification publisher
     if (redisUrl) {
       // Multi-instance mode: use Redis adapter
-      const { RedisAdapter } = await import('websocket');
+      const { RedisAdapter } = await import('./server/redis_adapter');
       const redisAdapter = new RedisAdapter({
         redisUrl,
         channel: 'websocket:notifications',

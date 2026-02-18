@@ -13,7 +13,7 @@ import { getNotificationPublisher } from '../../websocket/setup';
 const PublishNotificationBodySchema = z.object({
   userId: z.string(),
   type: z.enum(['status_change', 'connection_request', 'item_update', 'custom']),
-  data: z.record(z.unknown()),
+  data: z.record(z.string(), z.unknown()),
 });
 
 type PublishNotificationRequest = FastifyRequest<{
@@ -38,6 +38,10 @@ export const websocket_example_routes: FastifyPluginAsyncZod = async function (
           connections: z.number(),
           users: z.number(),
           redisHealthy: z.boolean(),
+        }),
+        503: z.object({
+          error: z.string(),
+          message: z.string(),
         }),
       },
     },

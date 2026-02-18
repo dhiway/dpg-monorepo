@@ -32,7 +32,7 @@ export class NotificationPublisher {
 
   /**
    * Publish a status change notification.
-   * 
+   *
    * @param userId - User ID to send notification to
    * @param data - Status change event data
    * @returns The created event
@@ -55,7 +55,7 @@ export class NotificationPublisher {
 
   /**
    * Publish a connection request notification.
-   * 
+   *
    * @param userId - User ID to send notification to
    * @param data - Connection request event data
    * @returns The created event
@@ -78,7 +78,7 @@ export class NotificationPublisher {
 
   /**
    * Publish a connection status change notification.
-   * 
+   *
    * @param userId - User ID to send notification to
    * @param data - Connection status change event data
    * @returns The created event
@@ -101,7 +101,7 @@ export class NotificationPublisher {
 
   /**
    * Publish an item update notification.
-   * 
+   *
    * @param userId - User ID to send notification to
    * @param data - Item update event data
    * @returns The created event
@@ -124,7 +124,7 @@ export class NotificationPublisher {
 
   /**
    * Publish a custom notification.
-   * 
+   *
    * @param userId - User ID to send notification to
    * @param data - Custom event data
    * @returns The created event
@@ -147,7 +147,7 @@ export class NotificationPublisher {
 
   /**
    * Publish a notification to a single user.
-   * 
+   *
    * @param userId - User ID to send notification to
    * @param type - Event type
    * @param data - Event data
@@ -173,7 +173,7 @@ export class NotificationPublisher {
   /**
    * Publish a notification to multiple users.
    * Creates separate events for each user.
-   * 
+   *
    * @param userIds - Array of user IDs
    * @param type - Event type
    * @param data - Event data (same for all users)
@@ -198,7 +198,7 @@ export class NotificationPublisher {
 
   /**
    * Publish a pre-constructed event.
-   * 
+   *
    * @param event - Notification event to publish
    */
   private async publishEvent(event: NotificationEvent): Promise<void> {
@@ -213,7 +213,7 @@ export class NotificationPublisher {
 
   /**
    * Publish multiple events.
-   * 
+   *
    * @param events - Array of notification events
    */
   private async publishEvents(events: NotificationEvent[]): Promise<void> {
@@ -230,7 +230,7 @@ export class NotificationPublisher {
 
   /**
    * Generate a unique event ID.
-   * 
+   *
    * @returns Event ID
    */
   private generateEventId(): string {
@@ -240,7 +240,7 @@ export class NotificationPublisher {
 
 /**
  * Create a notification publisher instance.
- * 
+ *
  * @param config - Publisher configuration
  * @returns NotificationPublisher instance
  */

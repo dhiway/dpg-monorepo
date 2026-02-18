@@ -14,7 +14,7 @@ export interface RedisAdapterConfig {
 /**
  * Redis adapter for multi-instance WebSocket scaling.
  * Enables communication between multiple WebSocket server instances.
- * 
+ *
  * When one server instance publishes an event, all other instances
  * receive it via Redis pub/sub and can deliver to their connected clients.
  */
@@ -26,7 +26,7 @@ export class RedisAdapter {
 
   constructor(config: RedisAdapterConfig) {
     this.channel = config.channel || 'websocket:notifications';
-    
+
     // Create separate Redis clients for pub and sub
     // (Redis requires separate connections for pub/sub)
     this.pub = new Redis(config.redisUrl, {
@@ -62,7 +62,7 @@ export class RedisAdapter {
 
   /**
    * Initialize the adapter and start listening for messages.
-   * 
+   *
    * @param handler - Function to call when a message is received
    */
   async initialize(handler: (channel: string, message: string) => void): Promise<void> {
@@ -83,7 +83,7 @@ export class RedisAdapter {
 
   /**
    * Publish a notification event to all server instances.
-   * 
+   *
    * @param event - Notification event to publish
    */
   async publish(event: NotificationEvent): Promise<void> {
@@ -98,13 +98,13 @@ export class RedisAdapter {
 
   /**
    * Publish multiple events in a batch.
-   * 
+   *
    * @param events - Array of notification events
    */
   async publishBatch(events: NotificationEvent[]): Promise<void> {
     try {
       const pipeline = this.pub.pipeline();
-      
+
       events.forEach((event) => {
         const message = JSON.stringify(event);
         pipeline.publish(this.channel, message);
@@ -119,19 +119,19 @@ export class RedisAdapter {
 
   /**
    * Check if Redis connections are healthy.
-   * 
+   *
    * @returns true if both pub and sub clients are connected
    */
   isHealthy(): boolean {
     return (
-      this.pub.status === 'ready' && 
+      this.pub.status === 'ready' &&
       this.sub.status === 'ready'
     );
   }
 
   /**
    * Get connection status.
-   * 
+   *
    * @returns Status object with pub and sub client states
    */
   getStatus(): { pub: string; sub: string } {
@@ -148,7 +148,7 @@ export class RedisAdapter {
     try {
       // Unsubscribe from channel
       await this.sub.unsubscribe(this.channel);
-      
+
       // Close connections
       await Promise.all([
         this.pub.quit(),
