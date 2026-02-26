@@ -97,7 +97,13 @@ export const update_item_handler = async (
               ? oldState.recipientId 
               : oldState.requesterId;
             
-            const fromUserName = newState.respondDetails?.name || oldState.requesterName;
+            // For accept/reject the action is taken by the recipient, so fromUserName
+            // must be the recipient's name — sourced from respondDetails (provided by
+            // the client on respond) or the stored recipientName.
+            // For cancelled the requester is the actor, so use requesterName.
+            const fromUserName = newState.status === 'cancelled'
+              ? oldState.requesterName
+              : (newState.respondDetails?.name || oldState.recipientName || oldState.recipientDomain);
             
             const event = await publisher.publishConnectionStatusChange(recipientId, {
               connectionId: itemId,

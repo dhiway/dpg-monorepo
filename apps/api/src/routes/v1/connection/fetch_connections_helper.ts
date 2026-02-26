@@ -10,6 +10,7 @@ export interface ConnectionItemState {
   requesterContact: string;
   requesterDomain: string;
   recipientId: string;
+  recipientName?: string;
   recipientDomain: string;
   status: ConnectionStatus;
   broadcastDetails: Record<string, unknown>;
