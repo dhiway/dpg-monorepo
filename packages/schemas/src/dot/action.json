@@ -1,0 +1,19 @@
+{
+  "action": "connect",
+  "rules": {
+    "from": "seeker-domain",
+    "to": "provider-domain",
+    "requirement_schema": {
+      "$ref": "https://registry.example.com/schemas/connect/requirement/1.0.0"
+    },
+    "event_log_schema": {
+      "info": "this schema will be added in future once implementation is added",
+      "$ref": "https://registry.example.com/schemas/connect/event/1.0.0"
+    },
+    "limits": {
+      "info": "currently limits will not be used",
+      "maxInstances": 10,
+      "timeoutMs": 5000
+    }
+  }
+}
