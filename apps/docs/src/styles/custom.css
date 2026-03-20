@@ -1,0 +1,19 @@
+:root {
+  --sl-color-accent-low: #1f3a2f;
+  --sl-color-accent: #3f8f61;
+  --sl-color-accent-high: #d8f0e0;
+  --sl-color-text-accent: #3f8f61;
+}
+
+[data-theme='light'] {
+  --sl-color-bg: #f7f5ef;
+  --sl-color-bg-nav: #fffdf7;
+  --sl-color-bg-sidebar: #f2efe6;
+  --sl-color-hairline-light: rgba(63, 143, 97, 0.22);
+}
+
+[data-theme='dark'] {
+  --sl-color-accent-low: #193225;
+  --sl-color-accent: #6fc28f;
+  --sl-color-accent-high: #d7f5e3;
+}
