@@ -11,3 +11,10 @@ const from_env =
 
 export const allowed_origins =
   from_env.length > 0 ? from_env : default_allowed_origins;
+
+export function mergeAllowedOrigins(...originGroups: Array<string[]>) {
+  return originGroups
+    .flat()
+    .filter(Boolean)
+    .filter((origin, index, list) => list.indexOf(origin) === index);
+}

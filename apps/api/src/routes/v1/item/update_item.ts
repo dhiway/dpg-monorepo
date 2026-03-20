@@ -20,7 +20,7 @@ type UpdateItemRequest = FastifyRequest<{
 export const update_item: FastifyPluginAsyncZod = async function (fastify) {
   fastify.route({
     method: 'PATCH',
-    url: '/:itemType/:itemId',
+    url: '/:itemNetwork/:itemDomain/:itemType/:itemId',
     preHandler: auth_middleware,
     schema: {
       tags: ['item'],
@@ -40,7 +40,7 @@ export const update_item_handler = async (
   request: UpdateItemRequest,
   reply: FastifyReply
 ) => {
-  const { itemType, itemId } = request.params;
+  const { itemNetwork, itemDomain, itemType, itemId } = request.params;
   const body = request.body;
 
   try {
@@ -50,7 +50,14 @@ export const update_item_handler = async (
         ...body,
         updated_at: sql`now()`,
       })
-      .where(and(eq(items.item_type, itemType), eq(items.item_id, itemId)))
+      .where(
+        and(
+          eq(items.item_network, itemNetwork),
+          eq(items.item_domain, itemDomain),
+          eq(items.item_type, itemType),
+          eq(items.item_id, itemId)
+        )
+      )
       .returning();
 
     if (result.length === 0) {
@@ -78,7 +85,10 @@ export const update_item_handler = async (
       }
     }
 
-    request.log.error({ err, itemType, itemId, body }, 'Failed to update item');
+    request.log.error(
+      { err, itemNetwork, itemDomain, itemType, itemId, body },
+      'Failed to update item'
+    );
 
     return reply.code(500).send({
       error: 'INTERNAL_SERVER_ERROR',

@@ -3,6 +3,7 @@ import {
   AuthSecretsSchema,
   DatabaseSecretsSchema,
   InstanceSecretsSchema,
+  NetworkRuntimeSecretsSchema,
   NotificationSecretsSchema,
 } from '@dpg/config';
 
@@ -12,11 +13,13 @@ export function loadEnv() {
   const auth = AuthSecretsSchema.parse(process.env);
   const databases = DatabaseSecretsSchema.parse(process.env);
   const notification = NotificationSecretsSchema.parse(process.env);
+  const networkRuntime = NetworkRuntimeSecretsSchema.parse(process.env);
   return {
     instance,
     api,
     auth,
     databases,
     notification,
+    networkRuntime,
   };
 }

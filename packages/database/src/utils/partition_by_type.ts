@@ -3,60 +3,144 @@ import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DrizzleQueryError } from 'drizzle-orm/errors';
 import { DatabaseError } from 'pg';
 
-// Reduced length to 50 to account for 'items_' prefix (6 chars)
-// keeping total under Postgres 63 byte limit.
-const ITEM_TYPE_REGEX = /^[a-z][a-z0-9_]{0,50}$/;
+// Keep identifiers short enough for Postgres partition table names.
+const PARTITION_SEGMENT_REGEX = /^[a-z][a-z0-9_]{0,20}$/;
 
-// Simple in-memory cache to avoid hitting DB for known partitions
-const knownPartitions = new Set<string>();
+const knownItemDomainPartitions = new Set<string>();
+const knownItemTypePartitions = new Set<string>();
+const knownEventDomainPartitions = new Set<string>();
+const knownEventTypePartitions = new Set<string>();
 
 export async function ensureItemPartition(
   db: NodePgDatabase<any>,
+  network: string,
+  domain: string,
   type: string
 ) {
-  // 1. Validation
-  if (!ITEM_TYPE_REGEX.test(type)) {
-    throw new Error(`Invalid item_type: "${type}"`);
+  if (
+    !PARTITION_SEGMENT_REGEX.test(network) ||
+    !PARTITION_SEGMENT_REGEX.test(domain) ||
+    !PARTITION_SEGMENT_REGEX.test(type)
+  ) {
+    throw new Error(
+      `Invalid partition path: "${network}.${domain}.${type}"`
+    );
   }
 
-  // 2. Cache Check (Optimization)
-  if (knownPartitions.has(type)) {
+  const domainPartitionKey = `${network}:${domain}`;
+  const typePartitionKey = `${domainPartitionKey}:${type}`;
+  const domainTableName = `items_${network}_${domain}`;
+  const typeTableName = `${domainTableName}_${type}`;
+
+  if (!knownItemDomainPartitions.has(domainPartitionKey)) {
+    try {
+      await db.execute(
+        sql.raw(`
+          CREATE TABLE IF NOT EXISTS "${domainTableName}"
+          PARTITION OF items
+          FOR VALUES IN (('${network}', '${domain}'))
+          PARTITION BY LIST (item_type);
+        `)
+      );
+
+      knownItemDomainPartitions.add(domainPartitionKey);
+    } catch (err) {
+      handlePartitionError(
+        err,
+        `network/domain partition "${network}.${domain}"`
+      );
+    }
+  }
+
+  if (knownItemTypePartitions.has(typePartitionKey)) {
     return;
   }
 
-  const tableName = `items_${type}`;
-
   try {
-    // 3. Execution
     await db.execute(
       sql.raw(`
-        CREATE TABLE IF NOT EXISTS "${tableName}"
-        PARTITION OF items
+        CREATE TABLE IF NOT EXISTS "${typeTableName}"
+        PARTITION OF "${domainTableName}"
         FOR VALUES IN ('${type}');
       `)
     );
 
-    // 4. Update Cache on Success
-    knownPartitions.add(type);
+    knownItemTypePartitions.add(typePartitionKey);
   } catch (err) {
-    if (
-      err instanceof DrizzleQueryError &&
-      err.cause instanceof DatabaseError
-    ) {
-      // 42P07: duplicate_table
-      if (err.cause.code === '42P07') {
-        knownPartitions.add(type); // It exists, so cache it
-        return;
-      }
+    handlePartitionError(err, `item_type partition "${type}"`);
+  }
+}
 
-      // 23514: check_violation (mismatch)
-      if (err.cause.code === '23514') {
-        throw new Error(
-          `Partition constraint mismatch for item_type "${type}"`
-        );
-      }
+export async function ensureItemEventPartition(
+  db: NodePgDatabase<any>,
+  network: string,
+  domain: string,
+  eventType: string
+) {
+  if (
+    !PARTITION_SEGMENT_REGEX.test(network) ||
+    !PARTITION_SEGMENT_REGEX.test(domain) ||
+    !PARTITION_SEGMENT_REGEX.test(eventType)
+  ) {
+    throw new Error(
+      `Invalid event partition path: "${network}.${domain}.${eventType}"`
+    );
+  }
+
+  const domainPartitionKey = `${network}:${domain}`;
+  const typePartitionKey = `${domainPartitionKey}:${eventType}`;
+  const domainTableName = `item_events_${network}_${domain}`;
+  const typeTableName = `${domainTableName}_${eventType}`;
+
+  if (!knownEventDomainPartitions.has(domainPartitionKey)) {
+    try {
+      await db.execute(
+        sql.raw(`
+          CREATE TABLE IF NOT EXISTS "${domainTableName}"
+          PARTITION OF item_events
+          FOR VALUES IN (('${network}', '${domain}'))
+          PARTITION BY LIST (event_type);
+        `)
+      );
+
+      knownEventDomainPartitions.add(domainPartitionKey);
+    } catch (err) {
+      handlePartitionError(
+        err,
+        `event network/domain partition "${network}.${domain}"`
+      );
+    }
+  }
+
+  if (knownEventTypePartitions.has(typePartitionKey)) {
+    return;
+  }
+
+  try {
+    await db.execute(
+      sql.raw(`
+        CREATE TABLE IF NOT EXISTS "${typeTableName}"
+        PARTITION OF "${domainTableName}"
+        FOR VALUES IN ('${eventType}');
+      `)
+    );
+
+    knownEventTypePartitions.add(typePartitionKey);
+  } catch (err) {
+    handlePartitionError(err, `event_type partition "${eventType}"`);
+  }
+}
+
+function handlePartitionError(err: unknown, label: string) {
+  if (err instanceof DrizzleQueryError && err.cause instanceof DatabaseError) {
+    if (err.cause.code === '42P07') {
+      return;
     }
 
-    throw err;
+    if (err.cause.code === '23514') {
+      throw new Error(`Partition constraint mismatch for ${label}`);
+    }
   }
+
+  throw err;
 }
