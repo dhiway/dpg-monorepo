@@ -25,6 +25,19 @@ export const NotificationSecretsSchema = z.object({
   SMS_TEMPLATE_ID: z.string().optional(),
 });
 
+export const SchemaRegistrySecretsSchema = z.object({
+  SCHEMA_REGISTRY_URL: z.url(),
+});
+
+export const NetworkRuntimeSecretsSchema = z.object({
+  SERVED_DOMAINS: z.string().min(1),
+  NETWORK_CONFIG_SOURCE: z.enum(['local', 'remote']).default('local'),
+  NETWORK_CONFIG_LOCAL_FILE: z.string().default(
+    'packages/schemas/src/dot_examples/network.json'
+  ),
+  NETWORK_CONFIG_URLS: z.string().optional(),
+});
+
 export const DatabaseSecretsSchema = z.object({
   POSTGRES_URL: z.string().optional(),
   POSTGRES_USER: z.string(),

@@ -43,12 +43,16 @@ const fetch_items_handler = async (
 ) => {
   const {
     item_id,
+    item_network,
     item_type,
     item_domain,
     item_domain_url,
     item_schema_id,
     item_schema_url,
     item_state,
+    item_latitude,
+    item_longitude,
+    radius_meters,
     limit,
     offset,
   } = request.query;
@@ -60,12 +64,16 @@ const fetch_items_handler = async (
     conditions.push(eq(items.item_id, item_id));
   }
 
-  if (item_type) {
-    conditions.push(eq(items.item_type, item_type));
+  if (item_network) {
+    conditions.push(eq(items.item_network, item_network));
   }
 
   if (item_domain) {
     conditions.push(eq(items.item_domain, item_domain));
+  }
+
+  if (item_type) {
+    conditions.push(eq(items.item_type, item_type));
   }
 
   if (item_domain_url) {
@@ -84,6 +92,30 @@ const fetch_items_handler = async (
     // JSONB containment: item_state @> {...}
     conditions.push(
       sql`${items.item_state} @> ${JSON.stringify(item_state)}::jsonb`
+    );
+  }
+
+  if (
+    item_latitude !== undefined &&
+    item_longitude !== undefined &&
+    radius_meters !== undefined
+  ) {
+    conditions.push(
+      sql`
+        earth_box(
+          ll_to_earth(${item_latitude}, ${item_longitude}),
+          ${radius_meters}
+        ) @> ll_to_earth(${items.item_latitude}, ${items.item_longitude})
+      `
+    );
+
+    conditions.push(
+      sql`
+        earth_distance(
+          ll_to_earth(${item_latitude}, ${item_longitude}),
+          ll_to_earth(${items.item_latitude}, ${items.item_longitude})
+        ) <= ${radius_meters}
+      `
     );
   }
   const whereClause = conditions.length ? and(...conditions) : undefined;

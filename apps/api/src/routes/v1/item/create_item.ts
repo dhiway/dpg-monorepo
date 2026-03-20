@@ -37,10 +37,20 @@ export const create_item_handler = async (
   const body = request.body;
 
   try {
-    await ensureItemPartition(db, body.item_type);
+    await ensureItemPartition(
+      db,
+      body.item_network,
+      body.item_domain,
+      body.item_type
+    );
   } catch (err) {
     request.log.error(
-      { err, item_type: body.item_type },
+      {
+        err,
+        item_network: body.item_network,
+        item_domain: body.item_domain,
+        item_type: body.item_type,
+      },
       'Failed to ensure item partition'
     );
 
@@ -54,22 +64,32 @@ export const create_item_handler = async (
     const result = await db
       .insert(items)
       .values({
+        item_network: body.item_network,
         item_type: body.item_type,
 
         item_domain: body.item_domain,
-        item_domain_url: body.item_domain_url ?? null,
+        item_domain_url: body.item_domain_url,
 
         item_schema_id: body.item_schema_id,
-        item_schema_url: body.item_schema_url ?? null,
+        item_schema_url: body.item_schema_url,
 
         item_state: body.item_state,
         item_requirements: body.item_requirements,
         item_filters: body.item_filters,
+        item_latitude: body.item_latitude ?? null,
+        item_longitude: body.item_longitude ?? null,
       })
       .onConflictDoNothing({
-        target: [items.item_type, items.item_id],
+        target: [
+          items.item_network,
+          items.item_domain,
+          items.item_type,
+          items.item_id,
+        ],
       })
       .returning({
+        itemNetwork: items.item_network,
+        itemDomain: items.item_domain,
         itemType: items.item_type,
         itemId: items.item_id,
       });
@@ -112,7 +132,12 @@ export const create_item_handler = async (
     }
 
     request.log.error(
-      { err, item_type: body.item_type },
+      {
+        err,
+        item_network: body.item_network,
+        item_domain: body.item_domain,
+        item_type: body.item_type,
+      },
       'Failed to create item'
     );
 

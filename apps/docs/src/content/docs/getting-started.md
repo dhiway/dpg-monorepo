@@ -34,6 +34,14 @@ Run the API:
 pnpm dev:api
 ```
 
+Suggested local network env:
+
+```bash
+SERVED_DOMAINS="yellow_dot/student"
+NETWORK_CONFIG_SOURCE="local"
+NETWORK_CONFIG_LOCAL_FILE="packages/schemas/src/dot_examples/network.json"
+```
+
 Useful root commands:
 
 - `pnpm build:api`
@@ -56,3 +64,14 @@ Build the static docs output:
 ```bash
 pnpm build:docs
 ```
+
+## Recommended reading order
+
+For a new developer or operator, read:
+
+1. `Getting Started`
+2. `Environment`
+3. `Flow Structure`
+4. `Hosting` pages
+5. `Schemas` and `Auth` pages
+6. package-specific pages for the part you are changing

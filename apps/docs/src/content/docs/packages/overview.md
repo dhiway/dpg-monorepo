@@ -6,31 +6,31 @@ head: []
 
 # Package Overview
 
-## `packages/auth`
+The monorepo keeps shared runtime logic in `packages/*`. Each package has a narrow role and is meant to be consumed by apps such as `apps/api`.
 
-Authentication support, auth plugin configuration, and OTP-related integrations used by the API.
+## At a glance
 
-## `packages/config`
+- `packages/auth`: Better Auth setup, plugin wiring, and unified OTP support
+- `packages/config`: env schemas, allowed-origin helpers, and network runtime helpers
+- `packages/database`: Drizzle ref tables, partition helpers, and base SQL scripts
+- `packages/notification`: notification client and provider-facing types
+- `packages/schemas`: Zod export, API schemas, DOT example configs, and schema fetching
 
-Shared configuration contracts and helpers, including:
+## How to read the package layout
 
-- allowed origins
-- allowed admin domains
-- environment validation schemas
+Start with `packages/config` if you are working on runtime setup or environment handling.
 
-## `packages/database`
+Start with `packages/database` if you are working on tables, partitioning, or item/event storage.
 
-Database table definitions, SQL scripts, and helpers used by Drizzle-backed services.
+Start with `packages/schemas` if you are changing request validation, network config shape, or external schema loading.
 
-## `packages/notification`
+Start with `packages/auth` if you are changing login, OTP, API key flows, or Better Auth integration.
 
-Notification client code and provider-facing types.
+## Detailed guides
 
-## `packages/schemas`
+Use the dedicated pages for package-level usage patterns:
 
-Schema-focused package containing:
-
-- the default `zod` export used elsewhere in the repo
-- API item request and response schemas
-- DOT example JSON files
-- a schema registry fetch helper that resolves `$ref` values
+- `Config Package`
+- `Database Package`
+- `Schemas Package`
+- `Auth Package`

@@ -6,12 +6,17 @@ import {
   validatorCompiler,
 } from 'fastify-type-provider-zod';
 import AuthRoutes from './routes/auth';
-import { apiConfig } from './config';
+import { apiConfig, instance } from './config';
 import cors from '@fastify/cors';
 import fastifyQs from 'fastify-qs';
 import fastifySwagger from '@fastify/swagger';
 import 'dotenv/config';
-import { allowed_origins } from '@dpg/config';
+import {
+  allowed_origins,
+  getAllowedInstanceOriginsFromNetworkConfig,
+  loadNetworkConfigs,
+  mergeAllowedOrigins,
+} from '@dpg/config';
 import v1_routes from './routes/v1/v1_routes';
 
 const app = fastify({
@@ -19,14 +24,32 @@ const app = fastify({
   trustProxy: true,
 });
 
+const networkConfigs = await loadNetworkConfigs({
+  source: apiConfig.network_config_source,
+  localFile: apiConfig.network_config_local_file,
+  remoteUrls: apiConfig.network_config_urls,
+});
+
+const networkAllowedOrigins = networkConfigs.flatMap((networkConfig) =>
+  getAllowedInstanceOriginsFromNetworkConfig(
+    networkConfig,
+    apiConfig.served_domains
+  )
+);
+
+const corsAllowedOrigins = mergeAllowedOrigins(
+  allowed_origins,
+  networkAllowedOrigins
+);
+
 // Add schema validator and serializer
 app.setValidatorCompiler(validatorCompiler);
 app.setSerializerCompiler(serializerCompiler);
 
 // CORS
 await app.register(cors, {
-  origin: (origin, cb) => {
-    if (!origin || allowed_origins.includes(origin)) {
+  origin: (origin: string, cb: any) => {
+    if (!origin || corsAllowedOrigins.includes(origin)) {
       cb(null, true);
     } else {
       cb(new Error('Not allowed'), false);
@@ -66,7 +89,12 @@ app.withTypeProvider<ZodTypeProvider>().route({
   method: 'GET',
   url: '/',
   handler: (_, res) => {
-    res.send('welcome');
+    res.send({
+      service: instance.INSTANCE_NAME,
+      status: 'ok',
+      served_domains: apiConfig.served_domains,
+      network_config_source: apiConfig.network_config_source,
+    });
   },
 });
 app.register(AuthRoutes);
