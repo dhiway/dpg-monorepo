@@ -22,7 +22,9 @@ export const item_events = pgTable(
     event_type: text('event_type').notNull(),
     event_id: uuid('event_id').defaultRandom().notNull(),
     action_name: text('action_name').notNull(),
+    actor_network: text('actor_network').notNull(),
     actor_domain: text('actor_domain').notNull(),
+    counterparty_network: text('counterparty_network').notNull(),
     counterparty_domain: text('counterparty_domain').notNull(),
 
     event_schema_url: text('event_schema_url'),

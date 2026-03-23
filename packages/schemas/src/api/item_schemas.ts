@@ -16,9 +16,8 @@ export const FetchItemsQuerySchema = z.object({
   item_domain: z.string().min(1),
   item_type: z.string().min(1),
 
-  item_domain_url: z.url().nullable().optional(),
+  item_instance_url: z.url().nullable().optional(),
 
-  item_schema_id: z.string().optional().default(''),
   item_schema_url: z.url().nullable().optional(),
 
   item_state: z.record(z.string(), z.unknown()).optional(),
