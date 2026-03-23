@@ -48,11 +48,11 @@ app.setSerializerCompiler(serializerCompiler);
 
 // CORS
 await app.register(cors, {
-  origin: (origin: string, cb: any) => {
+  origin: (origin, cb) => {
     if (!origin || corsAllowedOrigins.includes(origin)) {
-      cb(null, true);
+      return cb(null, true);
     } else {
-      cb(new Error('Not allowed'), false);
+      return cb(new Error('Not allowed'), false);
     }
   },
   credentials: true,
