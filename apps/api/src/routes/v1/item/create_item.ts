@@ -5,7 +5,11 @@ import { db } from 'apps/api/db/postgres/drizzle_config';
 import { DrizzleQueryError } from 'drizzle-orm';
 import { CreateItemBodySchema } from 'packages/schemas/src/api/item_schemas';
 import { DatabaseError, ensureItemPartition, items } from '@dpg/database';
-// import { auth_middleware } from 'apps/api/plugins/auth/auth_middleware';
+import { auth_middleware_if_enabled } from 'apps/api/plugins/auth/auth_middleware';
+import {
+  isServedDomainBinding,
+  replyForUnservedDomain,
+} from 'apps/api/src/utils/served_domain_guard';
 
 type CreateItemRequest = FastifyRequest<{
   Body: z.infer<typeof CreateItemBodySchema>;
@@ -15,7 +19,7 @@ export const create_item: FastifyPluginAsyncZod = async function (fastify) {
   fastify.route({
     url: '/create',
     method: 'POST',
-    // preHandler: auth_middleware,
+    preHandler: auth_middleware_if_enabled,
     schema: {
       tags: ['item'],
       body: CreateItemBodySchema,
@@ -35,6 +39,14 @@ export const create_item_handler = async (
   reply: FastifyReply
 ) => {
   const body = request.body;
+
+  if (!isServedDomainBinding(body.item_network, body.item_domain)) {
+    return replyForUnservedDomain(
+      reply,
+      body.item_network,
+      body.item_domain
+    );
+  }
 
   try {
     await ensureItemPartition(

@@ -10,7 +10,7 @@ import {
   UpdateItemParamsSchema,
 } from 'packages/schemas/src/api/item_schemas';
 import { items } from '@dpg/database';
-import { auth_middleware } from 'apps/api/plugins/auth/auth_middleware';
+import { auth_middleware_if_enabled } from 'apps/api/plugins/auth/auth_middleware';
 
 type UpdateItemRequest = FastifyRequest<{
   Params: z.infer<typeof UpdateItemParamsSchema>;
@@ -20,8 +20,8 @@ type UpdateItemRequest = FastifyRequest<{
 export const update_item: FastifyPluginAsyncZod = async function (fastify) {
   fastify.route({
     method: 'PATCH',
-    url: '/:itemNetwork/:itemDomain/:itemType/:itemId',
-    preHandler: auth_middleware,
+    url: '/:itemId',
+    preHandler: auth_middleware_if_enabled,
     schema: {
       tags: ['item'],
       params: UpdateItemParamsSchema,
@@ -40,7 +40,7 @@ export const update_item_handler = async (
   request: UpdateItemRequest,
   reply: FastifyReply
 ) => {
-  const { itemNetwork, itemDomain, itemType, itemId } = request.params;
+  const { itemId } = request.params;
   const body = request.body;
 
   try {
@@ -50,14 +50,7 @@ export const update_item_handler = async (
         ...body,
         updated_at: sql`now()`,
       })
-      .where(
-        and(
-          eq(items.item_network, itemNetwork),
-          eq(items.item_domain, itemDomain),
-          eq(items.item_type, itemType),
-          eq(items.item_id, itemId)
-        )
-      )
+      .where(and(eq(items.item_id, itemId)))
       .returning();
 
     if (result.length === 0) {
@@ -85,10 +78,7 @@ export const update_item_handler = async (
       }
     }
 
-    request.log.error(
-      { err, itemNetwork, itemDomain, itemType, itemId, body },
-      'Failed to update item'
-    );
+    request.log.error({ err, itemId, body }, 'Failed to update item');
 
     return reply.code(500).send({
       error: 'INTERNAL_SERVER_ERROR',

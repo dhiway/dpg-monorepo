@@ -15,6 +15,10 @@ export const apiConfig = {
 
 export const authConfig = {
   secret: auth.AUTH_SECRET,
+  middleware_enabled:
+    instance.INSTANCE_ENV === 'development'
+      ? auth.AUTH_MIDDLEWARE_ENABLED
+      : true,
   url:
     instance.INSTANCE_ENV === 'development'
       ? `${apiConfig.domain}:${apiConfig.port}/api/auth`

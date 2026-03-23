@@ -1,5 +1,6 @@
 import { authInstance } from 'apps/api/src/routes/auth/create_auth';
 import { FastifyReply, FastifyRequest } from 'fastify';
+import { authConfig } from 'apps/api/src/config';
 
 export async function auth_middleware(
   request: FastifyRequest,
@@ -45,4 +46,15 @@ export async function auth_middleware(
   }
 
   request.user = session.user;
+}
+
+export async function auth_middleware_if_enabled(
+  request: FastifyRequest,
+  reply: FastifyReply
+) {
+  if (!authConfig.middleware_enabled) {
+    return;
+  }
+
+  return auth_middleware(request, reply);
 }
