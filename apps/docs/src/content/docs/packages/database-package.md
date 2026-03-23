@@ -43,7 +43,7 @@ The database setup is split into two parts on purpose:
 2. Run your partition creation SQL
 3. Start the API, which can create missing runtime partitions through the helpers
 
-The first script creates the parent partitioned tables and shared indexes. The second script creates deployment-specific partitions such as network, domain, and type buckets.
+The first script creates the parent partitioned tables and shared indexes. The second script creates deployment-specific item-type partitions.
 
 ## Extensions used
 
@@ -117,35 +117,20 @@ The schema uses hierarchical list partitioning.
 
 For `items`:
 
-- parent table partitions by `item_network`
-- each network partition subpartitions by `item_domain`
-- each domain partition subpartitions by `item_type`
-
-For `item_events`:
-
-- parent table partitions by `item_network`
-- each network partition subpartitions by `item_domain`
-- each domain partition subpartitions by `event_type`
+- parent table partitions by `item_type`
+- partition tables are named as `<item_type>_item`
+- a default partition named `items_default` catches rows without a dedicated item-type partition
 
 This is the effective shape:
 
 ```text
 items
-  -> items_yellow_dot
-    -> items_yellow_dot_student
-      -> items_yellow_dot_student_profile
-    -> items_yellow_dot_tutor
-      -> items_yellow_dot_tutor_profile
-
-item_events
-  -> item_events_yellow_dot
-    -> item_events_yellow_dot_student
-      -> item_events_yellow_dot_student_connect
-    -> item_events_yellow_dot_tutor
-      -> item_events_yellow_dot_tutor_connect
+  -> profile_item
+  -> notify_event_item
+  -> items_default
 ```
 
-This design gives predictable partition names and allows PostgreSQL to prune partitions when queries include routing keys like `item_network`, `item_domain`, and `item_type`.
+This design keeps partition naming predictable and avoids partition explosion across network/domain combinations.
 
 ## How the scripts work
 
@@ -162,54 +147,39 @@ It also creates shared indexes:
 The parent tables are defined with:
 
 ```sql
-PARTITION BY LIST (item_network)
+PARTITION BY LIST (item_type)
 ```
 
-That means the first level of storage is always split by network.
+That means rows are routed only by `item_type`.
 
 ### `create_items_partitions.example.sql`
 
-This is an example deployment script. It shows one concrete partition tree for the `yellow_dot` network.
+This is an example deployment script. It shows concrete item-type partitions.
 
 It first verifies that:
 
 - `items` exists
-- `item_events` exists
 
 Then it creates:
 
-- a network partition such as `items_yellow_dot`
-- domain partitions such as `items_yellow_dot_student`
-- type partitions such as `items_yellow_dot_student_profile`
-
-The event side follows the same pattern:
-
-- `item_events_yellow_dot`
-- `item_events_yellow_dot_student`
-- `item_events_yellow_dot_student_connect`
+- `profile_item`
+- `notify_event_item`
+- `items_default`
 
 ## Runtime partition helpers
 
 The package exports:
 
 - `ensureItemPartition(db, network, domain, type)`
-- `ensureItemEventPartition(db, network, domain, eventType)`
 
-These helpers create missing partitions lazily with `CREATE TABLE IF NOT EXISTS`.
+This helper creates missing partitions lazily with `CREATE TABLE IF NOT EXISTS`.
 
 `ensureItemPartition()` creates:
 
-1. `items_<network>`
-2. `items_<network>_<domain>`
-3. `items_<network>_<domain>_<type>`
+1. `<item_type>_item`
+2. `items_default` if it does not already exist
 
-`ensureItemEventPartition()` creates:
-
-1. `item_events_<network>`
-2. `item_events_<network>_<domain>`
-3. `item_events_<network>_<domain>_<eventType>`
-
-The helper also validates partition path segments with this rule:
+The helper validates `item_type` with this rule:
 
 ```ts
 /^[a-z][a-z0-9_]{0,20}$/
@@ -219,41 +189,33 @@ That keeps generated table names safe and short enough for PostgreSQL identifier
 
 ## Why query filters matter
 
-Partition pruning only works well when the query includes the partition keys.
+Partition pruning only works well when the query includes the partition key.
 
-For `items`, the most important filters are:
+For `items`, the most important partition filter is:
+
+- `item_type`
+
+These are still useful indexed filters:
 
 - `item_network`
 - `item_domain`
-- `item_type`
 
 The fetch route already follows this pattern. It builds a `where` clause that includes these keys when present, which helps PostgreSQL avoid scanning unrelated partitions.
 
 ## Example table layout
 
-If you support:
+If you support item types:
 
-- network: `yellow_dot`
-- domains: `student`, `tutor`
-- item type: `profile`
-- event type: `connect`
+- `profile`
+- `notify_event`
 
 you would expect tables like:
 
 ```text
 items
-items_yellow_dot
-items_yellow_dot_student
-items_yellow_dot_student_profile
-items_yellow_dot_tutor
-items_yellow_dot_tutor_profile
-
-item_events
-item_events_yellow_dot
-item_events_yellow_dot_student
-item_events_yellow_dot_student_connect
-item_events_yellow_dot_tutor
-item_events_yellow_dot_tutor_connect
+profile_item
+notify_event_item
+items_default
 ```
 
 ## Example Drizzle queries
@@ -344,9 +306,7 @@ const result = await db
 ### Insert an event
 
 ```ts
-import { ensureItemEventPartition, item_events } from '@dpg/database';
-
-await ensureItemEventPartition(db, 'yellow_dot', 'student', 'connect');
+import { item_events } from '@dpg/database';
 
 await db.insert(item_events).values({
   item_network: 'yellow_dot',
@@ -389,5 +349,4 @@ const events = await db
 - Always run `create_items.sql` before creating partitions
 - Include partition keys in queries whenever possible
 - Call `ensureItemPartition()` before inserting items into a new path
-- Call `ensureItemEventPartition()` before inserting events into a new path
 - Treat the Drizzle tables in the package as reference tables for the partitioned parents, not as migration-managed tables
