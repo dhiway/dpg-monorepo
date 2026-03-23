@@ -1,11 +1,6 @@
 import { betterAuth } from 'better-auth/minimal';
-import {
-  admin,
-  apiKey,
-  bearer,
-  openAPI,
-  organization,
-} from 'better-auth/plugins';
+import { admin, bearer, openAPI, organization } from 'better-auth/plugins';
+import { apiKey, type ApiKeyConfigurationOptions } from '@better-auth/api-key';
 import { unifiedOtp } from '../plugins/unified_otp';
 import type { AuthRuntimeConfig } from './types';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
@@ -14,6 +9,16 @@ import { emailOtpHtmlTemplate } from './templates/otp_email';
 export function createAuth(config: AuthRuntimeConfig) {
   const redis = config.redis;
   const nc = config.notificationClient;
+  const apiKeyConfig: ApiKeyConfigurationOptions = {
+    rateLimit: {
+      timeWindow: 1000 * 60 * 60,
+      maxRequests: 10000,
+    },
+    requireName: true,
+    apiKeyHeaders: 'x-api-key',
+    defaultPrefix: `${config.appName.toLowerCase()}_`,
+    enableMetadata: true,
+  };
 
   return betterAuth({
     appName: config.appName,
@@ -120,7 +125,10 @@ export function createAuth(config: AuthRuntimeConfig) {
                 variables: { message: otp },
               });
             } catch (err) {
-              console.error('Failed to send phone OTP via notification service:', err);
+              console.error(
+                'Failed to send phone OTP via notification service:',
+                err
+              );
             }
           } else {
             console.log({ phoneNumber, message: `Your OTP: ${otp}` });
@@ -144,7 +152,10 @@ export function createAuth(config: AuthRuntimeConfig) {
                 },
               });
             } catch (err) {
-              console.error('Failed to send email OTP via notification service:', err);
+              console.error(
+                'Failed to send email OTP via notification service:',
+                err
+              );
             }
           } else {
             console.log({
@@ -204,17 +215,7 @@ export function createAuth(config: AuthRuntimeConfig) {
 
         createTestOtp: config.createTestOTP,
       }),
-
-      apiKey({
-        rateLimit: {
-          timeWindow: 1000 * 60 * 60,
-          maxRequests: 10000,
-        },
-        requireName: true,
-        apiKeyHeaders: 'x-api-key',
-        defaultPrefix: `${config.appName.toLowerCase()}_`,
-        enableMetadata: true,
-      }),
+      apiKey(apiKeyConfig),
     ],
   });
 }
