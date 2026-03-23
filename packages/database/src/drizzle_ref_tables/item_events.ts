@@ -8,9 +8,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
-// This is a ref table for item_events.
-// To create item_events table run the provided sql script (./sql_scripts/create_items.sql)
-
+// Drizzle reference table for the partitioned `item_events` parent table.
 export const item_events = pgTable(
   'item_events',
   {
