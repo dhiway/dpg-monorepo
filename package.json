@@ -17,9 +17,10 @@
     "db:generate:api": "node scripts/turbo-with-root-env.mjs run db:generate --filter=api",
     "db:migrate:api": "node scripts/turbo-with-root-env.mjs run db:migrate --filter=api",
     "db:studio:api": "node scripts/turbo-with-root-env.mjs run db:studio --filter=api",
-    "dev:ui": "pnpm run dev --filter=ui",
-    "build:ui": "pnpm run build --filter=ui",
-    "preview:ui": "pnpm run preview --filter=ui",
+    "dev:ui": "node scripts/turbo-with-root-env.mjs run dev --filter=ui",
+    "build:ui": "node scripts/turbo-with-root-env.mjs run build --filter=ui",
+    "preview:ui": "node scripts/turbo-with-root-env.mjs run preview --filter=ui",
+    "start:ui": "node scripts/turbo-with-root-env.mjs run start --filter=ui",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

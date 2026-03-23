@@ -37,6 +37,10 @@ dpg-monorepo/
 | `pnpm build:api` | Build API for production |
 | `pnpm build:ui` | Build UI for production |
 | `pnpm build:docs` | Build docs site |
+| `pnpm preview:ui` | Preview UI production build |
+| `pnpm preview:api` | Preview API production build |
+| `pnpm preview:docs` | Preview docs production build |
+| `pnpm start:ui` | Start UI production server |
 | `pnpm db:generate:api` | Generate Drizzle migrations |
 | `pnpm db:migrate:api` | Apply migrations |
 | `pnpm db:push:api` | Push schema to DB (no migrations) |
