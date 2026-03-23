@@ -6,7 +6,8 @@ import {
 } from 'react-leaflet';
 import L from 'leaflet';
 import type { MapProviderProps } from '@/engine/types';
-import { FitBounds } from './fit-bounds';
+import { registerMapProvider } from '@/engine/map/map-registry';
+import { FitBounds } from '../fit-bounds';
 
 import 'leaflet/dist/leaflet.css';
 
@@ -79,3 +80,6 @@ export function LeafletMapProvider({
     </MapContainer>
   );
 }
+
+// Self-register on import
+registerMapProvider({ name: 'leaflet', component: LeafletMapProvider });

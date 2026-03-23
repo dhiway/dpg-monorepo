@@ -1,7 +1,9 @@
+import * as React from 'react';
 import type { RJSFSchema } from '@rjsf/utils';
 import type { MapMarker } from '@/engine/types';
 import { filterDataBySchema, getPublicFieldKeys } from '@/engine/schema/schema-privacy';
 import { getActiveMapProvider } from '@/engine/map/map-registry';
+import { geocodePincode } from './geocoding';
 
 interface MapViewProps {
   schema: RJSFSchema;
@@ -21,32 +23,77 @@ export function MapView({
   zoom = 5,
 }: MapViewProps) {
   const MapProviderComponent = getActiveMapProvider();
+  const [markers, setMarkers] = React.useState<MapMarker[]>([]);
+  const [loading, setLoading] = React.useState(true);
 
-  const markers: MapMarker[] = items
-    .map((item) => {
-      const lat = resolveCoordinate(item.data, 'lat', 'latitude');
-      const lng = resolveCoordinate(item.data, 'lng', 'lon', 'longitude');
+  React.useEffect(() => {
+    let cancelled = false;
 
-      if (lat === null || lng === null) return null;
-
+    async function resolveMarkers() {
+      setLoading(true);
       const publicFields = getPublicFieldKeys(schema);
       const titleField = findTitleField(schema);
-      const label = titleField
-        ? String(item.data[titleField] ?? 'Item')
-        : 'Item';
 
-      return {
-        id: item.id,
-        lat,
-        lng,
-        label,
-        data: filterDataBySchema(
-          item.data,
-          { ...schema, properties: Object.fromEntries(Object.entries(schema.properties ?? {}).filter(([k]) => publicFields.includes(k))) }
-        ),
-      };
-    })
-    .filter((m): m is MapMarker => m !== null);
+      const resolved = await Promise.all(
+        items.map(async (item) => {
+          let lat = resolveCoordinate(item.data, 'lat', 'latitude');
+          let lng = resolveCoordinate(item.data, 'lng', 'lon', 'longitude');
+
+          // Fallback to pincode geocoding
+          if (lat === null || lng === null) {
+            const pincode = item.data.pincode;
+            if (typeof pincode === 'string' && pincode) {
+              const geo = await geocodePincode(pincode);
+              if (geo) {
+                lat = geo.lat;
+                lng = geo.lng;
+              }
+            }
+          }
+
+          if (lat === null || lng === null) return null;
+
+          const label = titleField
+            ? String(item.data[titleField] ?? 'Item')
+            : 'Item';
+
+          return {
+            id: item.id,
+            lat,
+            lng,
+            label,
+            data: filterDataBySchema(
+              item.data,
+              {
+                ...schema,
+                properties: Object.fromEntries(
+                  Object.entries(schema.properties ?? {}).filter(([k]) =>
+                    publicFields.includes(k)
+                  )
+                ),
+              }
+            ),
+          } satisfies MapMarker;
+        })
+      );
+
+      if (!cancelled) {
+        setMarkers(resolved.filter((m): m is MapMarker => m !== null));
+        setLoading(false);
+      }
+    }
+
+    resolveMarkers();
+    return () => { cancelled = true; };
+  }, [items, schema]);
+
+  if (loading) {
+    return (
+      <div className="flex h-full items-center justify-center rounded-lg border border-dashed">
+        <p className="text-muted-foreground">Loading map data...</p>
+      </div>
+    );
+  }
 
   if (markers.length === 0) {
     return (

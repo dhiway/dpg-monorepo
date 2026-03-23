@@ -2,7 +2,7 @@ import type { MapProvider, MapProviderProps } from '../types';
 import type React from 'react';
 
 const providers = new Map<string, React.ComponentType<MapProviderProps>>();
-let activeProviderName = 'leaflet';
+let activeProviderName = import.meta.env.VITE_MAP_PROVIDER ?? 'leaflet';
 
 export function registerMapProvider(provider: MapProvider): void {
   providers.set(provider.name, provider.component);
@@ -19,7 +19,7 @@ export function getActiveMapProvider(): React.ComponentType<MapProviderProps> {
   const provider = providers.get(activeProviderName);
   if (!provider) {
     throw new Error(
-      `No active map provider. Registered: ${[...providers.keys()].join(', ')}`
+      `No active map provider "${activeProviderName}". Registered: ${[...providers.keys()].join(', ')}`
     );
   }
   return provider;

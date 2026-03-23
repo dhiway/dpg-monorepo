@@ -8,12 +8,11 @@ import type {
 } from '@/engine/types';
 import { filterSchemaByPrivacy } from '@/engine/schema/schema-privacy';
 import { resolveNetworkRefs } from '@/engine/schema/resolve-schema';
-import { registerMapProvider } from '@/engine/map/map-registry';
 import { PageShell } from '@/components/layout/page-shell';
 import { CardGrid } from '@/components/cards/card-grid';
 import { ActionHandler } from '@/components/actions/action-handler';
 import { MapView } from '@/components/map/map-container';
-import { LeafletMapProvider } from '@/components/map/leaflet-provider';
+import '@/components/map/providers';
 import {
   educationNetwork,
 } from '../../../../packages/schemas/src/dot_examples/index';
@@ -29,32 +28,26 @@ const schemaRefMap: Record<string, unknown> = {
   './tutor_counsellor_domain.json': tutorCounsellorProfileSchema,
 };
 
-// Register default map provider
-registerMapProvider({
-  name: 'leaflet',
-  component: LeafletMapProvider,
-});
-
 // Demo data — in production this comes from API
 const DEMO_ITEMS: Record<string, Array<{ id: string; data: Record<string, unknown> }>> = {
   student_profile: [
-    { id: 'stu-001', data: { student_id: 'STU-2026-001', full_name: 'Aarav Sharma', grade: '11', email: 'aarav@student.example.com', date_of_birth: '2010-08-14' } },
-    { id: 'stu-002', data: { student_id: 'STU-2026-002', full_name: 'Priya Patel', grade: '12', email: 'priya@student.example.com', date_of_birth: '2009-03-22' } },
-    { id: 'stu-003', data: { student_id: 'STU-2026-003', full_name: 'Rohan Verma', grade: '10', email: 'rohan@student.example.com', date_of_birth: '2011-01-05' } },
+    { id: 'stu-001', data: { student_id: 'STU-2026-001', full_name: 'Aarav Sharma', grade: '11', email: 'aarav@student.example.com', date_of_birth: '2010-08-14', latitude: 12.9716, longitude: 77.5946 } },
+    { id: 'stu-002', data: { student_id: 'STU-2026-002', full_name: 'Priya Patel', grade: '12', email: 'priya@student.example.com', date_of_birth: '2009-03-22', latitude: 19.0760, longitude: 72.8777 } },
+    { id: 'stu-003', data: { student_id: 'STU-2026-003', full_name: 'Rohan Verma', grade: '10', email: 'rohan@student.example.com', date_of_birth: '2011-01-05', latitude: 28.7041, longitude: 77.1025 } },
   ],
   learner_profile: [
-    { id: 'lrn-001', data: { learner_id: 'LRN-2026-001', pincode: '560001', grade_band: 'Class XI', capability_band: 'Mid', academic_stream: 'Science', service_type: 'Tutoring', subject_or_domain: 'Physics' } },
-    { id: 'lrn-002', data: { learner_id: 'LRN-2026-002', pincode: '110001', grade_band: 'Class XII', capability_band: 'High', academic_stream: 'Commerce', service_type: 'Career Guidance', subject_or_domain: 'Admissions' } },
-    { id: 'lrn-003', data: { learner_id: 'LRN-2026-003', pincode: '400001', grade_band: 'Post-XII', capability_band: 'Low', academic_stream: 'Arts', service_type: 'Skill Workshop', subject_or_domain: 'Creative Writing' } },
+    { id: 'lrn-001', data: { learner_id: 'LRN-2026-001', pincode: '560001', grade_band: 'Class XI', capability_band: 'Mid', academic_stream: 'Science', service_type: 'Tutoring', subject_or_domain: 'Physics', latitude: 12.9716, longitude: 77.5946 } },
+    { id: 'lrn-002', data: { learner_id: 'LRN-2026-002', pincode: '110001', grade_band: 'Class XII', capability_band: 'High', academic_stream: 'Commerce', service_type: 'Career Guidance', subject_or_domain: 'Admissions', latitude: 28.6139, longitude: 77.2090 } },
+    { id: 'lrn-003', data: { learner_id: 'LRN-2026-003', pincode: '400001', grade_band: 'Post-XII', capability_band: 'Low', academic_stream: 'Arts', service_type: 'Skill Workshop', subject_or_domain: 'Creative Writing', latitude: 19.0760, longitude: 72.8777 } },
   ],
   tutor_counsellor_profile: [
-    { id: 'tut-001', data: { provider_id: 'PRV-2026-001', pincode: '560001', coverage_radius_km: 10, provider_type: 'Tutor', domain_specialisations: ['Mathematics', 'Physics'], credentials: [{ credential_type: 'Certified Tutor', issuing_body: 'CBSE Board' }], target_grade_band: 'Class XI', target_subject_area: 'Physics', target_capability_tier: 'Any', service_mode: 'Hybrid', session_structure: 'Regular' } },
-    { id: 'tut-002', data: { provider_id: 'PRV-2026-002', pincode: '110001', coverage_radius_km: 15, provider_type: 'Career Counsellor', domain_specialisations: ['College Admissions', 'Career Guidance'], credentials: [{ credential_type: 'Licensed Counsellor', issuing_body: 'NCERT' }], target_grade_band: 'Post-XII', target_subject_area: 'Admissions', target_capability_tier: 'High', service_mode: 'Online', session_structure: 'Topic Based' } },
-    { id: 'tut-003', data: { provider_id: 'PRV-2026-003', pincode: '400001', coverage_radius_km: 20, provider_type: 'Tutor', domain_specialisations: ['Chemistry', 'Biology'], credentials: [], target_grade_band: 'Class XII', target_subject_area: 'Chemistry', target_capability_tier: 'Mid', service_mode: 'In-person', session_structure: 'Regular' } },
+    { id: 'tut-001', data: { provider_id: 'PRV-2026-001', pincode: '560001', coverage_radius_km: 10, provider_type: 'Tutor', domain_specialisations: ['Mathematics', 'Physics'], credentials: [{ credential_type: 'Certified Tutor', issuing_body: 'CBSE Board' }], target_grade_band: 'Class XI', target_subject_area: 'Physics', target_capability_tier: 'Any', service_mode: 'Hybrid', session_structure: 'Regular', latitude: 12.9716, longitude: 77.5946 } },
+    { id: 'tut-002', data: { provider_id: 'PRV-2026-002', pincode: '110001', coverage_radius_km: 15, provider_type: 'Career Counsellor', domain_specialisations: ['College Admissions', 'Career Guidance'], credentials: [{ credential_type: 'Licensed Counsellor', issuing_body: 'NCERT' }], target_grade_band: 'Post-XII', target_subject_area: 'Admissions', target_capability_tier: 'High', service_mode: 'Online', session_structure: 'Topic Based', latitude: 28.6139, longitude: 77.2090 } },
+    { id: 'tut-003', data: { provider_id: 'PRV-2026-003', pincode: '400001', coverage_radius_km: 20, provider_type: 'Tutor', domain_specialisations: ['Chemistry', 'Biology'], credentials: [], target_grade_band: 'Class XII', target_subject_area: 'Chemistry', target_capability_tier: 'Mid', service_mode: 'In-person', session_structure: 'Regular', latitude: 19.0760, longitude: 72.8777 } },
   ],
   coaching_center: [
-    { id: 'cc-001', data: { name: 'Allen Career Institute', city: 'Kota', programs: ['JEE', 'NEET'], seats_available: 200 } },
-    { id: 'cc-002', data: { name: 'FIITJEE South', city: 'Chennai', programs: ['JEE', 'Olympiad'], seats_available: 150 } },
+    { id: 'cc-001', data: { name: 'Allen Career Institute', city: 'Kota', programs: ['JEE', 'NEET'], seats_available: 200, latitude: 25.2138, longitude: 75.8648 } },
+    { id: 'cc-002', data: { name: 'FIITJEE South', city: 'Chennai', programs: ['JEE', 'Olympiad'], seats_available: 150, latitude: 13.0827, longitude: 80.2707 } },
   ],
 };
 
