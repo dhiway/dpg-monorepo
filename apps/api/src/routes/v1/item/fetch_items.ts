@@ -46,8 +46,7 @@ const fetch_items_handler = async (
     item_network,
     item_type,
     item_domain,
-    item_domain_url,
-    item_schema_id,
+    item_instance_url,
     item_schema_url,
     item_state,
     item_latitude,
@@ -76,12 +75,8 @@ const fetch_items_handler = async (
     conditions.push(eq(items.item_type, item_type));
   }
 
-  if (item_domain_url) {
-    conditions.push(eq(items.item_domain_url, item_domain_url));
-  }
-
-  if (item_schema_id) {
-    conditions.push(eq(items.item_schema_id, item_schema_id));
+  if (item_instance_url) {
+    conditions.push(eq(items.item_instance_url, item_instance_url));
   }
 
   if (item_schema_url) {

@@ -45,6 +45,7 @@ export async function ensureItemPartition(
           PARTITION BY LIST (item_domain);
         `)
       );
+      await assertPartitionAttached(db, 'items', networkTableName);
 
       knownItemNetworkPartitions.add(network);
     } catch (err) {
@@ -62,6 +63,7 @@ export async function ensureItemPartition(
           PARTITION BY LIST (item_type);
         `)
       );
+      await assertPartitionAttached(db, networkTableName, domainTableName);
 
       knownItemDomainPartitions.add(domainPartitionKey);
     } catch (err) {
@@ -84,6 +86,7 @@ export async function ensureItemPartition(
         FOR VALUES IN ('${type}');
       `)
     );
+    await assertPartitionAttached(db, domainTableName, typeTableName);
 
     knownItemTypePartitions.add(typePartitionKey);
   } catch (err) {
@@ -123,6 +126,7 @@ export async function ensureItemEventPartition(
           PARTITION BY LIST (item_domain);
         `)
       );
+      await assertPartitionAttached(db, 'item_events', networkTableName);
 
       knownEventNetworkPartitions.add(network);
     } catch (err) {
@@ -140,6 +144,7 @@ export async function ensureItemEventPartition(
           PARTITION BY LIST (event_type);
         `)
       );
+      await assertPartitionAttached(db, networkTableName, domainTableName);
 
       knownEventDomainPartitions.add(domainPartitionKey);
     } catch (err) {
@@ -162,10 +167,40 @@ export async function ensureItemEventPartition(
         FOR VALUES IN ('${eventType}');
       `)
     );
+    await assertPartitionAttached(db, domainTableName, typeTableName);
 
     knownEventTypePartitions.add(typePartitionKey);
   } catch (err) {
     handlePartitionError(err, `event_type partition "${eventType}"`);
+  }
+}
+
+async function assertPartitionAttached(
+  db: NodePgDatabase<any>,
+  parentTableName: string,
+  childTableName: string
+) {
+  const result = (await db.execute(
+    sql.raw(`
+      SELECT EXISTS (
+        SELECT 1
+        FROM pg_inherits i
+        JOIN pg_class child ON child.oid = i.inhrelid
+        JOIN pg_class parent ON parent.oid = i.inhparent
+        JOIN pg_namespace child_ns ON child_ns.oid = child.relnamespace
+        JOIN pg_namespace parent_ns ON parent_ns.oid = parent.relnamespace
+        WHERE child_ns.nspname = current_schema()
+          AND parent_ns.nspname = current_schema()
+          AND child.relname = '${childTableName}'
+          AND parent.relname = '${parentTableName}'
+      ) AS attached;
+    `)
+  )) as { rows?: Array<{ attached: boolean }> };
+
+  if (!result.rows?.[0]?.attached) {
+    throw new Error(
+      `Partition table "${childTableName}" exists but is not attached to parent "${parentTableName}". Drop or rename the stale table and retry.`
+    );
   }
 }
 

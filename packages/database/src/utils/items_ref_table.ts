@@ -20,19 +20,10 @@ export const items = pgTable(
     item_type: text('item_type').notNull(),
     item_id: uuid('item_id').defaultRandom().notNull(),
 
-    item_domain_url: text('item_domain_url').notNull(),
-    item_schema_id: text('item_schema_id').default(''),
+    item_instance_url: text('item_instance_url').notNull(),
     item_schema_url: text('item_schema_url').notNull(),
 
     item_state: jsonb('item_state')
-      .$type<Record<string, unknown>>()
-      .notNull()
-      .default(sql`'{}'::jsonb`),
-    item_requirements: jsonb('item_requirements')
-      .$type<Record<string, unknown>>()
-      .notNull()
-      .default(sql`'{}'::jsonb`),
-    item_filters: jsonb('item_filters')
       .$type<Record<string, unknown>>()
       .notNull()
       .default(sql`'{}'::jsonb`),

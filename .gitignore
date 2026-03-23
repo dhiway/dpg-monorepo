@@ -9,7 +9,7 @@ out/
 drizzle/
 .turbo/
 *.tsbuildinfo
-.astro/
+.astro
 # Environment Variables
 .env
 .env.local

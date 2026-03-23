@@ -66,8 +66,8 @@ Important columns in `items`:
 
 - routing keys: `item_network`, `item_domain`, `item_type`
 - record id: `item_id`
-- metadata: `item_domain_url`, `item_schema_id`, `item_schema_url`
-- document fields: `item_state`, `item_requirements`, `item_filters`
+- instance fields: `item_instance_url`, `item_schema_url`
+- document fields: `item_state`
 - geo fields: `item_latitude`, `item_longitude`
 - timestamps: `created_at`, `updated_at`
 
@@ -75,8 +75,8 @@ Important columns in `item_events`:
 
 - item reference: `item_network`, `item_domain`, `item_type`, `item_id`
 - event routing: `event_type`, `event_id`
-- event data: `action_name`, `actor_domain`, `counterparty_domain`
-- payloads: `event_schema_url`, `event_payload`, `event_metadata`
+- parties: `actor_network`, `actor_domain`, `counterparty_network`, `counterparty_domain`
+- event data: `action_name`, `event_schema_url`, `event_payload`, `event_metadata`
 - timestamps: `occurred_at`, `created_at`
 
 `item_events` has a foreign key back to `items` on:
@@ -86,6 +86,30 @@ Important columns in `item_events`:
 ```
 
 That keeps an event tied to the exact item partition path it belongs to.
+
+## Event payload vs event metadata
+
+The intended difference is:
+
+- `event_payload`: the business event body itself. This is the domain-specific content that describes what happened.
+- `event_metadata`: transport, tracing, ingestion, or processing context around the event.
+
+Use `event_payload` for values that matter to the event semantics, for example:
+
+- status transitions
+- amounts
+- messages
+- references used by downstream business logic
+
+Use `event_metadata` for values that help operate the system, for example:
+
+- request ids
+- source service names
+- ingestion timestamps from an upstream system
+- retry counters
+- debug or audit annotations
+
+As a rule: if changing the field would change the meaning of the event, it belongs in `event_payload`. If it only changes how the event was delivered, observed, or processed, it belongs in `event_metadata`.
 
 ## Partition strategy
 
@@ -132,7 +156,7 @@ This script creates the partitioned parent tables only. It does not create busin
 It also creates shared indexes:
 
 - btree lookup indexes for common filters and ordering
-- GIN indexes for JSONB fields
+- GIN indexes for event JSONB fields
 - a GiST geo index using `ll_to_earth(item_latitude, item_longitude)`
 
 The parent tables are defined with:
@@ -250,12 +274,9 @@ const created = await db
     item_network: 'yellow_dot',
     item_domain: 'student',
     item_type: 'profile',
-    item_domain_url: 'student://123',
-    item_schema_id: 'student_profile_v1',
+    item_instance_url: 'student://123',
     item_schema_url: 'https://schemas.example.com/student_profile_v1.json',
     item_state: { name: 'Asha' },
-    item_requirements: {},
-    item_filters: { city: 'Bengaluru' },
     item_latitude: 12.9716,
     item_longitude: 77.5946,
   })
@@ -334,10 +355,12 @@ await db.insert(item_events).values({
   item_id: '11111111-1111-1111-1111-111111111111',
   event_type: 'connect',
   action_name: 'request_sent',
+  actor_network: 'yellow_dot',
   actor_domain: 'student',
+  counterparty_network: 'blue_dot',
   counterparty_domain: 'tutor',
-  event_payload: { source: 'api' },
-  event_metadata: { request_id: 'req_123' },
+  event_payload: { source: 'api', message: 'Interested in connecting' },
+  event_metadata: { request_id: 'req_123', ingestion_source: 'public_api' },
 });
 ```
 

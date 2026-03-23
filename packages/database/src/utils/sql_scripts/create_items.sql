@@ -8,13 +8,10 @@ CREATE TABLE IF NOT EXISTS items (
   item_type TEXT NOT NULL,
   item_id UUID DEFAULT gen_random_uuid() NOT NULL,
 
-  item_domain_url TEXT NOT NULL,
-  item_schema_id TEXT NOT NULL DEFAULT '',
+  item_instance_url TEXT NOT NULL,
   item_schema_url TEXT NOT NULL,
 
   item_state JSONB NOT NULL DEFAULT '{}'::jsonb,
-  item_requirements JSONB NOT NULL DEFAULT '{}'::jsonb,
-  item_filters JSONB NOT NULL DEFAULT '{}'::jsonb,
 
   item_latitude DOUBLE PRECISION,
   item_longitude DOUBLE PRECISION,
@@ -40,20 +37,14 @@ PARTITION BY LIST (item_network);
 CREATE INDEX IF NOT EXISTS items_lookup_idx
 ON items (item_network, item_domain, item_type, created_at DESC);
 
-CREATE INDEX IF NOT EXISTS items_domain_url_idx
-ON items (item_domain_url);
+CREATE INDEX IF NOT EXISTS items_instance_url_idx
+ON items (item_instance_url);
 
 CREATE INDEX IF NOT EXISTS items_schema_url_idx
 ON items (item_schema_url);
 
 CREATE INDEX IF NOT EXISTS items_state_gin_idx
 ON items USING GIN (item_state);
-
-CREATE INDEX IF NOT EXISTS items_requirements_gin_idx
-ON items USING GIN (item_requirements);
-
-CREATE INDEX IF NOT EXISTS items_filters_gin_idx
-ON items USING GIN (item_filters);
 
 CREATE INDEX IF NOT EXISTS items_geo_earth_idx
 ON items USING GIST (ll_to_earth(item_latitude, item_longitude));
@@ -67,7 +58,9 @@ CREATE TABLE IF NOT EXISTS item_events (
   event_type TEXT NOT NULL,
   event_id UUID DEFAULT gen_random_uuid() NOT NULL,
   action_name TEXT NOT NULL,
+  actor_network TEXT NOT NULL,
   actor_domain TEXT NOT NULL,
+  counterparty_network TEXT NOT NULL,
   counterparty_domain TEXT NOT NULL,
 
   event_schema_url TEXT,

@@ -42,8 +42,7 @@ Current item endpoints under `/api/v1/item`:
 - `item_id`
 - `item_type`
 - `item_domain`
-- `item_domain_url`
-- `item_schema_id`
+- `item_instance_url`
 - `item_schema_url`
 - `item_state`
 - `limit`

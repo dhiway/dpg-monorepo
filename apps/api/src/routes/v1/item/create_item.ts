@@ -5,7 +5,7 @@ import { db } from 'apps/api/db/postgres/drizzle_config';
 import { DrizzleQueryError } from 'drizzle-orm';
 import { CreateItemBodySchema } from 'packages/schemas/src/api/item_schemas';
 import { DatabaseError, ensureItemPartition, items } from '@dpg/database';
-import { auth_middleware } from 'apps/api/plugins/auth/auth_middleware';
+// import { auth_middleware } from 'apps/api/plugins/auth/auth_middleware';
 
 type CreateItemRequest = FastifyRequest<{
   Body: z.infer<typeof CreateItemBodySchema>;
@@ -15,7 +15,7 @@ export const create_item: FastifyPluginAsyncZod = async function (fastify) {
   fastify.route({
     url: '/create',
     method: 'POST',
-    preHandler: auth_middleware,
+    // preHandler: auth_middleware,
     schema: {
       tags: ['item'],
       body: CreateItemBodySchema,
@@ -68,14 +68,11 @@ export const create_item_handler = async (
         item_type: body.item_type,
 
         item_domain: body.item_domain,
-        item_domain_url: body.item_domain_url,
+        item_instance_url: body.item_instance_url,
 
-        item_schema_id: body.item_schema_id,
         item_schema_url: body.item_schema_url,
 
         item_state: body.item_state,
-        item_requirements: body.item_requirements,
-        item_filters: body.item_filters,
         item_latitude: body.item_latitude ?? null,
         item_longitude: body.item_longitude ?? null,
       })
