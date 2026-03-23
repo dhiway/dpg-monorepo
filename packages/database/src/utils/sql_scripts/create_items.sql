@@ -2,7 +2,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE EXTENSION IF NOT EXISTS cube;
 CREATE EXTENSION IF NOT EXISTS earthdistance;
 
-CREATE TABLE items (
+CREATE TABLE IF NOT EXISTS items (
   item_network TEXT NOT NULL,
   item_domain TEXT NOT NULL,
   item_type TEXT NOT NULL,
@@ -35,30 +35,30 @@ CREATE TABLE items (
     (item_latitude IS NOT NULL AND item_longitude IS NOT NULL)
   )
 )
-PARTITION BY LIST (item_network, item_domain);
+PARTITION BY LIST (item_network);
 
-CREATE INDEX items_lookup_idx
+CREATE INDEX IF NOT EXISTS items_lookup_idx
 ON items (item_network, item_domain, item_type, created_at DESC);
 
-CREATE INDEX items_domain_url_idx
+CREATE INDEX IF NOT EXISTS items_domain_url_idx
 ON items (item_domain_url);
 
-CREATE INDEX items_schema_url_idx
+CREATE INDEX IF NOT EXISTS items_schema_url_idx
 ON items (item_schema_url);
 
-CREATE INDEX items_state_gin_idx
+CREATE INDEX IF NOT EXISTS items_state_gin_idx
 ON items USING GIN (item_state);
 
-CREATE INDEX items_requirements_gin_idx
+CREATE INDEX IF NOT EXISTS items_requirements_gin_idx
 ON items USING GIN (item_requirements);
 
-CREATE INDEX items_filters_gin_idx
+CREATE INDEX IF NOT EXISTS items_filters_gin_idx
 ON items USING GIN (item_filters);
 
-CREATE INDEX items_geo_earth_idx
+CREATE INDEX IF NOT EXISTS items_geo_earth_idx
 ON items USING GIST (ll_to_earth(item_latitude, item_longitude));
 
-CREATE TABLE item_events (
+CREATE TABLE IF NOT EXISTS item_events (
   item_network TEXT NOT NULL,
   item_domain TEXT NOT NULL,
   item_type TEXT NOT NULL,
@@ -95,16 +95,16 @@ CREATE TABLE item_events (
     item_id
   ) ON DELETE CASCADE
 )
-PARTITION BY LIST (item_network, item_domain);
+PARTITION BY LIST (item_network);
 
-CREATE INDEX item_events_item_lookup_idx
+CREATE INDEX IF NOT EXISTS item_events_item_lookup_idx
 ON item_events (item_network, item_domain, item_type, item_id, occurred_at DESC);
 
-CREATE INDEX item_events_action_idx
+CREATE INDEX IF NOT EXISTS item_events_action_idx
 ON item_events (action_name, event_type, occurred_at DESC);
 
-CREATE INDEX item_events_payload_gin_idx
+CREATE INDEX IF NOT EXISTS item_events_payload_gin_idx
 ON item_events USING GIN (event_payload);
 
-CREATE INDEX item_events_metadata_gin_idx
+CREATE INDEX IF NOT EXISTS item_events_metadata_gin_idx
 ON item_events USING GIN (event_metadata);
