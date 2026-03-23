@@ -12,6 +12,10 @@ export const ApiSecretsSchema = z.object({
 
 export const AuthSecretsSchema = z.object({
   AUTH_SECRET: z.string().min(8),
+  AUTH_MIDDLEWARE_ENABLED: z
+    .string()
+    .default('true')
+    .transform((val) => val === 'true'),
   CREATE_TEST_OTP: z
     .string()
     .default('false')

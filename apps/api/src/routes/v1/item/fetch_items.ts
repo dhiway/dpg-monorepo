@@ -2,13 +2,17 @@ import z from '@dpg/schemas';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { db } from 'apps/api/db/postgres/drizzle_config';
 import { type FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
-import { auth_middleware } from 'apps/api/plugins/auth/auth_middleware';
+import { auth_middleware_if_enabled } from 'apps/api/plugins/auth/auth_middleware';
 import { and, eq, sql } from 'drizzle-orm';
 import {
   FetchItemsQuerySchema,
   ItemSelectSchema,
 } from 'packages/schemas/src/api/item_schemas';
 import { items } from '@dpg/database';
+import {
+  isServedDomainBinding,
+  replyForUnservedDomain,
+} from 'apps/api/src/utils/served_domain_guard';
 
 type FetchItemsRequest = FastifyRequest<{
   Querystring: z.infer<typeof FetchItemsQuerySchema>;
@@ -18,7 +22,7 @@ export const fetch_items: FastifyPluginAsyncZod = async function (fastify) {
   fastify.route({
     url: '/fetch',
     method: 'GET',
-    preHandler: auth_middleware as any,
+    preHandler: auth_middleware_if_enabled,
     schema: {
       tags: ['item'],
       query: FetchItemsQuerySchema,
@@ -55,6 +59,10 @@ const fetch_items_handler = async (
     limit,
     offset,
   } = request.query;
+
+  if (!isServedDomainBinding(item_network, item_domain)) {
+    return replyForUnservedDomain(reply, item_network, item_domain);
+  }
 
   const conditions = [];
 
