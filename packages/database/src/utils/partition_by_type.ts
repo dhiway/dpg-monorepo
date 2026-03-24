@@ -32,6 +32,54 @@ export async function ensureItemPartition(
   }
 }
 
+export async function ensureActionPartition(
+  db: NodePgDatabase<any>,
+  actionName: string
+) {
+  if (!PARTITION_SEGMENT_REGEX.test(actionName)) {
+    throw new Error(`Invalid action_name partition key: "${actionName}"`);
+  }
+
+  const partitionTableName = `${actionName}_action`;
+
+  try {
+    await db.execute(
+      sql.raw(`
+        CREATE TABLE IF NOT EXISTS "${partitionTableName}"
+        PARTITION OF item_actions
+        FOR VALUES IN ('${actionName}');
+      `)
+    );
+    await assertPartitionAttached(db, 'item_actions', partitionTableName);
+  } catch (err) {
+    handlePartitionError(err, `action partition "${actionName}"`);
+  }
+}
+
+export async function ensureActionEventPartition(
+  db: NodePgDatabase<any>,
+  eventType: string
+) {
+  if (!PARTITION_SEGMENT_REGEX.test(eventType)) {
+    throw new Error(`Invalid event_type partition key: "${eventType}"`);
+  }
+
+  const partitionTableName = `${eventType}_event`;
+
+  try {
+    await db.execute(
+      sql.raw(`
+        CREATE TABLE IF NOT EXISTS "${partitionTableName}"
+        PARTITION OF action_events
+        FOR VALUES IN ('${eventType}');
+      `)
+    );
+    await assertPartitionAttached(db, 'action_events', partitionTableName);
+  } catch (err) {
+    handlePartitionError(err, `event partition "${eventType}"`);
+  }
+}
+
 async function assertPartitionAttached(
   db: NodePgDatabase<any>,
   parentTableName: string,

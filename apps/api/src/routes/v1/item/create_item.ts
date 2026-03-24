@@ -3,13 +3,20 @@ import z from '@dpg/schemas';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { db } from 'apps/api/db/postgres/drizzle_config';
 import { DrizzleQueryError } from 'drizzle-orm';
-import { CreateItemBodySchema } from 'packages/schemas/src/api/item_schemas';
+import {
+  CreateItemBodySchema,
+} from 'packages/schemas/src/api/item_schemas';
 import { DatabaseError, ensureItemPartition, items } from '@dpg/database';
 import { auth_middleware_if_enabled } from 'apps/api/plugins/auth/auth_middleware';
 import {
   isServedDomainBinding,
   replyForUnservedDomain,
 } from 'apps/api/src/utils/served_domain_guard';
+import {
+  getDomainItemSchema,
+  validateAgainstJsonSchema,
+} from '@dpg/schemas';
+import { getNetworkConfigByName } from 'apps/api/src/network_configs';
 
 type CreateItemRequest = FastifyRequest<{
   Body: z.infer<typeof CreateItemBodySchema>;
@@ -46,6 +53,22 @@ export const create_item_handler = async (
       body.item_network,
       body.item_domain
     );
+  }
+
+  try {
+    const networkConfig = await getNetworkConfigByName(body.item_network);
+    const itemSchema = getDomainItemSchema(
+      networkConfig,
+      body.item_domain,
+      body.item_type
+    );
+
+    validateAgainstJsonSchema(itemSchema, body.item_state, 'item_state');
+  } catch (err) {
+    return reply.code(400).send({
+      error: 'INVALID_ITEM_STATE',
+      message: err instanceof Error ? err.message : 'Invalid item_state',
+    });
   }
 
   try {
