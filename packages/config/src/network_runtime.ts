@@ -4,22 +4,41 @@ export type ServedDomainBinding = {
   key: string;
 };
 
+export type JsonSchemaDocument = Record<string, unknown>;
+
+export type NetworkDomainConfig = {
+  name: string;
+  description?: string;
+  default_item_schemas?: Record<string, JsonSchemaDocument>;
+};
+
 type NetworkInstanceConfig = {
   domain_name: string;
   instance_url: string;
+  instance_name?: string;
+  schema_url?: string | null;
 };
 
-type NetworkActionInteraction = {
+export type NetworkActionInteraction = {
+  from_network?: string;
   from_domain: string;
+  to_network?: string;
   to_domain: string;
+  requirement_schema: JsonSchemaDocument;
+  event_schema: JsonSchemaDocument;
 };
 
 type NetworkActionConfig = {
+  description?: string;
   interactions?: NetworkActionInteraction[];
 };
 
 export type NetworkConfig = {
   name: string;
+  display_name?: string;
+  description?: string;
+  schema_standard?: string;
+  domains?: NetworkDomainConfig[];
   instances?: NetworkInstanceConfig[];
   actions?: Record<string, NetworkActionConfig>;
 };

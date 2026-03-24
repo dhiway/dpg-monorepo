@@ -55,7 +55,8 @@ The API app uses Fastify and mounts:
 The SQL scripts define partitioned parent tables:
 
 - `items`
-- `item_events`
+- `item_actions`
+- `action_events`
 
 Partitions are intentionally not hardcoded in the base SQL. They are created per deployment or at runtime.
 

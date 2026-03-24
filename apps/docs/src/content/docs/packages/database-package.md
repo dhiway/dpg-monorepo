@@ -11,7 +11,8 @@ head: []
 ## What it exposes
 
 - `items` reference table
-- `item_events` reference table
+- `item_actions` reference table
+- `action_events` reference table
 - partition helpers
 - SQL scripts for base table creation
 
@@ -34,6 +35,8 @@ The API uses:
 
 - `create_items.sql` contains generic parent table DDL
 - `create_items_partitions.example.sql` contains example partition definitions only
+- `create_actions_events.sql` contains generic parent table DDL for action and event runtime tables
+- `create_actions_events_partitions.example.sql` contains example action and event partitions only
 
 ## Postgres setup flow
 
@@ -57,10 +60,11 @@ These extensions are needed before the geo index and distance filters can work.
 
 ## Base tables
 
-The package models two parent tables:
+The package models three parent tables:
 
 - `items`: stores the current item record
-- `item_events`: stores event records linked back to an item
+- `item_actions`: stores runtime action instances between items
+- `action_events`: stores immutable events emitted by actions
 
 Important columns in `items`:
 
@@ -71,21 +75,34 @@ Important columns in `items`:
 - geo fields: `item_latitude`, `item_longitude`
 - timestamps: `created_at`, `updated_at`
 
-Important columns in `item_events`:
+Important columns in `item_actions`:
 
-- item reference: `item_network`, `item_domain`, `item_type`, `item_id`
-- event routing: `event_type`, `event_id`
-- parties: `actor_network`, `actor_domain`, `counterparty_network`, `counterparty_domain`
-- event data: `action_name`, `event_schema_url`, `event_payload`, `event_metadata`
-- timestamps: `occurred_at`, `created_at`
+- action identity: `action_name`, `action_id`
+- source item reference: `source_item_network`, `source_item_domain`, `source_item_type`, `source_item_id`
+- target item reference: `target_item_network`, `target_item_domain`, `target_item_type`, `target_item_id`
+- action state: `status`, `requirements_snapshot`
+- audit fields: `created_by`, `created_at`, `updated_at`
 
-`item_events` has a foreign key back to `items` on:
+Important columns in `action_events`:
+
+- event identity: `event_type`, `event_id`
+- action reference: `action_name`, `action_id`
+- source item reference: `source_item_network`, `source_item_domain`, `source_item_type`, `source_item_id`
+- target item reference: `target_item_network`, `target_item_domain`, `target_item_type`, `target_item_id`
+- event data: `event_payload`, `event_metadata`
+- audit fields: `created_by`, `occurred_at`, `created_at`
+
+`created_by` in both `item_actions` and `action_events` is a foreign key to the Better Auth `user` table. Test payloads must use a real existing `user.id` value. A placeholder like `USER_ID` will fail the insert with a foreign key error.
+
+`item_actions` has foreign keys back to `items` for both source and target items.
+
+`action_events` has a foreign key back to `item_actions` on:
 
 ```sql
-(item_network, item_domain, item_type, item_id)
+(action_name, action_id)
 ```
 
-That keeps an event tied to the exact item partition path it belongs to.
+That keeps every event tied to the runtime action that emitted it.
 
 ## Event payload vs event metadata
 
@@ -119,15 +136,12 @@ For `items`:
 
 - parent table partitions by `item_type`
 - partition tables are named as `<item_type>_item`
-- a default partition named `items_default` catches rows without a dedicated item-type partition
-
 This is the effective shape:
 
 ```text
 items
   -> profile_item
   -> notify_event_item
-  -> items_default
 ```
 
 This design keeps partition naming predictable and avoids partition explosion across network/domain combinations.
@@ -164,20 +178,28 @@ Then it creates:
 
 - `profile_item`
 - `notify_event_item`
-- `items_default`
 
 ## Runtime partition helpers
 
 The package exports:
 
 - `ensureItemPartition(db, network, domain, type)`
+- `ensureActionPartition(db, actionName)`
+- `ensureActionEventPartition(db, eventType)`
 
 This helper creates missing partitions lazily with `CREATE TABLE IF NOT EXISTS`.
 
 `ensureItemPartition()` creates:
 
 1. `<item_type>_item`
-2. `items_default` if it does not already exist
+
+`ensureActionPartition()` creates:
+
+1. `<action_name>_action`
+
+`ensureActionEventPartition()` creates:
+
+1. `<event_type>_event`
 
 The helper validates `item_type` with this rule:
 
@@ -215,7 +237,6 @@ you would expect tables like:
 items
 profile_item
 notify_event_item
-items_default
 ```
 
 ## Example Drizzle queries
@@ -303,45 +324,70 @@ const result = await db
   );
 ```
 
-### Insert an event
+### Insert an action
 
 ```ts
-import { item_events } from '@dpg/database';
+import { ensureActionPartition, item_actions } from '@dpg/database';
 
-await db.insert(item_events).values({
-  item_network: 'yellow_dot',
-  item_domain: 'student',
-  item_type: 'profile',
-  item_id: '11111111-1111-1111-1111-111111111111',
-  event_type: 'connect',
-  action_name: 'request_sent',
-  actor_network: 'yellow_dot',
-  actor_domain: 'student',
-  counterparty_network: 'blue_dot',
-  counterparty_domain: 'tutor',
-  event_payload: { source: 'api', message: 'Interested in connecting' },
-  event_metadata: { request_id: 'req_123', ingestion_source: 'public_api' },
+await ensureActionPartition(db, 'connect');
+
+await db.insert(item_actions).values({
+  action_name: 'connect',
+  source_item_network: 'yellow_dot',
+  source_item_domain: 'student',
+  source_item_type: 'profile',
+  source_item_id: '11111111-1111-1111-1111-111111111111',
+  target_item_network: 'yellow_dot',
+  target_item_domain: 'tutor',
+  target_item_type: 'profile',
+  target_item_id: '22222222-2222-2222-2222-222222222222',
+  status: 'pending',
+  requirements_snapshot: { subject: 'math', goal: 'board_exam' },
+  created_by: 'user_123',
 });
 ```
 
-### Fetch events for one item
+### Insert an action event
+
+```ts
+import { action_events, ensureActionEventPartition } from '@dpg/database';
+
+await ensureActionEventPartition(db, 'action_response');
+
+await db.insert(action_events).values({
+  event_type: 'action_response',
+  action_name: 'connect',
+  action_id: '33333333-3333-3333-3333-333333333333',
+  source_item_network: 'yellow_dot',
+  source_item_domain: 'student',
+  source_item_type: 'profile',
+  source_item_id: '11111111-1111-1111-1111-111111111111',
+  target_item_network: 'yellow_dot',
+  target_item_domain: 'tutor',
+  target_item_type: 'profile',
+  target_item_id: '22222222-2222-2222-2222-222222222222',
+  event_payload: { status: 'pending', message: 'Interested in connecting' },
+  event_metadata: { request_id: 'req_123', ingestion_source: 'public_api' },
+  created_by: 'user_123',
+});
+```
+
+### Fetch events for one action
 
 ```ts
 import { and, desc, eq } from 'drizzle-orm';
-import { item_events } from '@dpg/database';
+import { action_events } from '@dpg/database';
 
 const events = await db
   .select()
-  .from(item_events)
+  .from(action_events)
   .where(
     and(
-      eq(item_events.item_network, 'yellow_dot'),
-      eq(item_events.item_domain, 'student'),
-      eq(item_events.item_type, 'profile'),
-      eq(item_events.item_id, '11111111-1111-1111-1111-111111111111')
+      eq(action_events.action_name, 'connect'),
+      eq(action_events.action_id, '33333333-3333-3333-3333-333333333333')
     )
   )
-  .orderBy(desc(item_events.occurred_at));
+  .orderBy(desc(action_events.occurred_at));
 ```
 
 ## Practical rules

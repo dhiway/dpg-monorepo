@@ -54,6 +54,139 @@ Current item endpoints under `/api/v1/item`:
 
 `PATCH /api/v1/item/:itemType/:itemId` accepts a partial item payload, updates `updated_at`, and returns `404` when the target item does not exist.
 
+## Action and event routes
+
+Current action and event endpoints under `/api/v1`:
+
+- `POST /action/perform`
+- `POST /event/store`
+
+`created_by` for action and event writes must be a real existing Better Auth `user.id`. Sending a placeholder like `USER_ID` will fail because both `item_actions.created_by` and `action_events.created_by` are foreign keys to the `user` table.
+
+Use this query first when testing manually:
+
+```sql
+select id, email, name
+from "user"
+limit 10;
+```
+
+Then copy one real `id` value into the `created_by` field in the request bodies below.
+
+## Test scenario
+
+Suggested order:
+
+1. `POST /api/v1/item/create` for the student item
+2. `POST /api/v1/item/create` for the tutor item
+3. `POST /api/v1/action/perform`
+4. optionally `POST /api/v1/event/store`
+
+### Create student item
+
+```json
+{
+  "item_network": "yellow_dot",
+  "item_domain": "student",
+  "item_type": "profile",
+  "item_instance_url": "http://localhost:2783/items/student/arya",
+  "item_schema_url": "https://schemas.example.com/student_profile_v1.json",
+  "item_state": {
+    "name": "Arya",
+    "grade": "10",
+    "city": "Bengaluru",
+    "preferred_subject": "math"
+  }
+}
+```
+
+### Create tutor item
+
+```json
+{
+  "item_network": "yellow_dot",
+  "item_domain": "tutor",
+  "item_type": "profile",
+  "item_instance_url": "http://localhost:2783/items/tutor/ravi",
+  "item_schema_url": "https://schemas.example.com/tutor_profile_v1.json",
+  "item_state": {
+    "name": "Ravi",
+    "subjects": ["math", "science"],
+    "experience_years": 6,
+    "teaching_mode": "hybrid"
+  }
+}
+```
+
+### Perform action
+
+Replace `source_item.item_id` and `target_item.item_id` with real ids returned from item creation. Replace `created_by` with a real Better Auth `user.id`.
+
+```json
+{
+  "action_name": "connect",
+  "source_item": {
+    "item_network": "yellow_dot",
+    "item_domain": "student",
+    "item_type": "profile",
+    "item_id": "67b6558e-46f2-45c5-953a-f417e8162332"
+  },
+  "target_item": {
+    "item_network": "yellow_dot",
+    "item_domain": "tutor",
+    "item_type": "profile",
+    "item_id": "46cc4c8e-f875-40c3-b4f4-e7d211afdc59"
+  },
+  "requirements_snapshot": {
+    "subject": "math",
+    "goal": "board_exam_preparation"
+  },
+  "created_by": "REAL_USER_ID",
+  "response_event_type": "action_response",
+  "response_event_payload": {
+    "status": "pending",
+    "message": "Connect request created"
+  },
+  "response_event_metadata": {
+    "request_id": "req_local_001",
+    "source": "manual_test"
+  }
+}
+```
+
+### Store event directly
+
+Replace `action_id` and item ids with real values. Replace `created_by` with a real Better Auth `user.id`.
+
+```json
+{
+  "event_type": "action_response",
+  "action_name": "connect",
+  "action_id": "ACTION_ID",
+  "source_item": {
+    "item_network": "yellow_dot",
+    "item_domain": "student",
+    "item_type": "profile",
+    "item_id": "SOURCE_ITEM_ID"
+  },
+  "target_item": {
+    "item_network": "yellow_dot",
+    "item_domain": "tutor",
+    "item_type": "profile",
+    "item_id": "TARGET_ITEM_ID"
+  },
+  "event_payload": {
+    "status": "accepted",
+    "message": "Tutor accepted the connect request"
+  },
+  "event_metadata": {
+    "request_id": "req_local_002",
+    "source": "manual_test"
+  },
+  "created_by": "REAL_USER_ID"
+}
+```
+
 ## API documentation
 
 - OpenAPI metadata is registered in `src/server.ts`.

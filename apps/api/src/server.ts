@@ -14,21 +14,17 @@ import 'dotenv/config';
 import {
   allowed_origins,
   getAllowedInstanceOriginsFromNetworkConfig,
-  loadNetworkConfigs,
   mergeAllowedOrigins,
 } from '@dpg/config';
 import v1_routes from './routes/v1/v1_routes';
+import { getNetworkConfigs } from './network_configs';
 
 const app = fastify({
   logger: true,
   trustProxy: true,
 });
 
-const networkConfigs = await loadNetworkConfigs({
-  source: apiConfig.network_config_source,
-  localFile: apiConfig.network_config_local_file,
-  remoteUrls: apiConfig.network_config_urls,
-});
+const networkConfigs = await getNetworkConfigs();
 
 const networkAllowedOrigins = networkConfigs.flatMap((networkConfig) =>
   getAllowedInstanceOriginsFromNetworkConfig(

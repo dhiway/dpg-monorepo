@@ -148,7 +148,9 @@
       "description": "Defines which domains can connect to which other domains, what requirement payload they send, and what event payload is returned.",
       "interactions": [
         {
+          "from_network": "yellow_dot",
           "from_domain": "student",
+          "to_network": "yellow_dot",
           "to_domain": "tutor",
           "requirement_schema": {
             "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -193,7 +195,9 @@
           }
         },
         {
+          "from_network": "yellow_dot",
           "from_domain": "student",
+          "to_network": "yellow_dot",
           "to_domain": "coaching_center",
           "requirement_schema": {
             "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -238,7 +242,9 @@
           }
         },
         {
+          "from_network": "yellow_dot",
           "from_domain": "tutor",
+          "to_network": "yellow_dot",
           "to_domain": "student",
           "requirement_schema": {
             "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -283,7 +289,9 @@
           }
         },
         {
+          "from_network": "yellow_dot",
           "from_domain": "tutor",
+          "to_network": "yellow_dot",
           "to_domain": "coaching_center",
           "requirement_schema": {
             "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -333,7 +341,9 @@
           }
         },
         {
+          "from_network": "yellow_dot",
           "from_domain": "coaching_center",
+          "to_network": "yellow_dot",
           "to_domain": "student",
           "requirement_schema": {
             "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -377,7 +387,9 @@
           }
         },
         {
+          "from_network": "yellow_dot",
           "from_domain": "coaching_center",
+          "to_network": "yellow_dot",
           "to_domain": "tutor",
           "requirement_schema": {
             "$schema": "https://json-schema.org/draft/2020-12/schema",
