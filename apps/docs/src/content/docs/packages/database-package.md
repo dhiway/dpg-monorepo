@@ -34,6 +34,7 @@ The API uses:
 ## SQL files
 
 - `create_items.sql` contains generic parent table DDL
+- `migrate_items_add_created_by.sql` adds item ownership to an existing `items` table
 - `create_items_partitions.example.sql` contains example partition definitions only
 - `create_actions_events.sql` contains generic parent table DDL for action and event runtime tables
 - `create_actions_events_partitions.example.sql` contains example action and event partitions only
@@ -47,6 +48,8 @@ The database setup is split into two parts on purpose:
 3. Start the API, which can create missing runtime partitions through the helpers
 
 The first script creates the parent partitioned tables and shared indexes. The second script creates deployment-specific item-type partitions.
+
+If your database already has an `items` table from an earlier version, run `migrate_items_add_created_by.sql` before using the ownership-enforced item APIs.
 
 ## Extensions used
 
@@ -73,7 +76,10 @@ Important columns in `items`:
 - instance fields: `item_instance_url`, `item_schema_url`
 - document fields: `item_state`
 - geo fields: `item_latitude`, `item_longitude`
+- owner field: `created_by`
 - timestamps: `created_at`, `updated_at`
+
+`items.created_by` is a foreign key to the Better Auth `user` table. The item APIs do not accept `created_by` from the client. The API derives it from the authenticated user and uses it for item ownership checks on update.
 
 Important columns in `item_actions`:
 
@@ -260,6 +266,7 @@ const created = await db
     item_instance_url: 'student://123',
     item_schema_url: 'https://schemas.example.com/student_profile_v1.json',
     item_state: { name: 'Asha' },
+    created_by: 'real_user_id',
     item_latitude: 12.9716,
     item_longitude: 77.5946,
   })

@@ -15,11 +15,14 @@ CREATE TABLE IF NOT EXISTS items (
 
   item_latitude DOUBLE PRECISION,
   item_longitude DOUBLE PRECISION,
+  created_by TEXT NOT NULL,
 
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 
   CONSTRAINT items_pk PRIMARY KEY (item_network, item_domain, item_type, item_id),
+  CONSTRAINT items_created_by_fk FOREIGN KEY (created_by)
+    REFERENCES "user" (id) ON DELETE RESTRICT,
   CONSTRAINT items_geo_lat_chk CHECK (
     item_latitude IS NULL OR (item_latitude >= -90 AND item_latitude <= 90)
   ),
@@ -42,6 +45,9 @@ ON items (item_instance_url);
 
 CREATE INDEX IF NOT EXISTS items_schema_url_idx
 ON items (item_schema_url);
+
+CREATE INDEX IF NOT EXISTS items_created_by_idx
+ON items (created_by, created_at DESC);
 
 CREATE INDEX IF NOT EXISTS items_state_gin_idx
 ON items USING GIN (item_state);

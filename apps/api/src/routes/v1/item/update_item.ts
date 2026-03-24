@@ -42,6 +42,14 @@ export const update_item_handler = async (
 ) => {
   const { itemId } = request.params;
   const body = request.body;
+  const userId = request.user?.id;
+
+  if (!userId) {
+    return reply.code(401).send({
+      error: 'UNAUTHORIZED',
+      message: 'Authenticated user is required to update an item',
+    });
+  }
 
   try {
     const result = await db
@@ -50,13 +58,13 @@ export const update_item_handler = async (
         ...body,
         updated_at: sql`now()`,
       })
-      .where(and(eq(items.item_id, itemId)))
+      .where(and(eq(items.item_id, itemId), eq(items.created_by, userId)))
       .returning();
 
     if (result.length === 0) {
       return reply.code(404).send({
-        error: 'ITEM_NOT_FOUND',
-        message: 'Item not found',
+        error: 'ITEM_NOT_FOUND_OR_FORBIDDEN',
+        message: 'Item not found or does not belong to the authenticated user',
       });
     }
 
