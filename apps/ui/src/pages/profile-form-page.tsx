@@ -17,6 +17,16 @@ import { resolveNetworkRefs } from '@/engine/schema/resolve-schema';
 import type { DotNetworkSchema } from '@/engine/types';
 import { educationNetwork } from '../../../../packages/schemas/src/dot_examples/index';
 
+import {
+  createItem,
+  fetchItems,
+  updateItem,
+  type CreateItemPayload,
+  type UpdateItemPayload,
+  type Item,
+} from '@/lib/item-api';
+import { extractAndGeocode } from '@/lib/item-utils';
+
 // Referenced schemas — imported at build time, resolved at runtime via refMap
 import studentProfileSchema from '../../../../packages/schemas/src/dot_examples/domain.json';
 import learnerProfileSchema from '../../../../packages/schemas/src/dot_examples/learner_domain.json';
@@ -42,6 +52,10 @@ export function ProfileFormPage() {
 
   const [selectedDomain, setSelectedDomain] = React.useState<string | null>(null);
   const [resolvedNetwork, setResolvedNetwork] = React.useState<DotNetworkSchema | null>(null);
+  const [existingItem, setExistingItem] = React.useState<Item | null>(null);
+  const [initialData, setInitialData] = React.useState<Record<string, unknown> | null>(null);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(isEdit);
 
   // Eagerly resolve all $ref in network before rendering
   React.useEffect(() => {
@@ -49,6 +63,41 @@ export function ProfileFormPage() {
       setResolvedNetwork(resolved as DotNetworkSchema);
     });
   }, []);
+
+  // Fetch existing profile for edit mode
+  React.useEffect(() => {
+    if (!isEdit || !id || !resolvedNetwork) return;
+
+    const loadExistingProfile = async () => {
+      try {
+        // Search across all domains to find the item
+        for (const domain of resolvedNetwork.domains ?? []) {
+          const response = await fetchItems({
+            item_network: educationNetwork.name,
+            item_domain: domain.name,
+            item_type: 'profile',
+            item_id: id,
+            limit: 1,
+          });
+
+          if (response.items.length > 0) {
+            const item = response.items[0];
+            setExistingItem(item);
+            setSelectedDomain(item.item_domain);
+            setInitialData(item.item_state);
+            break;
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load profile:', err);
+        toast.error('Failed to load profile');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadExistingProfile();
+  }, [isEdit, id, resolvedNetwork]);
 
   const network = resolvedNetwork;
   const domains = network?.domains ?? [];
@@ -62,19 +111,95 @@ export function ProfileFormPage() {
 
   const selectedDomainInfo = domains.find((d) => d.name === selectedDomain);
 
-  if (!network) {
+  // Get network-level instance URL and schema URL for the selected domain
+  const domainInstance = React.useMemo(() => {
+    if (!selectedDomain) return null;
+    return educationNetwork.instances?.find((i) => i.domain_name === selectedDomain) ?? null;
+  }, [selectedDomain]);
+
+  const handleSubmit = async (data: Record<string, unknown>) => {
+    if (!selectedDomain || !network) return;
+
+    setIsSubmitting(true);
+
+    try {
+      // Geocode from domain-specific pincode field
+      const { coordinates } = await extractAndGeocode(data, selectedDomain);
+
+      if (isEdit && existingItem) {
+        // Update existing profile
+        const updatePayload: UpdateItemPayload = {
+          item_state: data,
+        };
+
+        if (coordinates) {
+          updatePayload.item_latitude = coordinates.lat;
+          updatePayload.item_longitude = coordinates.lng;
+        }
+
+        await updateItem(existingItem.item_id, updatePayload);
+        toast.success('Profile updated!');
+      } else {
+        // Create new profile
+        const createPayload: CreateItemPayload = {
+          item_network: network.name,
+          item_domain: selectedDomain,
+          item_type: 'profile',
+          item_state: data,
+        };
+
+        if (domainInstance?.instance_url) {
+          createPayload.item_instance_url = domainInstance.instance_url;
+        }
+
+        if (domainInstance?.schema_url) {
+          createPayload.item_schema_url = domainInstance.schema_url;
+        }
+
+        if (coordinates) {
+          createPayload.item_latitude = coordinates.lat;
+          createPayload.item_longitude = coordinates.lng;
+        }
+
+        const result = await createItem(createPayload);
+        toast.success('Profile created!', { description: `ID: ${result.item_id}` });
+      }
+
+      navigate('/');
+    } catch (err: unknown) {
+      console.error('Failed to save profile:', err);
+
+      const axiosError = err as { response?: { status?: number; data?: { error?: string; message?: string } } };
+      const status = axiosError?.response?.status;
+      const error = axiosError?.response?.data;
+
+      if (status === 403 && error?.error === 'UNSERVED_DOMAIN_BINDING') {
+        toast.error('Domain not served by this API instance', {
+          description: error.message,
+        });
+      } else if (status === 409) {
+        toast.error('Profile already exists', {
+          description: 'A profile with this combination already exists',
+        });
+      } else {
+        toast.error(isEdit ? 'Failed to update profile' : 'Failed to create profile', {
+          description: error?.message ?? 'Something went wrong',
+        });
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!network || isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <p className="text-muted-foreground">Loading network schemas...</p>
+        <p className="text-muted-foreground">
+          {isLoading ? 'Loading profile...' : 'Loading network schemas...'}
+        </p>
       </div>
     );
   }
-
-  const handleSubmit = (data: Record<string, unknown>) => {
-    console.log('Profile data:', { domain: selectedDomain, data });
-    toast.success(isEdit ? 'Profile updated!' : 'Profile created!');
-    navigate('/');
-  };
 
   // Domain selection step
   if (!selectedDomain && !isEdit) {
@@ -128,10 +253,10 @@ export function ProfileFormPage() {
         <Button
           variant="ghost"
           className="mb-4 gap-2"
-          onClick={() => (selectedDomain ? setSelectedDomain(null) : navigate('/'))}
+          onClick={() => (selectedDomain && !isEdit ? setSelectedDomain(null) : navigate('/'))}
         >
           <ArrowLeft className="h-4 w-4" />
-          {selectedDomain ? 'Choose different role' : 'Back'}
+          {selectedDomain && !isEdit ? 'Choose different role' : 'Back'}
         </Button>
         <Card>
           <CardHeader>
@@ -147,6 +272,8 @@ export function ProfileFormPage() {
               <SchemaForm
                 schema={profileSchema}
                 onSubmit={handleSubmit}
+                disabled={isSubmitting}
+                formData={initialData ?? undefined}
               />
             )}
           </CardContent>
