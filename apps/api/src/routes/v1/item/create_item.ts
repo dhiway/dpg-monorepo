@@ -45,7 +45,15 @@ export const create_item_handler = async (
   request: CreateItemRequest,
   reply: FastifyReply
 ) => {
+  const userId = request.user?.id;
   const body = request.body;
+
+  if (!userId) {
+    return reply.code(401).send({
+      error: 'UNAUTHORIZED',
+      message: 'Authenticated user is required to create an item',
+    });
+  }
 
   if (!isServedDomainBinding(body.item_network, body.item_domain)) {
     return replyForUnservedDomain(
@@ -110,6 +118,7 @@ export const create_item_handler = async (
         item_state: body.item_state,
         item_latitude: body.item_latitude ?? null,
         item_longitude: body.item_longitude ?? null,
+        created_by: userId,
       })
       .onConflictDoNothing({
         target: [
@@ -157,7 +166,7 @@ export const create_item_handler = async (
         if (cause.code === '23503') {
           return reply.code(400).send({
             error: 'INVALID_REFERENCE',
-            message: 'One or more referenced entities do not exist',
+            message: 'One or more referenced entities do not exist, including the authenticated user',
           });
         }
       }

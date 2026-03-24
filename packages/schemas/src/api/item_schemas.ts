@@ -5,6 +5,7 @@ export const ItemSelectSchema = createSelectSchema(items);
 export const ItemInsertSchema = createInsertSchema(items);
 
 export const CreateItemBodySchema = ItemInsertSchema.omit({
+  created_by: true,
   item_id: true,
   created_at: true,
   updated_at: true,
@@ -57,6 +58,7 @@ export const UpdateItemParamsSchema = z.object({
 });
 
 export const UpdateItemBodySchema = ItemInsertSchema.omit({
+  created_by: true,
   item_network: true,
   item_domain: true,
   item_type: true,

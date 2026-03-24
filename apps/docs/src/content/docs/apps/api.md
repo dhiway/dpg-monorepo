@@ -29,11 +29,13 @@ Current item endpoints under `/api/v1/item`:
 
 - `POST /create`
 - `GET /fetch`
-- `PATCH /:itemType/:itemId`
+- `PATCH /:itemNetwork/:itemDomain/:itemType/:itemId`
 
 ### Create item
 
-`POST /api/v1/item/create` accepts the insert schema minus generated fields such as `item_id`, `created_at`, and `updated_at`. Before insert, the handler ensures the item partition exists.
+`POST /api/v1/item/create` accepts the insert schema minus generated fields such as `item_id`, `created_by`, `created_at`, and `updated_at`. Before insert, the handler ensures the item partition exists.
+
+The item owner is always the authenticated user. The handler writes `items.created_by = request.user.id`, so the client must not send `created_by` in the body.
 
 ### Fetch items
 
@@ -52,7 +54,9 @@ Current item endpoints under `/api/v1/item`:
 
 ### Update item
 
-`PATCH /api/v1/item/:itemType/:itemId` accepts a partial item payload, updates `updated_at`, and returns `404` when the target item does not exist.
+`PATCH /api/v1/item/:itemNetwork/:itemDomain/:itemType/:itemId` accepts a partial item payload, updates `updated_at`, and only updates rows that belong to the authenticated user.
+
+If the item does not exist, or if it belongs to a different user, the handler returns `404`.
 
 ## Action and event routes
 
@@ -84,6 +88,8 @@ Suggested order:
 
 ### Create student item
 
+The item create body does not include `created_by`. The API sets that automatically from the authenticated user.
+
 ```json
 {
   "item_network": "yellow_dot",
@@ -101,6 +107,8 @@ Suggested order:
 ```
 
 ### Create tutor item
+
+The item create body does not include `created_by`. The API sets that automatically from the authenticated user.
 
 ```json
 {

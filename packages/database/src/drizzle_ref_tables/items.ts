@@ -27,6 +27,7 @@ export const items = pgTable(
       .default(sql`'{}'::jsonb`),
     item_latitude: doublePrecision('item_latitude'),
     item_longitude: doublePrecision('item_longitude'),
+    created_by: text('created_by').notNull(),
 
     created_at: timestamp('created_at')
       .$defaultFn(() => /* @__PURE__ */ new Date())
