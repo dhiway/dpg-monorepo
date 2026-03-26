@@ -17,7 +17,7 @@ const ReadSchemaParamsSchema = z.object({
   itemType: z.string().min(1),
 });
 
-export const get_network_schema: FastifyPluginAsyncZod = async function (fastify) {
+export const fetch_schema: FastifyPluginAsyncZod = async function (fastify) {
   fastify.route({
     url: '/schema/:network/:domain/:itemType',
     method: 'GET',

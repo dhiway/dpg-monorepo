@@ -26,7 +26,7 @@ type FetchItemsLocalRequest = FastifyRequest<{
   Body: z.infer<typeof FetchItemsBodySchema>;
 }>;
 
-export const network_item_fetch: FastifyPluginAsyncZod = async function (fastify) {
+export const fetch_item: FastifyPluginAsyncZod = async function (fastify) {
   fastify.route({
     url: '/item/fetch',
     method: 'GET',
@@ -44,7 +44,7 @@ export const network_item_fetch: FastifyPluginAsyncZod = async function (fastify
         }),
       },
     },
-    handler: network_fetch_items_handler as any,
+    handler: fetch_network_item_handler as any,
   });
 
   fastify.route({
@@ -83,7 +83,7 @@ export const network_item_fetch: FastifyPluginAsyncZod = async function (fastify
   });
 };
 
-const network_fetch_items_handler = async (
+const fetch_network_item_handler = async (
   request: FetchItemsAggregateRequest,
   reply: FastifyReply
 ) => {

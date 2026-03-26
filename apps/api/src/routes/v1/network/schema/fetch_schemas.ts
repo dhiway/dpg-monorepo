@@ -9,7 +9,7 @@ const ReadSchemasQuerySchema = z.object({
   schema_url: z.string().optional(),
 });
 
-export const get_network_schemas: FastifyPluginAsyncZod = async function (fastify) {
+export const fetch_schemas: FastifyPluginAsyncZod = async function (fastify) {
   fastify.route({
     url: '/schemas',
     method: 'GET',
