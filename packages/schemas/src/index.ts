@@ -4,6 +4,7 @@ export { FetchSchema, fetchSchema } from './schema_registry';
 export * from './api/action_schemas';
 export {
   getActionInteraction,
+  getDomainMinimumCacheTtlSeconds,
   getDomainItemTypes,
   getDomainItemSchema,
   getInstanceCustomItemSchemaUrl,

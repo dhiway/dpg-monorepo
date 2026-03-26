@@ -6,6 +6,7 @@ const JsonSchemaDocumentSchema = z.record(z.string(), z.unknown());
 const NetworkDomainSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
+  minimum_cache_ttl_seconds: z.number().int().positive().optional().default(300),
   item_schemas: z
     .record(z.string(), JsonSchemaDocumentSchema)
     .optional()
@@ -151,6 +152,23 @@ export function getDomainItemTypes(
   }
 
   return Object.keys(domainConfig.item_schemas);
+}
+
+export function getDomainMinimumCacheTtlSeconds(
+  networkConfig: NetworkConfigDocument,
+  domain: string
+): number {
+  const domainConfig = networkConfig.domains.find(
+    (entry) => entry.name === domain
+  );
+
+  if (!domainConfig) {
+    throw new Error(
+      `Domain "${domain}" is not defined for network "${networkConfig.name}".`
+    );
+  }
+
+  return domainConfig.minimum_cache_ttl_seconds;
 }
 
 export function getInstanceCustomItemSchemaUrl(

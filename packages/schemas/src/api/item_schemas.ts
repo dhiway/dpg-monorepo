@@ -13,11 +13,11 @@ export const CreateItemBodySchema = ItemInsertSchema.omit({
   updated_at: true,
 });
 
-export const FetchItemsQuerySchema = z.object({
+const FetchItemsSchemaBase = z.object({
   item_id: z.uuid().optional(),
   item_network: z.string().min(1),
   item_domain: z.string().min(1),
-  item_type: z.string().min(1),
+  item_type: z.string().min(1).optional(),
 
   item_instance_url: z.url().nullable().optional(),
 
@@ -30,7 +30,11 @@ export const FetchItemsQuerySchema = z.object({
 
   limit: z.coerce.number().int().min(1).max(100).default(20),
   offset: z.coerce.number().int().min(0).default(0),
-}).refine(
+  cache_ttl_seconds: z.coerce.number().int().positive().optional(),
+});
+
+function withGeoSearchRefinement<T extends z.ZodTypeAny>(schema: T) {
+  return schema.refine(
   (data) => {
     const hasCoordinates =
       data.item_latitude !== undefined || data.item_longitude !== undefined;
@@ -50,7 +54,24 @@ export const FetchItemsQuerySchema = z.object({
       'item_latitude, item_longitude, and radius_meters must be provided together for geosearch',
     path: ['radius_meters'],
   }
+  );
+}
+
+export const FetchItemsQuerySchema = withGeoSearchRefinement(FetchItemsSchemaBase);
+
+export const FetchItemsCountBodySchema = withGeoSearchRefinement(
+  FetchItemsSchemaBase.omit({
+    limit: true,
+    offset: true,
+    cache_ttl_seconds: true,
+  })
 );
+
+export const FetchItemsBodySchema = withGeoSearchRefinement(FetchItemsSchemaBase.extend({
+  limit: z.number().int().min(1).max(100),
+  offset: z.number().int().min(0),
+  cache_ttl_seconds: z.number().int().positive().optional(),
+}));
 
 export const UpdateItemParamsSchema = z.object({
   itemNetwork: z.string().min(1),

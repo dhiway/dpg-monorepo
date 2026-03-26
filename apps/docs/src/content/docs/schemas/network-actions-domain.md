@@ -20,11 +20,14 @@ A network config should define:
 
 Each domain entry should expose an `item_schemas` map keyed by schema identifier. That identifier is what DPG expects in `item_type`.
 
+It can also define `minimum_cache_ttl_seconds` for inter-instance item fetch caching.
+
 Example shape:
 
 ```json
 {
   "name": "student",
+  "minimum_cache_ttl_seconds": 300,
   "item_schemas": {
     "profile_1.0": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -120,6 +123,7 @@ This is the model used in the `yellow_dot` example network config.
 - `POST /api/v1/item/create` checks that `item_type` exists in `domains[].item_schemas` for the given `network/domain`.
 - `POST /api/v1/item/create` validates `item_state` against the inline domain schema by default and persists `item_instance_url` and `item_schema_url` from backend runtime state rather than trusting the request body.
 - `POST /api/v1/item/create` uses `instances[].custom_item_schema_urls[item_type]` when the current instance has a custom schema registered for that item type.
+- `GET /api/v1/item/fetch` now aggregates across all configured instances for the requested `network/domain`, caches instance counts and merged page responses in Redis, and enforces `domains[].minimum_cache_ttl_seconds` as the minimum cache TTL.
 - `POST /api/v1/action/perform` validates `requirements_snapshot` against `actions[action_name].interactions[].requirement_schema`.
 - `POST /api/v1/action/perform` and `POST /api/v1/event/store` validate event payloads against `actions[action_name].interactions[].event_schema`.
 - `GET /api/v1/network/schemas` returns the schema documents cached on disk for UI and cross-instance consumers.
