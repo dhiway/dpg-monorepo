@@ -1,12 +1,12 @@
 ---
 title: Flow Structure
-description: How the current DPG backend flow is structured.
+description: Internal runtime flow for the current DPG implementation.
 head: []
 ---
 
 # Flow Structure
 
-The current backend flow is organized in layers.
+This page is the implementation-oriented companion to the higher-level [Architecture](/concepts/architecture) guide.
 
 ## 1. Environment and runtime config
 
@@ -36,8 +36,9 @@ The network config defines:
 - available domains
 - registered instances
 - action interaction rules
-- default item schemas for domains
+- item schemas for domains
 - requirement and event schemas for actions
+- minimum cache TTL per domain
 
 The API can load this config from a local JSON file in development or remote schema URLs in production.
 
@@ -47,6 +48,11 @@ The API app uses Fastify and mounts:
 
 - `/api/auth/*` for Better Auth handlers
 - `/api/v1/*` for application routes
+
+The most important fetch split is:
+
+- `/api/v1/item/fetch`: local-only fetch
+- `/api/v1/network/item/fetch`: inter-instance fetch
 
 ## 5. Data layer
 

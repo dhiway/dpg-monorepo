@@ -1,14 +1,36 @@
 ---
 title: Environment
-description: Environment variables currently expected by the monorepo.
+description: Complete environment reference for local development and production deployment.
 head: []
 ---
 
 # Environment
 
-The root `.env.example` is the source template for local and deployment configuration.
+The root `.env.example` is the source template for local and production configuration.
 
-## Core instance variables
+## Minimal Local Example
+
+```bash
+INSTANCE_NAME="dpg-local"
+INSTANCE_ENV="development"
+API_DOMAIN="http://localhost"
+API_PORT="2742"
+AUTH_SECRET="replace-this"
+ALLOWED_ORIGINS="http://localhost:3000"
+SERVED_DOMAINS="yellow_dot/student"
+NETWORK_CONFIG_SOURCE="local"
+NETWORK_CONFIG_LOCAL_FILE="examples/schemas/yellow_dot/network.json"
+POSTGRES_USER="postgres"
+POSTGRES_PASSWORD="replace-this"
+POSTGRES_DB="postgresdb"
+POSTGRES_HOST="127.0.0.1"
+DATABASE_PORT="5432"
+REDIS_HOST="127.0.0.1"
+REDIS_PASSWORD="replace-this"
+REDIS_PORT="5555"
+```
+
+## Core Instance Variables
 
 - `INSTANCE_NAME`
 - `INSTANCE_ENV`
@@ -22,7 +44,7 @@ The root `.env.example` is the source template for local and deployment configur
 - `NETWORK_CONFIG_URLS`
 - `SCHEMA_REGISTRY_URL`
 
-## Database variables
+## Database Variables
 
 - `POSTGRES_USER`
 - `POSTGRES_PASSWORD`
@@ -30,78 +52,92 @@ The root `.env.example` is the source template for local and deployment configur
 - `POSTGRES_HOST`
 - `POSTGRES_PORT`
 - `DATABASE_PORT`
-- `POSTGRES_URL` as an optional full override
+- `POSTGRES_URL`
 - `REDIS_HOST`
 - `REDIS_PASSWORD`
 - `REDIS_PORT`
-- `REDIS_URL` as an optional full override
+- `REDIS_URL`
 
-## Notification variables
+If `POSTGRES_URL` is present, the individual PostgreSQL fields are fallbacks.
+
+If `REDIS_URL` is present, the individual Redis fields are fallbacks.
+
+## Notification Variables
 
 - `NOTIFICATION_SERVICE_ENDPOINT`
 - `NOTIFICATION_SERVICE_KEY_ID`
 - `NOTIFICATION_SERVICE_SECRET`
 - `SMS_TEMPLATE_ID`
 
-## Schema registry
+## `SERVED_DOMAINS`
 
-- `SCHEMA_REGISTRY_URL`
+`SERVED_DOMAINS` tells the backend which `network/domain` pairs it serves.
 
-`SCHEMA_REGISTRY_URL` can now be used in two forms:
-
-```bash
-SCHEMA_REGISTRY_URL="https://registry.example.com/schemas/"
-```
-
-With a single base URL, the API derives one network config URL per served network using `{base}/{network}/network.json`.
-
-```bash
-SCHEMA_REGISTRY_URL="yellow_dot=https://registry.example.com/schemas/yellow_dot/network.json,blue_dot=https://registry.other.example.com/schemas/blue_dot/network.json"
-```
-
-With explicit mappings, each entry is `network=url`. The URL may be a full `network.json` URL or a registry base URL that ends in that network’s schema folder.
-
-## Network runtime binding
-
-`SERVED_DOMAINS` declares which network/domain pairs a backend serves.
-
-Format:
+Example:
 
 ```bash
 SERVED_DOMAINS="yellow_dot/student,blue_dot/seeker"
 ```
 
-Each entry is `network/domain`.
+This affects:
 
-This value is parsed by the config layer and exposed to the API runtime so the backend can declare:
+- which create and fetch requests are allowed
+- which schema routes are served
+- which instance origins can be allowed by network-driven CORS
 
-- which network it belongs to
-- which domain or domains it serves
-- which network-config instance origins should be allowed to call it when network-driven CORS is applied
+## Network Config Source
 
-## Network config source
-
-The API supports two ways to load network config:
+### Local example file
 
 ```bash
 NETWORK_CONFIG_SOURCE="local"
 NETWORK_CONFIG_LOCAL_FILE="examples/schemas/yellow_dot/network.json"
 ```
 
-Use this in development when you want to test against a checked-in example file.
+Best for:
+
+- development
+- demos
+- schema iteration
+
+### Remote config URLs
 
 ```bash
 NETWORK_CONFIG_SOURCE="remote"
 NETWORK_CONFIG_URLS="yellow_dot=https://registry.example.com/yellow-dot/network.json"
 ```
 
-Use this in production when the network config should be fetched from one or more remote schema URLs.
+Best for:
+
+- production
+- multi-network instances
+- remote registries
+
+## `SCHEMA_REGISTRY_URL`
+
+`SCHEMA_REGISTRY_URL` can be used in two forms.
+
+### Single registry base URL
+
+```bash
+SCHEMA_REGISTRY_URL="https://registry.example.com/schemas/"
+```
+
+This resolves served networks as:
+
+- `{base}/{network}/network.json`
+
+### Explicit network mappings
+
+```bash
+SCHEMA_REGISTRY_URL="yellow_dot=https://registry.example.com/schemas/yellow_dot/network.json,blue_dot=https://registry.other.example.com/schemas/blue_dot/network.json"
+```
 
 If `NETWORK_CONFIG_URLS` is not set, the API falls back to `SCHEMA_REGISTRY_URL`.
 
-When loaded, the API merges:
+## Related Guides
 
-- `ALLOWED_ORIGINS` from env
-- instance origins allowed by the network config for the backend’s `SERVED_DOMAINS`
-
-This merged list is used for the Fastify CORS check.
+- [Getting Started](/getting-started)
+- [Local And Docker](/hosting/local-docker)
+- [Single Instance](/hosting/single-domain)
+- [Multi-Instance Hosting](/hosting/multi-domain-instance)

@@ -1,29 +1,27 @@
 ---
-title: API App
-description: Fastify API app responsibilities, routes, and runtime behavior.
+title: API Overview
+description: How the DPG API is organized and what each major route group does.
 head: []
 ---
 
-# API App
+# API Overview
 
-The API app lives in `apps/api` and runs a Fastify server with Zod-based validation and serialization.
+The DPG API lives in `apps/api` and is a Fastify application with:
 
-## Runtime stack
-
-- Fastify
-- `fastify-type-provider-zod`
-- Fastify CORS
-- Fastify Swagger
+- Zod request validation
+- OpenAPI generation
 - Scalar API reference
-- Drizzle ORM
+- PostgreSQL-backed storage
+- Redis-backed caching
+- network-aware schema and instance behavior
 
-## Mounted routes
+## Mounted Routes
 
-- `GET /` returns a simple welcome response.
-- Auth routes are registered from `./routes/auth`.
-- Versioned business routes are registered under `/api/v1`.
+- `GET /`
+- `/api/auth/*`
+- `/api/v1/*`
 
-## Item routes
+## Item Routes
 
 Current item endpoints under `/api/v1/item`:
 
@@ -31,178 +29,83 @@ Current item endpoints under `/api/v1/item`:
 - `GET /fetch`
 - `PATCH /:itemNetwork/:itemDomain/:itemType/:itemId`
 
-### Create item
+### `POST /item/create`
 
-`POST /api/v1/item/create` accepts the insert schema minus generated fields such as `item_id`, `created_by`, `item_instance_url`, `item_schema_url`, `created_at`, and `updated_at`. Before insert, the handler ensures the item partition exists.
+Creates an item on the current instance.
 
-The item owner is always the authenticated user. The handler writes `items.created_by = request.user.id`, derives `item_instance_url` from the current backend URL, and derives `item_schema_url` from either the configured custom schema URL or the schema route exposed by the same backend.
+The client sends:
 
-### Fetch items
-
-`GET /api/v1/item/fetch` supports filters for:
-
-- `item_id`
-- `item_type`
+- `item_network`
 - `item_domain`
+- `item_type`
+- `item_state`
+
+The backend generates:
+
 - `item_instance_url`
 - `item_schema_url`
-- `item_state`
-- `limit`
-- `offset`
+- `created_by`
 
-`item_state` filtering uses JSONB containment in PostgreSQL.
+### `GET /item/fetch`
 
-### Update item
+Instance-local fetch only.
 
-`PATCH /api/v1/item/:itemNetwork/:itemDomain/:itemType/:itemId` accepts a partial item payload, updates `updated_at`, and only updates rows that belong to the authenticated user.
+Use it for:
 
-If the item does not exist, or if it belongs to a different user, the handler returns `404`.
+- current instance dashboards
+- “my items” views
+- local service reads
 
-## Action and event routes
+This route is cached in Redis for a very short TTL.
 
-Current action and event endpoints under `/api/v1`:
+### `PATCH /item/:...`
+
+Updates an owned item.
+
+## Action And Event Routes
 
 - `POST /action/perform`
 - `POST /event/store`
+
+These routes validate payloads against the network action contract.
+
+## Network Routes
+
+- `GET /network/item/fetch`
+- `POST /network/item/count_local`
+- `POST /network/item/fetch_local`
 - `GET /network/schemas`
 - `GET /network/schema/:network/:domain/:itemType`
 - `POST /network/refetch_schemas`
 
-`created_by` for action and event writes must be a real existing Better Auth `user.id`. Sending a placeholder like `USER_ID` will fail because both `item_actions.created_by` and `action_events.created_by` are foreign keys to the `user` table.
+### `GET /network/item/fetch`
 
-Use this query first when testing manually:
+This is the inter-instance read path.
 
-```sql
-select id, email, name
-from "user"
-limit 10;
-```
+It:
 
-Then copy one real `id` value into the `created_by` field in the request bodies below.
+- discovers instances for the requested domain
+- runs the count phase
+- excludes zero-result instances
+- builds a page plan
+- fetches only required slices
+- caches counts and merged pages in Redis
 
-## Test scenario
+### `POST /network/item/count_local`
 
-Suggested order:
+Internal server-to-server count endpoint used by the aggregator.
 
-1. `POST /api/v1/item/create` for the student item
-2. `POST /api/v1/item/create` for the tutor item
-3. `POST /api/v1/action/perform`
-4. optionally `POST /api/v1/event/store`
+### `POST /network/item/fetch_local`
 
-### Create student item
+Internal server-to-server fetch endpoint used by the aggregator.
 
-The item create body does not include `created_by`. The API sets that automatically from the authenticated user.
+### Schema Routes
 
-```json
-{
-  "item_network": "yellow_dot",
-  "item_domain": "student",
-  "item_type": "profile_1.0",
-  "item_state": {
-    "name": "Arya",
-    "grade": "10",
-    "city": "Bengaluru",
-    "preferred_subject": "math"
-  }
-}
-```
+- `GET /network/schemas` returns cached schema documents
+- `GET /network/schema/:network/:domain/:itemType` returns one concrete schema
+- `POST /network/refetch_schemas` refreshes schema cache
 
-### Create tutor item
+## API Documentation
 
-The item create body does not include `created_by`. The API sets that automatically from the authenticated user.
-
-```json
-{
-  "item_network": "yellow_dot",
-  "item_domain": "tutor",
-  "item_type": "profile_1.0",
-  "item_state": {
-    "name": "Ravi",
-    "subjects": ["math", "science"],
-    "experience_years": 6,
-    "teaching_mode": "hybrid"
-  }
-}
-```
-
-### Perform action
-
-Replace `source_item.item_id` and `target_item.item_id` with real ids returned from item creation. Replace `created_by` with a real Better Auth `user.id`.
-
-```json
-{
-  "action_name": "connect",
-  "source_item": {
-    "item_network": "yellow_dot",
-    "item_domain": "student",
-    "item_type": "profile_1.0",
-    "item_id": "67b6558e-46f2-45c5-953a-f417e8162332"
-  },
-  "target_item": {
-    "item_network": "yellow_dot",
-    "item_domain": "tutor",
-    "item_type": "profile_1.0",
-    "item_id": "46cc4c8e-f875-40c3-b4f4-e7d211afdc59"
-  },
-  "requirements_snapshot": {
-    "subject": "math",
-    "goal": "board_exam_preparation"
-  },
-  "created_by": "REAL_USER_ID",
-  "response_event_type": "action_response",
-  "response_event_payload": {
-    "status": "pending",
-    "message": "Connect request created"
-  },
-  "response_event_metadata": {
-    "request_id": "req_local_001",
-    "source": "manual_test"
-  }
-}
-```
-
-### Store event directly
-
-Replace `action_id` and item ids with real values. Replace `created_by` with a real Better Auth `user.id`.
-
-```json
-{
-  "event_type": "action_response",
-  "action_name": "connect",
-  "action_id": "ACTION_ID",
-  "source_item": {
-    "item_network": "yellow_dot",
-    "item_domain": "student",
-    "item_type": "profile_1.0",
-    "item_id": "SOURCE_ITEM_ID"
-  },
-  "target_item": {
-    "item_network": "yellow_dot",
-    "item_domain": "tutor",
-    "item_type": "profile_1.0",
-    "item_id": "TARGET_ITEM_ID"
-  },
-  "event_payload": {
-    "status": "accepted",
-    "message": "Tutor accepted the connect request"
-  },
-  "event_metadata": {
-    "request_id": "req_local_002",
-    "source": "manual_test"
-  },
-  "created_by": "REAL_USER_ID"
-}
-```
-
-## API documentation
-
-- OpenAPI metadata is registered in `src/server.ts`.
-- Scalar UI is mounted at `/api/reference`.
-
-## Network schema cache routes
-
-`GET /api/v1/network/schemas` returns the disk-cached network configs, inline domain item schemas, instance custom schemas, and any remote item schemas fetched from stored items.
-
-`GET /api/v1/network/schema/:network/:domain/:itemType` returns the schema document that this backend serves for that item type.
-
-`POST /api/v1/network/refetch_schemas` reloads configured network schemas and refreshes the disk cache. This is the route to call after changing a remote registry or after bootstrap if the instance needs the latest custom item schemas for UI rendering.
+- OpenAPI metadata is registered in `src/server.ts`
+- Scalar UI is mounted at `/api/reference`

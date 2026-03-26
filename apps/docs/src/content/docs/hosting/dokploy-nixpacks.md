@@ -1,12 +1,17 @@
 ---
 title: Dokploy Nixpacks
-description: Nixpacks env configuration for deploying the API on Dokploy.
+description: Production deployment guide for DPG on Dokploy using Nixpacks.
 head: []
 ---
 
 # Dokploy With Nixpacks
 
-When deploying the API app with Dokploy and Nixpacks, use these env variables:
+When deploying the API with Dokploy and Nixpacks, there are two parts:
+
+- build/runtime commands
+- normal DPG environment variables
+
+## Nixpacks Settings
 
 ```bash
 NIXPACKS_TURBO_APP_NAME="Dpg Api"
@@ -22,7 +27,7 @@ NIXPACKS_INSTALL_CMD="pnpm install --no-frozen-lockfile"
 - `NIXPACKS_START_CMD` runs the built API
 - `NIXPACKS_INSTALL_CMD` avoids install failures caused by lockfile strictness on some hosted builders
 
-## Suggested Dokploy env set
+## Suggested Dokploy Env
 
 Add the normal runtime env alongside the Nixpacks env:
 
@@ -39,7 +44,7 @@ REDIS_URL="redis://:password@host:6379"
 AUTH_SECRET="replace-this"
 ```
 
-## Notes
+## Production Checklist
 
 - `API_DOMAIN` should be the public domain, not `localhost`
 - use `POSTGRES_URL` and `REDIS_URL` for hosted databases when possible
