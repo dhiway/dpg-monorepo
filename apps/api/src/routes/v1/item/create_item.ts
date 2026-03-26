@@ -47,7 +47,7 @@ export const create_item_handler = async (
   request: CreateItemRequest,
   reply: FastifyReply
 ) => {
-  const userId = '6d7eb3be-531f-4165-8c2b-f340629aae59';
+  const userId = request.user?.id;
   const body = request.body;
   const itemInstanceUrl = getCurrentApiBaseUrl();
   let itemSchemaUrl = `${itemInstanceUrl}/api/v1/network/schema/${encodeURIComponent(body.item_network)}/${encodeURIComponent(body.item_domain)}/${encodeURIComponent(body.item_type)}`;
