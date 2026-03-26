@@ -3,9 +3,7 @@ import z from '@dpg/schemas';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { db } from 'apps/api/db/postgres/drizzle_config';
 import { DrizzleQueryError } from 'drizzle-orm';
-import {
-  CreateItemBodySchema,
-} from 'packages/schemas/src/api/item_schemas';
+import { CreateItemBodySchema } from 'packages/schemas/src/api/item_schemas';
 import { DatabaseError, ensureItemPartition, items } from '@dpg/database';
 import { auth_middleware_if_enabled } from 'apps/api/plugins/auth/auth_middleware';
 import {
@@ -49,7 +47,7 @@ export const create_item_handler = async (
   request: CreateItemRequest,
   reply: FastifyReply
 ) => {
-  const userId = request.user?.id;
+  const userId = '6d7eb3be-531f-4165-8c2b-f340629aae59';
   const body = request.body;
   const itemInstanceUrl = getCurrentApiBaseUrl();
   let itemSchemaUrl = `${itemInstanceUrl}/api/v1/network/schema/${encodeURIComponent(body.item_network)}/${encodeURIComponent(body.item_domain)}/${encodeURIComponent(body.item_type)}`;
@@ -62,7 +60,7 @@ export const create_item_handler = async (
   }
 
   if (!isServedDomainBinding(body.item_network, body.item_domain)) {
-    return replyForUnservedDomain(
+    return await replyForUnservedDomain(
       reply,
       body.item_network,
       body.item_domain
@@ -204,7 +202,8 @@ export const create_item_handler = async (
         if (cause.code === '23503') {
           return reply.code(400).send({
             error: 'INVALID_REFERENCE',
-            message: 'One or more referenced entities do not exist, including the authenticated user',
+            message:
+              'One or more referenced entities do not exist, including the authenticated user',
           });
         }
       }

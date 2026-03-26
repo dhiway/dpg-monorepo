@@ -2,9 +2,9 @@ import { sql } from 'drizzle-orm';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DrizzleQueryError } from 'drizzle-orm/errors';
 import { DatabaseError } from 'pg';
+import { createHash } from 'node:crypto';
 
-// Keep identifiers short enough for Postgres partition table names.
-const PARTITION_SEGMENT_REGEX = /^[a-z][a-z0-9_]{0,20}$/;
+const MAX_PARTITION_KEY_LENGTH = 120;
 
 export async function ensureItemPartition(
   db: NodePgDatabase<any>,
@@ -12,18 +12,15 @@ export async function ensureItemPartition(
   _domain: string,
   type: string
 ) {
-  if (!PARTITION_SEGMENT_REGEX.test(type)) {
-    throw new Error(`Invalid item_type partition key: "${type}"`);
-  }
-
-  const partitionTableName = `${type}_item`;
+  assertValidPartitionKey(type, 'item_type');
+  const partitionTableName = buildPartitionTableName(type, 'item');
 
   try {
     await db.execute(
       sql.raw(`
         CREATE TABLE IF NOT EXISTS "${partitionTableName}"
         PARTITION OF items
-        FOR VALUES IN ('${type}');
+        FOR VALUES IN ('${escapeSqlLiteral(type)}');
       `)
     );
     await assertPartitionAttached(db, 'items', partitionTableName);
@@ -36,18 +33,15 @@ export async function ensureActionPartition(
   db: NodePgDatabase<any>,
   actionName: string
 ) {
-  if (!PARTITION_SEGMENT_REGEX.test(actionName)) {
-    throw new Error(`Invalid action_name partition key: "${actionName}"`);
-  }
-
-  const partitionTableName = `${actionName}_action`;
+  assertValidPartitionKey(actionName, 'action_name');
+  const partitionTableName = buildPartitionTableName(actionName, 'action');
 
   try {
     await db.execute(
       sql.raw(`
         CREATE TABLE IF NOT EXISTS "${partitionTableName}"
         PARTITION OF item_actions
-        FOR VALUES IN ('${actionName}');
+        FOR VALUES IN ('${escapeSqlLiteral(actionName)}');
       `)
     );
     await assertPartitionAttached(db, 'item_actions', partitionTableName);
@@ -60,18 +54,15 @@ export async function ensureActionEventPartition(
   db: NodePgDatabase<any>,
   eventType: string
 ) {
-  if (!PARTITION_SEGMENT_REGEX.test(eventType)) {
-    throw new Error(`Invalid event_type partition key: "${eventType}"`);
-  }
-
-  const partitionTableName = `${eventType}_event`;
+  assertValidPartitionKey(eventType, 'event_type');
+  const partitionTableName = buildPartitionTableName(eventType, 'event');
 
   try {
     await db.execute(
       sql.raw(`
         CREATE TABLE IF NOT EXISTS "${partitionTableName}"
         PARTITION OF action_events
-        FOR VALUES IN ('${eventType}');
+        FOR VALUES IN ('${escapeSqlLiteral(eventType)}');
       `)
     );
     await assertPartitionAttached(db, 'action_events', partitionTableName);
@@ -96,8 +87,8 @@ async function assertPartitionAttached(
         JOIN pg_namespace parent_ns ON parent_ns.oid = parent.relnamespace
         WHERE child_ns.nspname = current_schema()
           AND parent_ns.nspname = current_schema()
-          AND child.relname = '${childTableName}'
-          AND parent.relname = '${parentTableName}'
+          AND child.relname = '${escapeSqlLiteral(childTableName)}'
+          AND parent.relname = '${escapeSqlLiteral(parentTableName)}'
       ) AS attached;
     `)
   )) as { rows?: Array<{ attached: boolean }> };
@@ -121,4 +112,28 @@ function handlePartitionError(err: unknown, label: string) {
   }
 
   throw err;
+}
+
+function assertValidPartitionKey(value: string, label: string) {
+  if (!value.trim()) {
+    throw new Error(`Invalid ${label} partition key: empty value`);
+  }
+
+  if (value.length > MAX_PARTITION_KEY_LENGTH) {
+    throw new Error(`Invalid ${label} partition key: exceeds ${MAX_PARTITION_KEY_LENGTH} characters`);
+  }
+}
+
+function buildPartitionTableName(value: string, suffix: 'item' | 'action' | 'event') {
+  const normalized = value.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  const base = normalized && /^[a-z]/.test(normalized) ? normalized : `p_${normalized || 'value'}`;
+  const hash = createHash('sha1').update(value).digest('hex').slice(0, 8);
+  const maxBaseLength = 63 - suffix.length - hash.length - 2;
+  const truncated = base.slice(0, Math.max(1, maxBaseLength));
+
+  return `${truncated}_${hash}_${suffix}`;
+}
+
+function escapeSqlLiteral(value: string) {
+  return value.replace(/'/g, "''");
 }

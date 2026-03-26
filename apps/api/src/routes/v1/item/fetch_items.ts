@@ -61,7 +61,7 @@ const fetch_items_handler = async (
   } = request.query;
 
   if (!isServedDomainBinding(item_network, item_domain)) {
-    return replyForUnservedDomain(reply, item_network, item_domain);
+    return await replyForUnservedDomain(reply, item_network, item_domain);
   }
 
   const conditions = [];
