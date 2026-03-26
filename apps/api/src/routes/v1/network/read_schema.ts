@@ -29,7 +29,11 @@ export const get_network_schema: FastifyPluginAsyncZod = async function (fastify
       const params = request.params as z.infer<typeof ReadSchemaParamsSchema>;
 
       if (!isServedDomainBinding(params.network, params.domain)) {
-        return replyForUnservedDomain(reply, params.network, params.domain);
+        return await replyForUnservedDomain(
+          reply,
+          params.network,
+          params.domain
+        );
       }
 
       const networkConfig = await getNetworkConfigByName(params.network);

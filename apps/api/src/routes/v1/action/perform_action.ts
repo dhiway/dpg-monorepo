@@ -59,7 +59,7 @@ export const perform_action_handler = async (
       body.target_item.item_domain
     )
   ) {
-    return replyForUnservedDomain(
+    return await replyForUnservedDomain(
       reply,
       body.target_item.item_network,
       body.target_item.item_domain

@@ -49,7 +49,7 @@ export const store_event_handler = async (
       body.source_item.item_domain
     )
   ) {
-    return replyForUnservedDomain(
+    return await replyForUnservedDomain(
       reply,
       body.source_item.item_network,
       body.source_item.item_domain
