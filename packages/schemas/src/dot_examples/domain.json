@@ -3,8 +3,8 @@
   "name": "student_profile",
   "version": "1.0.0",
   "details": {
-    "dot": "https://dot.example.com",
-    "domain": "https://school.example.com"
+    "dot": "yellow-dot",
+    "domain": "student"
   },
   "schema_type": "profile",
   "schema": {

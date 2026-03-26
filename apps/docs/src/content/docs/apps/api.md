@@ -64,6 +64,8 @@ Current action and event endpoints under `/api/v1`:
 
 - `POST /action/perform`
 - `POST /event/store`
+- `GET /network/schemas`
+- `POST /network/refetch_schemas`
 
 `created_by` for action and event writes must be a real existing Better Auth `user.id`. Sending a placeholder like `USER_ID` will fail because both `item_actions.created_by` and `action_events.created_by` are foreign keys to the `user` table.
 
@@ -94,9 +96,9 @@ The item create body does not include `created_by`. The API sets that automatica
 {
   "item_network": "yellow_dot",
   "item_domain": "student",
-  "item_type": "profile",
+  "item_type": "profile_1.0",
   "item_instance_url": "http://localhost:2783/items/student/arya",
-  "item_schema_url": "https://schemas.example.com/student_profile_v1.json",
+  "item_schema_url": "https://schemas.example.com/student_profile_1.0.json",
   "item_state": {
     "name": "Arya",
     "grade": "10",
@@ -114,9 +116,9 @@ The item create body does not include `created_by`. The API sets that automatica
 {
   "item_network": "yellow_dot",
   "item_domain": "tutor",
-  "item_type": "profile",
+  "item_type": "profile_1.0",
   "item_instance_url": "http://localhost:2783/items/tutor/ravi",
-  "item_schema_url": "https://schemas.example.com/tutor_profile_v1.json",
+  "item_schema_url": "https://schemas.example.com/tutor_profile_1.0.json",
   "item_state": {
     "name": "Ravi",
     "subjects": ["math", "science"],
@@ -136,13 +138,13 @@ Replace `source_item.item_id` and `target_item.item_id` with real ids returned f
   "source_item": {
     "item_network": "yellow_dot",
     "item_domain": "student",
-    "item_type": "profile",
+    "item_type": "profile_1.0",
     "item_id": "67b6558e-46f2-45c5-953a-f417e8162332"
   },
   "target_item": {
     "item_network": "yellow_dot",
     "item_domain": "tutor",
-    "item_type": "profile",
+    "item_type": "profile_1.0",
     "item_id": "46cc4c8e-f875-40c3-b4f4-e7d211afdc59"
   },
   "requirements_snapshot": {
@@ -174,13 +176,13 @@ Replace `action_id` and item ids with real values. Replace `created_by` with a r
   "source_item": {
     "item_network": "yellow_dot",
     "item_domain": "student",
-    "item_type": "profile",
+    "item_type": "profile_1.0",
     "item_id": "SOURCE_ITEM_ID"
   },
   "target_item": {
     "item_network": "yellow_dot",
     "item_domain": "tutor",
-    "item_type": "profile",
+    "item_type": "profile_1.0",
     "item_id": "TARGET_ITEM_ID"
   },
   "event_payload": {
@@ -199,3 +201,9 @@ Replace `action_id` and item ids with real values. Replace `created_by` with a r
 
 - OpenAPI metadata is registered in `src/server.ts`.
 - Scalar UI is mounted at `/api/reference`.
+
+## Network schema cache routes
+
+`GET /api/v1/network/schemas` returns the disk-cached network configs, inline domain item schemas, instance custom schemas, and any remote item schemas fetched from stored items.
+
+`POST /api/v1/network/refetch_schemas` reloads configured network schemas and refreshes the disk cache. This is the route to call after changing a remote registry or after bootstrap if the instance needs the latest custom item schemas for UI rendering.
