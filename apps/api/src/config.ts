@@ -34,6 +34,16 @@ export const authConfig = {
   create_test_otp: auth.CREATE_TEST_OTP,
 };
 
+export function getCurrentApiBaseUrl(): string {
+  const parsedUrl = new URL(api.API_DOMAIN);
+
+  if (instance.INSTANCE_ENV === 'development' && !parsedUrl.port) {
+    parsedUrl.port = String(api.API_PORT);
+  }
+
+  return parsedUrl.toString().replace(/\/$/, '');
+}
+
 const postgresPort = databases.POSTGRES_PORT ?? databases.DATABASE_PORT;
 const pg_url =
   databases.POSTGRES_URL ??

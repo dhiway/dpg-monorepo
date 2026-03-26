@@ -7,8 +7,6 @@
   "item_network": "blue_dot",
   "item_domain": "seeker",
   "item_type": "profile_1.0",
-  "item_instance_url": "https://seeker.bluedot.example.com",
-  "item_schema_url": null,
   "item_state": {
     "name": "Aisha Khan",
     "skills": ["typescript", "react", "sql"],
@@ -26,8 +24,6 @@
   "item_network": "blue_dot",
   "item_domain": "provider",
   "item_type": "job_posting_1.0",
-  "item_instance_url": "https://provider.bluedot.example.com",
-  "item_schema_url": null,
   "item_state": {
     "company_name": "Acme Labs",
     "role": "Backend Engineer",
