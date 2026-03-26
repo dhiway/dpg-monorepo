@@ -1,0 +1,182 @@
+import z from '@dpg/schemas';
+import { FastifyReply, FastifyRequest } from 'fastify';
+import { type FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import {
+  FetchItemsBodySchema,
+  FetchItemsCountBodySchema,
+  FetchItemsQuerySchema,
+  ItemSelectSchema,
+} from 'packages/schemas/src/api/item_schemas';
+import {
+  isServedDomainBinding,
+  replyForUnservedDomain,
+} from 'apps/api/src/utils/served_domain_guard';
+import {
+  countLocalItems,
+  fetchLocalItems,
+} from 'apps/api/src/utils/item_fetch_runtime';
+import { getNetworkConfigByName } from 'apps/api/src/network_configs';
+import { fetchItemsAcrossInstances } from 'apps/api/src/utils/inter_instance_fetch';
+
+type FetchItemsAggregateRequest = FastifyRequest<{
+  Querystring: z.infer<typeof FetchItemsQuerySchema>;
+}>;
+
+type FetchItemsLocalRequest = FastifyRequest<{
+  Body: z.infer<typeof FetchItemsBodySchema>;
+}>;
+
+export const network_item_fetch: FastifyPluginAsyncZod = async function (fastify) {
+  fastify.route({
+    url: '/item/fetch',
+    method: 'GET',
+    schema: {
+      tags: ['network'],
+      query: FetchItemsQuerySchema,
+      response: {
+        200: z.object({
+          meta: z.object({
+            total: z.number(),
+            limit: z.number(),
+            offset: z.number(),
+          }),
+          items: ItemSelectSchema.array(),
+        }),
+      },
+    },
+    handler: network_fetch_items_handler as any,
+  });
+
+  fastify.route({
+    url: '/item/count_local',
+    method: 'POST',
+    schema: {
+      tags: ['network'],
+      body: FetchItemsCountBodySchema,
+      response: {
+        200: z.object({
+          count: z.number(),
+        }),
+      },
+    },
+    handler: count_local_items_handler as any,
+  });
+
+  fastify.route({
+    url: '/item/fetch_local',
+    method: 'POST',
+    schema: {
+      tags: ['network'],
+      body: FetchItemsBodySchema,
+      response: {
+        200: z.object({
+          meta: z.object({
+            total: z.number(),
+            limit: z.number(),
+            offset: z.number(),
+          }),
+          items: ItemSelectSchema.array(),
+        }),
+      },
+    },
+    handler: fetch_local_items_handler as any,
+  });
+};
+
+const network_fetch_items_handler = async (
+  request: FetchItemsAggregateRequest,
+  reply: FastifyReply
+) => {
+  const {
+    item_id,
+    item_network,
+    item_type,
+    item_domain,
+    item_instance_url,
+    item_schema_url,
+    item_state,
+    item_latitude,
+    item_longitude,
+    radius_meters,
+    limit,
+    offset,
+    cache_ttl_seconds,
+  } = request.query;
+
+  try {
+    const networkConfig = await getNetworkConfigByName(item_network);
+    const domainExists = networkConfig.domains.some(
+      (domain) => domain.name === item_domain
+    );
+
+    if (!domainExists) {
+      return await replyForUnservedDomain(reply, item_network, item_domain);
+    }
+
+    const result = await fetchItemsAcrossInstances({
+      networkConfig,
+      filters: {
+        item_id,
+        item_network,
+        item_type,
+        item_domain,
+        item_instance_url,
+        item_schema_url,
+        item_state,
+        item_latitude,
+        item_longitude,
+        radius_meters,
+        limit,
+        offset,
+      },
+      requestedCacheTtlSeconds: cache_ttl_seconds,
+    });
+
+    return reply.code(200).send(result);
+  } catch (err) {
+    request.log.error(
+      { err, query: request.query },
+      'Failed to fetch items across network instances'
+    );
+
+    return reply.code(500).send({
+      error: 'INTERNAL_SERVER_ERROR',
+      message: 'Failed to fetch items across network instances',
+    });
+  }
+};
+
+const count_local_items_handler = async (
+  request: FetchItemsLocalRequest,
+  reply: FastifyReply
+) => {
+  const body = request.body;
+
+  if (!isServedDomainBinding(body.item_network, body.item_domain)) {
+    return await replyForUnservedDomain(
+      reply,
+      body.item_network,
+      body.item_domain
+    );
+  }
+
+  const count = await countLocalItems(body);
+  return reply.code(200).send({ count });
+};
+
+const fetch_local_items_handler = async (
+  request: FetchItemsLocalRequest,
+  reply: FastifyReply
+) => {
+  const body = request.body;
+
+  if (!isServedDomainBinding(body.item_network, body.item_domain)) {
+    return await replyForUnservedDomain(
+      reply,
+      body.item_network,
+      body.item_domain
+    );
+  }
+
+  return reply.code(200).send(await fetchLocalItems(body));
+};

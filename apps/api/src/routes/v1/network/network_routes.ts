@@ -2,10 +2,12 @@ import { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { get_network_schemas } from './read_schemas';
 import { refetch_network_schemas } from './refetch_schemas';
 import { get_network_schema } from './read_schema';
+import { network_item_fetch } from './network_item_fetch';
 
 const network_routes: FastifyPluginAsyncZod = async (fastify) => {
   fastify.register(get_network_schemas);
   fastify.register(get_network_schema);
+  fastify.register(network_item_fetch);
   fastify.register(refetch_network_schemas);
 };
 

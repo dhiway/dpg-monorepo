@@ -9,6 +9,7 @@ export type JsonSchemaDocument = Record<string, unknown>;
 export type NetworkDomainConfig = {
   name: string;
   description?: string;
+  minimum_cache_ttl_seconds?: number;
   item_schemas?: Record<string, JsonSchemaDocument>;
   default_item_schemas?: Record<string, JsonSchemaDocument>;
 };
