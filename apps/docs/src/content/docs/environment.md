@@ -20,6 +20,7 @@ The root `.env.example` is the source template for local and deployment configur
 - `NETWORK_CONFIG_SOURCE`
 - `NETWORK_CONFIG_LOCAL_FILE`
 - `NETWORK_CONFIG_URLS`
+- `SCHEMA_REGISTRY_URL`
 
 ## Database variables
 
@@ -46,7 +47,19 @@ The root `.env.example` is the source template for local and deployment configur
 
 - `SCHEMA_REGISTRY_URL`
 
-`packages/config/src/secrets.ts` now exposes `SchemaRegistrySecretsSchema`, which requires `SCHEMA_REGISTRY_URL` to be a valid URL. Use this when a service needs to resolve domain schemas from an external registry through `fetchSchema`.
+`SCHEMA_REGISTRY_URL` can now be used in two forms:
+
+```bash
+SCHEMA_REGISTRY_URL="https://registry.example.com/schemas/"
+```
+
+With a single base URL, the API derives one network config URL per served network using `{base}/{network}/network.json`.
+
+```bash
+SCHEMA_REGISTRY_URL="yellow_dot=https://registry.example.com/schemas/yellow_dot/network.json,blue_dot=https://registry.other.example.com/schemas/blue_dot/network.json"
+```
+
+With explicit mappings, each entry is `network=url`. The URL may be a full `network.json` URL or a registry base URL that ends in that network’s schema folder.
 
 ## Network runtime binding
 
@@ -83,6 +96,8 @@ NETWORK_CONFIG_URLS="yellow_dot=https://registry.example.com/yellow-dot/network.
 ```
 
 Use this in production when the network config should be fetched from one or more remote schema URLs.
+
+If `NETWORK_CONFIG_URLS` is not set, the API falls back to `SCHEMA_REGISTRY_URL`.
 
 When loaded, the API merges:
 

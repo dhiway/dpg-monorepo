@@ -6,18 +6,35 @@ const JsonSchemaDocumentSchema = z.record(z.string(), z.unknown());
 const NetworkDomainSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
+  item_schemas: z
+    .record(z.string(), JsonSchemaDocumentSchema)
+    .optional()
+    .default({}),
   default_item_schemas: z
     .record(z.string(), JsonSchemaDocumentSchema)
     .optional()
     .default({}),
-});
+}).transform((domain) => ({
+  ...domain,
+  item_schemas: {
+    ...domain.default_item_schemas,
+    ...domain.item_schemas,
+  },
+}));
 
 const NetworkInstanceSchema = z.object({
   domain_name: z.string().min(1),
   instance_name: z.string().optional(),
   instance_url: z.url(),
   schema_url: z.url().nullable().optional(),
-});
+  custom_item_schema_urls: z.record(z.string(), z.url()).optional().default({}),
+}).transform((instance) => ({
+  ...instance,
+  custom_item_schema_urls: {
+    ...(instance.schema_url ? { profile: instance.schema_url } : {}),
+    ...instance.custom_item_schema_urls,
+  },
+}));
 
 const NetworkActionInteractionSchema = z.object({
   from_network: z.string().min(1).optional(),
@@ -108,7 +125,7 @@ export function getDomainItemSchema(
     );
   }
 
-  const itemSchema = domainConfig.default_item_schemas[itemType];
+  const itemSchema = domainConfig.item_schemas[itemType];
 
   if (!itemSchema) {
     throw new Error(
@@ -117,6 +134,44 @@ export function getDomainItemSchema(
   }
 
   return itemSchema;
+}
+
+export function getDomainItemTypes(
+  networkConfig: NetworkConfigDocument,
+  domain: string
+): string[] {
+  const domainConfig = networkConfig.domains.find(
+    (entry) => entry.name === domain
+  );
+
+  if (!domainConfig) {
+    throw new Error(
+      `Domain "${domain}" is not defined for network "${networkConfig.name}".`
+    );
+  }
+
+  return Object.keys(domainConfig.item_schemas);
+}
+
+export function getInstanceCustomItemSchemaUrl(
+  networkConfig: NetworkConfigDocument,
+  input: {
+    domain: string;
+    instanceUrl: string;
+    itemType: string;
+  }
+): string | null {
+  const instanceConfig = networkConfig.instances.find(
+    (entry) =>
+      entry.domain_name === input.domain &&
+      entry.instance_url === input.instanceUrl
+  );
+
+  if (!instanceConfig) {
+    return null;
+  }
+
+  return instanceConfig.custom_item_schema_urls[input.itemType] ?? null;
 }
 
 export function validateAgainstJsonSchema(

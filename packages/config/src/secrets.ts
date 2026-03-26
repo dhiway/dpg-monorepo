@@ -30,7 +30,11 @@ export const NotificationSecretsSchema = z.object({
 });
 
 export const SchemaRegistrySecretsSchema = z.object({
-  SCHEMA_REGISTRY_URL: z.url(),
+  SCHEMA_REGISTRY_URL: z.string().min(1),
+});
+
+export const OptionalSchemaRegistrySecretsSchema = z.object({
+  SCHEMA_REGISTRY_URL: z.string().optional(),
 });
 
 export const NetworkRuntimeSecretsSchema = z.object({

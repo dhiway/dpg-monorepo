@@ -13,10 +13,13 @@ import {
   replyForUnservedDomain,
 } from 'apps/api/src/utils/served_domain_guard';
 import {
+  getDomainItemTypes,
   getDomainItemSchema,
+  getInstanceCustomItemSchemaUrl,
   validateAgainstJsonSchema,
 } from '@dpg/schemas';
 import { getNetworkConfigByName } from 'apps/api/src/network_configs';
+import { getOrFetchSchemaByUrl } from 'apps/api/src/network_schema_cache';
 
 type CreateItemRequest = FastifyRequest<{
   Body: z.infer<typeof CreateItemBodySchema>;
@@ -65,11 +68,55 @@ export const create_item_handler = async (
 
   try {
     const networkConfig = await getNetworkConfigByName(body.item_network);
-    const itemSchema = getDomainItemSchema(
+    const supportedItemTypes = getDomainItemTypes(
       networkConfig,
-      body.item_domain,
-      body.item_type
+      body.item_domain
     );
+
+    if (!supportedItemTypes.includes(body.item_type)) {
+      throw new Error(
+        `Item type "${body.item_type}" is not defined for domain "${body.item_domain}" in network "${body.item_network}".`
+      );
+    }
+
+    let itemSchema: Record<string, unknown> | null = null;
+
+    if (body.item_schema_url) {
+      const expectedSchemaUrl = getInstanceCustomItemSchemaUrl(networkConfig, {
+        domain: body.item_domain,
+        instanceUrl: body.item_instance_url,
+        itemType: body.item_type,
+      });
+
+      if (!expectedSchemaUrl) {
+        throw new Error(
+          `Item type "${body.item_type}" is not registered as a custom schema for instance "${body.item_instance_url}".`
+        );
+      }
+
+      if (expectedSchemaUrl !== body.item_schema_url) {
+        throw new Error(
+          `Item schema URL "${body.item_schema_url}" does not match the network-configured schema for "${body.item_type}".`
+        );
+      }
+
+      itemSchema = await getOrFetchSchemaByUrl({
+        schemaUrl: body.item_schema_url,
+        network: body.item_network,
+        domain: body.item_domain,
+        itemType: body.item_type,
+        instanceUrl: body.item_instance_url,
+        kind: 'instance_custom_item_schema',
+      });
+    }
+
+    if (!itemSchema) {
+      itemSchema = getDomainItemSchema(
+        networkConfig,
+        body.item_domain,
+        body.item_type
+      );
+    }
 
     validateAgainstJsonSchema(itemSchema, body.item_state, 'item_state');
   } catch (err) {

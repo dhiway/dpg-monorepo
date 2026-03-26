@@ -9,6 +9,7 @@ export type JsonSchemaDocument = Record<string, unknown>;
 export type NetworkDomainConfig = {
   name: string;
   description?: string;
+  item_schemas?: Record<string, JsonSchemaDocument>;
   default_item_schemas?: Record<string, JsonSchemaDocument>;
 };
 
@@ -17,6 +18,7 @@ type NetworkInstanceConfig = {
   instance_url: string;
   instance_name?: string;
   schema_url?: string | null;
+  custom_item_schema_urls?: Record<string, string>;
 };
 
 export type NetworkActionInteraction = {
@@ -127,8 +129,79 @@ export function parseNetworkConfigUrls(input: string): Record<string, string> {
           );
         }
 
-        new URL(url);
-        return [network, url];
+        return [network, normalizeNetworkConfigUrl(url)];
       })
   );
+}
+
+export function parseSchemaRegistryUrls(
+  input: string,
+  networks: string[]
+): Record<string, string> {
+  const entries = input
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+
+  if (entries.length === 0) {
+    return {};
+  }
+
+  const hasExplicitMappings = entries.some((entry) => entry.includes('='));
+
+  if (!hasExplicitMappings) {
+    if (entries.length !== 1) {
+      throw new Error(
+        'Invalid SCHEMA_REGISTRY_URL. Use a single base URL or comma-separated "network=url" mappings.'
+      );
+    }
+
+    const baseUrl = normalizeRegistryBaseUrl(entries[0]);
+    const uniqueNetworks = [...new Set(networks)];
+
+    if (uniqueNetworks.length === 0) {
+      throw new Error(
+        'Cannot derive network schema URLs from SCHEMA_REGISTRY_URL without any served networks.'
+      );
+    }
+
+    return Object.fromEntries(
+      uniqueNetworks.map((network) => [
+        network,
+        new URL(`${network}/network.json`, baseUrl).toString(),
+      ])
+    );
+  }
+
+  return Object.fromEntries(
+    entries.map((entry) => {
+      const [network, url] = entry.split('=').map((part) => part.trim());
+
+      if (!network || !url) {
+        throw new Error(
+          `Invalid SCHEMA_REGISTRY_URL entry "${entry}". Expected "network=url".`
+        );
+      }
+
+      return [network, normalizeNetworkConfigUrl(url)];
+    })
+  );
+}
+
+function normalizeNetworkConfigUrl(input: string): string {
+  if (input.endsWith('.json')) {
+    return new URL(input).toString();
+  }
+
+  const baseUrl = normalizeRegistryBaseUrl(input);
+  return new URL('network.json', baseUrl).toString();
+}
+
+function normalizeRegistryBaseUrl(input: string): string {
+  const url = new URL(input);
+  const withTrailingSlash = url.toString().endsWith('/')
+    ? url.toString()
+    : `${url.toString()}/`;
+
+  return withTrailingSlash;
 }

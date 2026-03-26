@@ -4,7 +4,9 @@ export { FetchSchema, fetchSchema } from './schema_registry';
 export * from './api/action_schemas';
 export {
   getActionInteraction,
+  getDomainItemTypes,
   getDomainItemSchema,
+  getInstanceCustomItemSchemaUrl,
   NetworkConfigSchema,
   parseNetworkConfigDocument,
   validateAgainstJsonSchema,

@@ -9,12 +9,16 @@ import {
   type NetworkConfig,
   type NetworkConfigSource,
   parseNetworkConfigUrls,
+  parseSchemaRegistryUrls,
+  type ServedDomainBinding,
 } from './network_runtime';
 
 type LoadNetworkConfigOptions = {
   source: NetworkConfigSource;
   localFile: string;
   remoteUrls?: string;
+  schemaRegistryUrls?: string;
+  servedDomains?: ServedDomainBinding[];
 };
 
 export async function loadNetworkConfigs(
@@ -26,15 +30,24 @@ export async function loadNetworkConfigs(
     return [parseNetworkConfigDocument(JSON.parse(contents))];
   }
 
-  if (!options.remoteUrls) {
+  const servedNetworks = (options.servedDomains ?? []).map(
+    (binding) => binding.network
+  );
+
+  const resolvedRemoteUrls = options.remoteUrls
+    ? parseNetworkConfigUrls(options.remoteUrls)
+    : options.schemaRegistryUrls
+      ? parseSchemaRegistryUrls(options.schemaRegistryUrls, servedNetworks)
+      : null;
+
+  if (!resolvedRemoteUrls) {
     throw new Error(
-      'NETWORK_CONFIG_URLS is required when NETWORK_CONFIG_SOURCE=remote'
+      'NETWORK_CONFIG_URLS or SCHEMA_REGISTRY_URL is required when NETWORK_CONFIG_SOURCE=remote'
     );
   }
 
-  const urlMap = parseNetworkConfigUrls(options.remoteUrls);
   return Promise.all(
-    Object.values(urlMap).map(async (url) => {
+    Object.values(resolvedRemoteUrls).map(async (url) => {
       const config = await new fetchSchema(url).getSchema();
       return NetworkConfigSchema.parse(config);
     })
