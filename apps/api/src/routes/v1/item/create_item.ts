@@ -20,6 +20,7 @@ import {
 } from '@dpg/schemas';
 import { getNetworkConfigByName } from 'apps/api/src/network_configs';
 import { getOrFetchSchemaByUrl } from 'apps/api/src/network_schema_cache';
+import { getCurrentApiBaseUrl } from 'apps/api/src/config';
 
 type CreateItemRequest = FastifyRequest<{
   Body: z.infer<typeof CreateItemBodySchema>;
@@ -50,6 +51,8 @@ export const create_item_handler = async (
 ) => {
   const userId = request.user?.id;
   const body = request.body;
+  const itemInstanceUrl = getCurrentApiBaseUrl();
+  let itemSchemaUrl = `${itemInstanceUrl}/api/v1/network/schema/${encodeURIComponent(body.item_network)}/${encodeURIComponent(body.item_domain)}/${encodeURIComponent(body.item_type)}`;
 
   if (!userId) {
     return reply.code(401).send({
@@ -80,32 +83,20 @@ export const create_item_handler = async (
     }
 
     let itemSchema: Record<string, unknown> | null = null;
+    const expectedSchemaUrl = getInstanceCustomItemSchemaUrl(networkConfig, {
+      domain: body.item_domain,
+      instanceUrl: itemInstanceUrl,
+      itemType: body.item_type,
+    });
 
-    if (body.item_schema_url) {
-      const expectedSchemaUrl = getInstanceCustomItemSchemaUrl(networkConfig, {
-        domain: body.item_domain,
-        instanceUrl: body.item_instance_url,
-        itemType: body.item_type,
-      });
-
-      if (!expectedSchemaUrl) {
-        throw new Error(
-          `Item type "${body.item_type}" is not registered as a custom schema for instance "${body.item_instance_url}".`
-        );
-      }
-
-      if (expectedSchemaUrl !== body.item_schema_url) {
-        throw new Error(
-          `Item schema URL "${body.item_schema_url}" does not match the network-configured schema for "${body.item_type}".`
-        );
-      }
-
+    if (expectedSchemaUrl) {
+      itemSchemaUrl = expectedSchemaUrl;
       itemSchema = await getOrFetchSchemaByUrl({
-        schemaUrl: body.item_schema_url,
+        schemaUrl: expectedSchemaUrl,
         network: body.item_network,
         domain: body.item_domain,
         itemType: body.item_type,
-        instanceUrl: body.item_instance_url,
+        instanceUrl: itemInstanceUrl,
         kind: 'instance_custom_item_schema',
       });
     }
@@ -158,9 +149,9 @@ export const create_item_handler = async (
         item_type: body.item_type,
 
         item_domain: body.item_domain,
-        item_instance_url: body.item_instance_url,
+        item_instance_url: itemInstanceUrl,
 
-        item_schema_url: body.item_schema_url,
+        item_schema_url: itemSchemaUrl,
 
         item_state: body.item_state,
         item_latitude: body.item_latitude ?? null,

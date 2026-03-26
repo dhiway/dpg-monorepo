@@ -33,9 +33,9 @@ Current item endpoints under `/api/v1/item`:
 
 ### Create item
 
-`POST /api/v1/item/create` accepts the insert schema minus generated fields such as `item_id`, `created_by`, `created_at`, and `updated_at`. Before insert, the handler ensures the item partition exists.
+`POST /api/v1/item/create` accepts the insert schema minus generated fields such as `item_id`, `created_by`, `item_instance_url`, `item_schema_url`, `created_at`, and `updated_at`. Before insert, the handler ensures the item partition exists.
 
-The item owner is always the authenticated user. The handler writes `items.created_by = request.user.id`, so the client must not send `created_by` in the body.
+The item owner is always the authenticated user. The handler writes `items.created_by = request.user.id`, derives `item_instance_url` from the current backend URL, and derives `item_schema_url` from either the configured custom schema URL or the schema route exposed by the same backend.
 
 ### Fetch items
 
@@ -65,6 +65,7 @@ Current action and event endpoints under `/api/v1`:
 - `POST /action/perform`
 - `POST /event/store`
 - `GET /network/schemas`
+- `GET /network/schema/:network/:domain/:itemType`
 - `POST /network/refetch_schemas`
 
 `created_by` for action and event writes must be a real existing Better Auth `user.id`. Sending a placeholder like `USER_ID` will fail because both `item_actions.created_by` and `action_events.created_by` are foreign keys to the `user` table.
@@ -97,8 +98,6 @@ The item create body does not include `created_by`. The API sets that automatica
   "item_network": "yellow_dot",
   "item_domain": "student",
   "item_type": "profile_1.0",
-  "item_instance_url": "http://localhost:2783/items/student/arya",
-  "item_schema_url": "https://schemas.example.com/student_profile_1.0.json",
   "item_state": {
     "name": "Arya",
     "grade": "10",
@@ -117,8 +116,6 @@ The item create body does not include `created_by`. The API sets that automatica
   "item_network": "yellow_dot",
   "item_domain": "tutor",
   "item_type": "profile_1.0",
-  "item_instance_url": "http://localhost:2783/items/tutor/ravi",
-  "item_schema_url": "https://schemas.example.com/tutor_profile_1.0.json",
   "item_state": {
     "name": "Ravi",
     "subjects": ["math", "science"],
@@ -205,5 +202,7 @@ Replace `action_id` and item ids with real values. Replace `created_by` with a r
 ## Network schema cache routes
 
 `GET /api/v1/network/schemas` returns the disk-cached network configs, inline domain item schemas, instance custom schemas, and any remote item schemas fetched from stored items.
+
+`GET /api/v1/network/schema/:network/:domain/:itemType` returns the schema document that this backend serves for that item type.
 
 `POST /api/v1/network/refetch_schemas` reloads configured network schemas and refreshes the disk cache. This is the route to call after changing a remote registry or after bootstrap if the instance needs the latest custom item schemas for UI rendering.

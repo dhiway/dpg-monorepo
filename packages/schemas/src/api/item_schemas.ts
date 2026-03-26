@@ -7,6 +7,8 @@ export const ItemInsertSchema = createInsertSchema(items);
 export const CreateItemBodySchema = ItemInsertSchema.omit({
   created_by: true,
   item_id: true,
+  item_instance_url: true,
+  item_schema_url: true,
   created_at: true,
   updated_at: true,
 });

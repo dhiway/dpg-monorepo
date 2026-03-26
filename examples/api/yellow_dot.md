@@ -7,8 +7,6 @@
   "item_network": "yellow_dot",
   "item_domain": "student",
   "item_type": "profile_1.0",
-  "item_instance_url": "https://student.yellowdot.example.com/items/student/arya",
-  "item_schema_url": null,
   "item_state": {
     "name": "Arya",
     "grade": "10",
@@ -25,8 +23,6 @@
   "item_network": "yellow_dot",
   "item_domain": "tutor",
   "item_type": "profile_1.1",
-  "item_instance_url": "https://tutor.yellowdot.example.com",
-  "item_schema_url": "https://tutor.yellowdot.example.com/schemas/profile_1.1.json",
   "item_state": {
     "name": "Ravi",
     "subjects": ["math", "science"],
