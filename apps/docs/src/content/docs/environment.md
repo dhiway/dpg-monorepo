@@ -85,7 +85,7 @@ The API supports two ways to load network config:
 
 ```bash
 NETWORK_CONFIG_SOURCE="local"
-NETWORK_CONFIG_LOCAL_FILE="packages/schemas/src/dot_examples/network.json"
+NETWORK_CONFIG_LOCAL_FILE="examples/schemas/yellow_dot/network.json"
 ```
 
 Use this in development when you want to test against a checked-in example file.

@@ -39,7 +39,7 @@ Suggested local network env:
 ```bash
 SERVED_DOMAINS="yellow_dot/student"
 NETWORK_CONFIG_SOURCE="local"
-NETWORK_CONFIG_LOCAL_FILE="packages/schemas/src/dot_examples/network.json"
+NETWORK_CONFIG_LOCAL_FILE="examples/schemas/yellow_dot/network.json"
 ```
 
 Useful root commands:
