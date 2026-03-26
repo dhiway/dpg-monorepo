@@ -12,21 +12,22 @@ export default defineConfig({
       customCss: ['./src/styles/custom.css'],
       sidebar: [
         {
-          label: 'Setup',
+          label: 'Start Here',
           items: [
-            { label: 'Introduction', slug: 'index' },
+            { label: 'What Is DPG?', slug: 'index' },
+            { label: 'Vocabulary', slug: 'concepts/vocabulary' },
+            { label: 'Architecture', slug: 'concepts/architecture' },
             { label: 'Getting Started', slug: 'getting-started' },
             { label: 'Environment', slug: 'environment' },
-            { label: 'Flow Structure', slug: 'flow-structure' },
-            { label: 'DB Access', slug: 'database/access' },
           ],
         },
         {
           label: 'Hosting',
           items: [
-            { label: 'Single Domain', slug: 'hosting/single-domain' },
+            { label: 'Local And Docker', slug: 'hosting/local-docker' },
+            { label: 'Single Instance', slug: 'hosting/single-domain' },
             {
-              label: 'Multiple Domains',
+              label: 'Multi-Instance Hosting',
               slug: 'hosting/multi-domain-instance',
             },
             {
@@ -39,30 +40,37 @@ export default defineConfig({
           label: 'Schemas',
           items: [
             {
-              label: 'Network Action Domain',
+              label: 'Schema Authoring Guide',
+              slug: 'schemas/authoring',
+            },
+            {
+              label: 'Network Schema Reference',
               slug: 'schemas/network-actions-domain',
             },
+            { label: 'Example Networks', slug: 'schemas/examples' },
           ],
         },
         {
-          label: 'Auth',
+          label: 'API',
           items: [
+            { label: 'API Overview', slug: 'apps/api' },
             {
               label: 'Better Auth And OTP',
               slug: 'auth/better-auth-unified-otp',
             },
+            { label: 'DB Access', slug: 'database/access' },
           ],
         },
         {
-          label: 'Packages',
+          label: 'Internals',
           items: [
+            { label: 'Flow Structure', slug: 'flow-structure' },
             { label: 'Package Overview', slug: 'packages/overview' },
             { label: 'Adding Packages', slug: 'packages/add-packages' },
             { label: 'Config Package', slug: 'packages/config-package' },
             { label: 'Database Package', slug: 'packages/database-package' },
             { label: 'Schemas Package', slug: 'packages/schemas-and-registry' },
             { label: 'Auth Package', slug: 'packages/auth-package' },
-            { label: 'API App', slug: 'apps/api' },
           ],
         },
       ],

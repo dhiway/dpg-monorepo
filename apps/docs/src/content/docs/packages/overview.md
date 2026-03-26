@@ -1,12 +1,19 @@
 ---
 title: Package Overview
-description: Shared package responsibilities in the current workspace.
+description: Internal package-level overview for contributors working inside the monorepo.
 head: []
 ---
 
 # Package Overview
 
 The monorepo keeps shared runtime logic in `packages/*`. Each package has a narrow role and is meant to be consumed by apps such as `apps/api`.
+
+Most readers should start with the higher-level guides first:
+
+- [What Is DPG?](/)
+- [Architecture](/concepts/architecture)
+- [Schema Authoring Guide](/schemas/authoring)
+- [API Overview](/apps/api)
 
 ## At a glance
 
