@@ -41,7 +41,7 @@ export const NetworkRuntimeSecretsSchema = z.object({
   SERVED_DOMAINS: z.string().min(1),
   NETWORK_CONFIG_SOURCE: z.enum(['local', 'remote']).default('local'),
   NETWORK_CONFIG_LOCAL_FILE: z.string().default(
-    'packages/schemas/src/dot_examples/network.json'
+    'examples/schemas/yellow_dot/network.json'
   ),
   NETWORK_CONFIG_URLS: z.string().optional(),
 });

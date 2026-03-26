@@ -14,7 +14,9 @@ The monorepo keeps shared runtime logic in `packages/*`. Each package has a narr
 - `packages/config`: env schemas, allowed-origin helpers, and network runtime helpers
 - `packages/database`: Drizzle ref tables, partition helpers, and base SQL scripts
 - `packages/notification`: notification client and provider-facing types
-- `packages/schemas`: Zod export, API schemas, DOT example configs, and schema fetching
+- `packages/schemas`: Zod export, API schemas, and schema fetching
+
+Checked-in example network configs and request payloads live under `examples/`.
 
 ## How to read the package layout
 

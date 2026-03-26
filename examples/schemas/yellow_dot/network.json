@@ -13,11 +13,7 @@
           "title": "Student Profile 1.0",
           "type": "object",
           "additionalProperties": false,
-          "required": [
-            "name",
-            "grade",
-            "city"
-          ],
+          "required": ["name", "grade", "city"],
           "properties": {
             "name": {
               "type": "string",
@@ -25,13 +21,7 @@
             },
             "grade": {
               "type": "string",
-              "enum": [
-                "8",
-                "9",
-                "10",
-                "11",
-                "12"
-              ]
+              "enum": ["8", "9", "10", "11", "12"]
             },
             "city": {
               "type": "string"
@@ -46,12 +36,7 @@
           "title": "Student Profile 1.1",
           "type": "object",
           "additionalProperties": false,
-          "required": [
-            "name",
-            "grade",
-            "city",
-            "language"
-          ],
+          "required": ["name", "grade", "city", "language"],
           "properties": {
             "name": {
               "type": "string",
@@ -59,13 +44,7 @@
             },
             "grade": {
               "type": "string",
-              "enum": [
-                "8",
-                "9",
-                "10",
-                "11",
-                "12"
-              ]
+              "enum": ["8", "9", "10", "11", "12"]
             },
             "city": {
               "type": "string"
@@ -90,11 +69,7 @@
           "title": "Tutor Profile 1.0",
           "type": "object",
           "additionalProperties": false,
-          "required": [
-            "name",
-            "subjects",
-            "experience_years"
-          ],
+          "required": ["name", "subjects", "experience_years"],
           "properties": {
             "name": {
               "type": "string",
@@ -113,11 +88,7 @@
             },
             "teaching_mode": {
               "type": "string",
-              "enum": [
-                "online",
-                "offline",
-                "hybrid"
-              ]
+              "enum": ["online", "offline", "hybrid"]
             }
           }
         }
@@ -132,11 +103,7 @@
           "title": "Coaching Center Profile 1.0",
           "type": "object",
           "additionalProperties": false,
-          "required": [
-            "name",
-            "city",
-            "programs"
-          ],
+          "required": ["name", "city", "programs"],
           "properties": {
             "name": {
               "type": "string",
@@ -172,13 +139,17 @@
       "domain_name": "tutor",
       "instance_name": "Yellow Dot Tutor",
       "instance_url": "https://tutor.yellowdot.example.com",
-      "custom_item_schema_urls": {}
+      "custom_item_schema_urls": {
+        "profile_1.1": "https://tutor.yellowdot.example.com/schemas/profile_1.1.json"
+      }
     },
     {
       "domain_name": "coaching_center",
       "instance_name": "Yellow Dot Coaching",
       "instance_url": "https://coaching.yellowdot.example.com",
-      "custom_item_schema_urls": {}
+      "custom_item_schema_urls": {
+        "profile_1.0": "https://coaching.yellowdot.example.com/schemas/profile_1.0.json"
+      }
     }
   ],
   "actions": {
@@ -195,10 +166,7 @@
             "title": "Student To Tutor Connect Requirement",
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "subject",
-              "goal"
-            ],
+            "required": ["subject", "goal"],
             "properties": {
               "subject": {
                 "type": "string"
@@ -213,18 +181,11 @@
             "title": "Student To Tutor Connect Event",
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "status",
-              "message"
-            ],
+            "required": ["status", "message"],
             "properties": {
               "status": {
                 "type": "string",
-                "enum": [
-                  "pending",
-                  "accepted",
-                  "rejected"
-                ]
+                "enum": ["pending", "accepted", "rejected"]
               },
               "message": {
                 "type": "string"
@@ -242,10 +203,7 @@
             "title": "Student To Coaching Center Connect Requirement",
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "program",
-              "goal"
-            ],
+            "required": ["program", "goal"],
             "properties": {
               "program": {
                 "type": "string"
@@ -260,18 +218,11 @@
             "title": "Student To Coaching Center Connect Event",
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "status",
-              "message"
-            ],
+            "required": ["status", "message"],
             "properties": {
               "status": {
                 "type": "string",
-                "enum": [
-                  "pending",
-                  "accepted",
-                  "rejected"
-                ]
+                "enum": ["pending", "accepted", "rejected"]
               },
               "message": {
                 "type": "string"
@@ -289,15 +240,9 @@
             "title": "Tutor To Student Connect Requirement",
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "offered_subject",
-              "availability"
-            ],
+            "required": ["intro_message"],
             "properties": {
-              "offered_subject": {
-                "type": "string"
-              },
-              "availability": {
+              "intro_message": {
                 "type": "string"
               }
             }
@@ -307,163 +252,11 @@
             "title": "Tutor To Student Connect Event",
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "status",
-              "message"
-            ],
+            "required": ["status", "message"],
             "properties": {
               "status": {
                 "type": "string",
-                "enum": [
-                  "pending",
-                  "accepted",
-                  "rejected"
-                ]
-              },
-              "message": {
-                "type": "string"
-              }
-            }
-          }
-        },
-        {
-          "from_network": "yellow_dot",
-          "from_domain": "tutor",
-          "to_network": "yellow_dot",
-          "to_domain": "coaching_center",
-          "requirement_schema": {
-            "$schema": "https://json-schema.org/draft/2020-12/schema",
-            "title": "Tutor To Coaching Center Connect Requirement",
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-              "offered_subject",
-              "engagement_type"
-            ],
-            "properties": {
-              "offered_subject": {
-                "type": "string"
-              },
-              "engagement_type": {
-                "type": "string",
-                "enum": [
-                  "guest_faculty",
-                  "full_time",
-                  "part_time"
-                ]
-              }
-            }
-          },
-          "event_schema": {
-            "$schema": "https://json-schema.org/draft/2020-12/schema",
-            "title": "Tutor To Coaching Center Connect Event",
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-              "status",
-              "message"
-            ],
-            "properties": {
-              "status": {
-                "type": "string",
-                "enum": [
-                  "pending",
-                  "accepted",
-                  "rejected"
-                ]
-              },
-              "message": {
-                "type": "string"
-              }
-            }
-          }
-        },
-        {
-          "from_network": "yellow_dot",
-          "from_domain": "coaching_center",
-          "to_network": "yellow_dot",
-          "to_domain": "student",
-          "requirement_schema": {
-            "$schema": "https://json-schema.org/draft/2020-12/schema",
-            "title": "Coaching Center To Student Connect Requirement",
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-              "program_name"
-            ],
-            "properties": {
-              "program_name": {
-                "type": "string"
-              },
-              "scholarship_available": {
-                "type": "boolean"
-              }
-            }
-          },
-          "event_schema": {
-            "$schema": "https://json-schema.org/draft/2020-12/schema",
-            "title": "Coaching Center To Student Connect Event",
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-              "status",
-              "message"
-            ],
-            "properties": {
-              "status": {
-                "type": "string",
-                "enum": [
-                  "pending",
-                  "accepted",
-                  "rejected"
-                ]
-              },
-              "message": {
-                "type": "string"
-              }
-            }
-          }
-        },
-        {
-          "from_network": "yellow_dot",
-          "from_domain": "coaching_center",
-          "to_network": "yellow_dot",
-          "to_domain": "tutor",
-          "requirement_schema": {
-            "$schema": "https://json-schema.org/draft/2020-12/schema",
-            "title": "Coaching Center To Tutor Connect Requirement",
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-              "subject",
-              "program_name"
-            ],
-            "properties": {
-              "subject": {
-                "type": "string"
-              },
-              "program_name": {
-                "type": "string"
-              }
-            }
-          },
-          "event_schema": {
-            "$schema": "https://json-schema.org/draft/2020-12/schema",
-            "title": "Coaching Center To Tutor Connect Event",
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-              "status",
-              "message"
-            ],
-            "properties": {
-              "status": {
-                "type": "string",
-                "enum": [
-                  "pending",
-                  "accepted",
-                  "rejected"
-                ]
+                "enum": ["pending", "accepted", "rejected"]
               },
               "message": {
                 "type": "string"

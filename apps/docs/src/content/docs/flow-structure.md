@@ -66,8 +66,9 @@ Partitions are intentionally not hardcoded in the base SQL. They are created per
 
 - the default `zod` export used across the repo
 - request/response schemas
-- DOT example configs
 - a fetch helper for remote schema JSON
+
+Checked-in example network configs now live under `examples/schemas`.
 
 ## 7. Auth and OTP
 
