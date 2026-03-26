@@ -3,7 +3,7 @@ import { type FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { auth_middleware_if_enabled } from 'apps/api/plugins/auth/auth_middleware';
 import { refreshConsumedSchemas } from 'apps/api/src/network_schema_cache';
 
-export const refetch_network_schemas: FastifyPluginAsyncZod =
+export const refetch_schema: FastifyPluginAsyncZod =
   async function (fastify) {
     fastify.route({
       url: '/refetch_schemas',

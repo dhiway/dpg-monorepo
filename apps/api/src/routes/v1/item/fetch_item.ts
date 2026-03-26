@@ -40,6 +40,8 @@ export const fetch_items: FastifyPluginAsyncZod = async function (fastify) {
   });
 };
 
+export const fetch_item = fetch_items;
+
 const fetch_items_handler = async (
   request: FetchItemsRequest,
   reply: FastifyReply
