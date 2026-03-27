@@ -57,6 +57,7 @@ const fetch_items_handler = async (
     item_latitude,
     item_longitude,
     radius_meters,
+    created_by_me,
     limit,
     offset,
   } = request.query;
@@ -77,6 +78,7 @@ const fetch_items_handler = async (
       item_latitude,
       item_longitude,
       radius_meters,
+      created_by: created_by_me ? request.user?.id : undefined,
       limit,
       offset,
     };

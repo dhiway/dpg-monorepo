@@ -13,6 +13,7 @@ export type ItemFetchFilters = {
   item_latitude?: number;
   item_longitude?: number;
   radius_meters?: number;
+  created_by?: string;
   limit: number;
   offset: number;
 };
@@ -43,6 +44,10 @@ function buildWhereClause(filters: Omit<ItemFetchFilters, 'limit' | 'offset'>) {
     conditions.push(
       sql`${items.item_state} @> ${JSON.stringify(filters.item_state)}::jsonb`
     );
+  }
+
+  if (filters.created_by) {
+    conditions.push(eq(items.created_by, filters.created_by));
   }
 
   if (

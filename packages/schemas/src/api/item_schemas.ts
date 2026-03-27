@@ -28,6 +28,8 @@ const FetchItemsSchemaBase = z.object({
   item_longitude: z.coerce.number().optional(),
   radius_meters: z.coerce.number().positive().optional(),
 
+  created_by_me: z.coerce.boolean().optional(),
+
   limit: z.coerce.number().int().min(1).max(100).default(20),
   offset: z.coerce.number().int().min(0).default(0),
   cache_ttl_seconds: z.coerce.number().int().positive().optional(),
@@ -74,9 +76,6 @@ export const FetchItemsBodySchema = withGeoSearchRefinement(FetchItemsSchemaBase
 }));
 
 export const UpdateItemParamsSchema = z.object({
-  itemNetwork: z.string().min(1),
-  itemDomain: z.string().min(1),
-  itemType: z.string().min(1),
   itemId: z.uuid(),
 });
 
