@@ -47,6 +47,11 @@ const widgets: RegistryWidgetsType = {
   date: DatePickerWidget,
 };
 
+function stripMetaSchema(schema: RJSFSchema): RJSFSchema {
+  const { $schema, ...rest } = schema as RJSFSchema & { $schema?: string };
+  return rest as RJSFSchema;
+}
+
 export function SchemaForm({
   schema,
   formData,
@@ -57,11 +62,12 @@ export function SchemaForm({
   className,
 }: SchemaFormProps) {
   const uiSchema = generateUiSchema(schema, mode);
+  const schemaWithoutMeta = stripMetaSchema(schema);
 
   return (
     <div className={className}>
       <Form
-        schema={schema}
+        schema={schemaWithoutMeta}
         uiSchema={uiSchema}
         formData={formData}
         validator={validator}

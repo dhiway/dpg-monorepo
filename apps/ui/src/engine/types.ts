@@ -25,9 +25,10 @@ export interface DotActionSchema {
 export interface DotNetworkDomain {
   name: string;
   description: string;
-  default_item_schemas: {
+  default_item_schemas?: {
     profile: RJSFSchema;
   };
+  item_schemas?: Record<string, RJSFSchema>;
 }
 
 export interface DotNetworkInteraction {

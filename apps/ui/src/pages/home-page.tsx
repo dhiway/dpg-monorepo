@@ -13,15 +13,14 @@ import { CardGrid } from '@/components/cards/card-grid';
 import { ActionHandler } from '@/components/actions/action-handler';
 import { MapView } from '@/components/map/map-container';
 import '@/components/map/providers';
-import { fetchItems, type Item } from '@/lib/item-api';
-import {
-  educationNetwork,
-} from '../../../../packages/schemas/src/dot_examples/index';
+import { fetchItems, performAction, type Item } from '@/lib/item-api';
+import { useAuth } from '@/contexts/auth-context';
+import educationNetwork from '../../../../examples/schemas/yellow_dot/network.json';
 
 // Referenced schemas — imported at build time, resolved at runtime via refMap
-import studentProfileSchema from '../../../../packages/schemas/src/dot_examples/domain.json';
-import learnerProfileSchema from '../../../../packages/schemas/src/dot_examples/learner_domain.json';
-import tutorCounsellorProfileSchema from '../../../../packages/schemas/src/dot_examples/tutor_counsellor_domain.json';
+import studentProfileSchema from '../../../../examples/schemas/domain.json';
+import learnerProfileSchema from '../../../../examples/schemas/learner_domain.json';
+import tutorCounsellorProfileSchema from '../../../../examples/schemas/tutor_counsellor_domain.json';
 
 const schemaRefMap: Record<string, unknown> = {
   './domain.json': studentProfileSchema,
@@ -42,6 +41,7 @@ function itemToCardItem(item: Item): { id: string; data: Record<string, unknown>
 
 export function HomePage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = React.useState('');
   const [viewMode, setViewMode] = React.useState<ViewMode>(
@@ -52,6 +52,7 @@ export function HomePage() {
   );
   const [resolvedNetwork, setResolvedNetwork] = React.useState<DotNetworkSchema | null>(null);
   const [items, setItems] = React.useState<Item[]>([]);
+  const [myItem, setMyItem] = React.useState<Item | null>(null);
   const [loading, setLoading] = React.useState(false);
 
   // Eagerly resolve all $ref in network before rendering
@@ -65,6 +66,20 @@ export function HomePage() {
 
   // Current domain: driven by ?as= param (demo); defaults to first domain
   const currentDomain = searchParams.get('as') ?? network?.domains[0]?.name ?? 'student_profile';
+
+  // Fetch the current user's own profile item for currentDomain
+  React.useEffect(() => {
+    if (!network || !user) return;
+    fetchItems({
+      item_network: educationNetwork.name,
+      item_domain: currentDomain,
+      item_type: currentItemType,
+      created_by_me: true,
+      limit: 1,
+    })
+      .then((response) => setMyItem(response.items[0] ?? null))
+      .catch(() => setMyItem(null));
+  }, [network, currentDomain, user]);
 
   // Domains visible to the current user — derived from connect interactions
   const visibleDomains = React.useMemo(() => {
@@ -89,7 +104,7 @@ export function HomePage() {
     fetchItems({
       item_network: educationNetwork.name,
       item_domain: activeDomain,
-      item_type: 'profile',
+      item_type: currentItemType,
       limit: 100,
     })
       .then((response) => {
@@ -112,9 +127,18 @@ export function HomePage() {
   const activeSchema = React.useMemo(() => {
     if (!network) return undefined;
     const domainName = selectedDomain ?? visibleDomains[0]?.name;
-    const domain = network.domains.find((d) => d.name === domainName);
-    return domain?.default_item_schemas.profile ?? network.domains[0]?.default_item_schemas.profile;
+    const domain = network.domains.find((d) => d.name === domainName) ?? network.domains[0];
+    if (!domain) return undefined;
+    return domain.item_schemas ? Object.values(domain.item_schemas)[0] : undefined;
   }, [network, selectedDomain, visibleDomains]);
+
+  // Get default item type name for current domain (e.g., "profile_1.0")
+  const currentItemType = React.useMemo(() => {
+    if (!network) return 'profile';
+    const domain = network.domains.find((d) => d.name === currentDomain) ?? network.domains[0];
+    const itemTypeKeys = domain?.item_schemas ? Object.keys(domain.item_schemas) : [];
+    return itemTypeKeys.length > 0 ? itemTypeKeys[0] : 'profile';
+  }, [network, currentDomain]);
 
   // Transform API items to card format
   const cardItems = React.useMemo(() => items.map(itemToCardItem), [items]);
@@ -195,8 +219,39 @@ export function HomePage() {
     >
       {viewMode === 'list' ? (
         <ActionHandler
-          onActionSubmit={async (actionType, _actionSchema, formData) => {
-            console.log('Connect action:', { actionType, formData });
+          onActionSubmit={async (actionType, _actionSchema, formData, targetItemId) => {
+            if (!myItem) {
+              toast.error('Create your profile first to connect');
+              throw new Error('No source item');
+            }
+            if (!user) {
+              toast.error('You must be signed in to connect');
+              throw new Error('No user');
+            }
+            const targetItem = items.find((i) => i.item_id === targetItemId);
+            if (!targetItem) {
+              toast.error('Could not find the target item');
+              throw new Error('Target item not found');
+            }
+            await performAction({
+              action_name: actionType,
+              source_item: {
+                item_network: myItem.item_network,
+                item_domain: myItem.item_domain,
+                item_type: myItem.item_type,
+                item_id: myItem.item_id,
+              },
+              target_item: {
+                item_network: targetItem.item_network,
+                item_domain: targetItem.item_domain,
+                item_type: targetItem.item_type,
+                item_id: targetItem.item_id,
+              },
+              requirements_snapshot: formData,
+              created_by: user.id,
+              response_event_type: 'action_response',
+              response_event_payload: { status: 'pending', message: '' },
+            });
             toast.success('Connection request sent!');
           }}
         >
@@ -207,8 +262,8 @@ export function HomePage() {
               schemaDescription={currentDomainLabel}
               items={filteredItems}
               actions={actions}
-              onAction={(_itemId, _type, actionSchema) => {
-                triggerAction(_type, actionSchema);
+              onAction={(itemId, _type, actionSchema) => {
+                triggerAction(_type, actionSchema, itemId);
               }}
               onItemClick={(id) => navigate(`/profile/${id}/edit`)}
               loading={loading}

@@ -15,7 +15,7 @@ import {
 import { SchemaForm } from '@/components/forms/schema-form';
 import { resolveNetworkRefs } from '@/engine/schema/resolve-schema';
 import type { DotNetworkSchema } from '@/engine/types';
-import { educationNetwork } from '../../../../packages/schemas/src/dot_examples/index';
+import educationNetwork from '../../../../examples/schemas/yellow_dot/network.json';
 
 import {
   createItem,
@@ -28,9 +28,9 @@ import {
 import { extractAndGeocode } from '@/lib/item-utils';
 
 // Referenced schemas — imported at build time, resolved at runtime via refMap
-import studentProfileSchema from '../../../../packages/schemas/src/dot_examples/domain.json';
-import learnerProfileSchema from '../../../../packages/schemas/src/dot_examples/learner_domain.json';
-import tutorCounsellorProfileSchema from '../../../../packages/schemas/src/dot_examples/tutor_counsellor_domain.json';
+import studentProfileSchema from '../../../../examples/schemas/domain.json';
+import learnerProfileSchema from '../../../../examples/schemas/learner_domain.json';
+import tutorCounsellorProfileSchema from '../../../../examples/schemas/tutor_counsellor_domain.json';
 
 const schemaRefMap: Record<string, unknown> = {
   './domain.json': studentProfileSchema,
@@ -75,7 +75,7 @@ export function ProfileFormPage() {
           const response = await fetchItems({
             item_network: educationNetwork.name,
             item_domain: domain.name,
-            item_type: 'profile',
+item_type: defaultItemType ?? 'profile',
             item_id: id,
             limit: 1,
           });
@@ -106,7 +106,15 @@ export function ProfileFormPage() {
   const profileSchema = React.useMemo<RJSFSchema | null>(() => {
     if (!selectedDomain || !domains.length) return null;
     const domain = domains.find((d) => d.name === selectedDomain);
-    return (domain?.default_item_schemas.profile ?? null) as RJSFSchema | null;
+    return domain?.item_schemas ? Object.values(domain.item_schemas)[0] : null;
+  }, [selectedDomain, domains]);
+
+  // Get the default item type name from domain config (e.g., "profile_1.0")
+  const defaultItemType = React.useMemo<string | null>(() => {
+    if (!selectedDomain || !domains.length) return null;
+    const domain = domains.find((d) => d.name === selectedDomain);
+    const itemTypeKeys = domain?.item_schemas ? Object.keys(domain.item_schemas) : [];
+    return itemTypeKeys.length > 0 ? itemTypeKeys[0] : null;
   }, [selectedDomain, domains]);
 
   const selectedDomainInfo = domains.find((d) => d.name === selectedDomain);
@@ -144,7 +152,7 @@ export function ProfileFormPage() {
         const createPayload: CreateItemPayload = {
           item_network: network.name,
           item_domain: selectedDomain,
-          item_type: 'profile',
+          item_type: defaultItemType ?? 'profile',
           item_state: data,
         };
 

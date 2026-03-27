@@ -33,6 +33,7 @@ export interface FetchItemsQuery {
   item_type: string;
   item_instance_url?: string;
   item_schema_url?: string;
+  created_by_me?: boolean;
   limit?: number;
   offset?: number;
 }
@@ -92,6 +93,7 @@ export async function fetchItems(query: FetchItemsQuery): Promise<FetchItemsResp
   if (query.item_id) params.set('item_id', query.item_id);
   if (query.item_instance_url) params.set('item_instance_url', query.item_instance_url);
   if (query.item_schema_url) params.set('item_schema_url', query.item_schema_url);
+  if (query.created_by_me) params.set('created_by_me', 'true');
   if (query.limit !== undefined) params.set('limit', String(query.limit));
   if (query.offset !== undefined) params.set('offset', String(query.offset));
 
@@ -101,5 +103,35 @@ export async function fetchItems(query: FetchItemsQuery): Promise<FetchItemsResp
 
 export async function updateItem(itemId: string, payload: UpdateItemPayload): Promise<UpdateItemResponse> {
   const response = await apiClient.patch<UpdateItemResponse>(`/api/v1/item/${itemId}`, payload);
+  return response.data;
+}
+
+export interface ItemRef {
+  item_network: string;
+  item_domain: string;
+  item_type: string;
+  item_id: string;
+}
+
+export interface PerformActionPayload {
+  action_name: string;
+  source_item: ItemRef;
+  target_item: ItemRef;
+  requirements_snapshot: Record<string, unknown>;
+  created_by: string;
+  response_event_type: string;
+  response_event_payload: Record<string, unknown>;
+}
+
+export interface PerformActionResponse {
+  action_id: string;
+  action_name: string;
+  status: string;
+  response_event_type: string;
+  response_event_payload: Record<string, unknown>;
+}
+
+export async function performAction(payload: PerformActionPayload): Promise<PerformActionResponse> {
+  const response = await apiClient.post<PerformActionResponse>('/api/v1/action/perform', payload);
   return response.data;
 }
