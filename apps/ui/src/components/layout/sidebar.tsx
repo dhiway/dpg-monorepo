@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom';
+import type { RJSFSchema } from '@rjsf/utils';
 import type { DotNetworkDomain } from '@/engine/types';
+import type { Item } from '@/lib/item-api';
 import {
   Sidebar as ShadcnSidebar,
   SidebarContent,
@@ -7,20 +9,24 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarMenu,
+  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
-  SidebarFooter,
+  SidebarSeparator,
 } from '@/components/ui/sidebar';
-import { LayoutGrid, Box, Plus, GraduationCap, UserCheck, Building2 } from 'lucide-react';
+import { LayoutGrid, Box, Plus, Pencil, GraduationCap, UserCheck, Building2 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
 interface AppSidebarProps {
   domains: DotNetworkDomain[];
   selectedDomain: string | null;
   onDomainSelect: (domainName: string | null) => void;
   currentDomainLabel?: string;
+  myItems?: Item[];
+  activeProfileId?: string | null;
+  onActiveProfileChange?: (profileId: string) => void;
+  userSchemas?: Record<string, RJSFSchema>;
 }
 
 const domainIcons: Record<string, LucideIcon> = {
@@ -29,11 +35,24 @@ const domainIcons: Record<string, LucideIcon> = {
   coaching_center: Building2,
 };
 
+function findTitleField(schema: RJSFSchema): string | null {
+  if (!schema.properties) return null;
+  const candidates = ['name', 'full_name', 'title', 'provider_id', 'learner_id', 'student_id'];
+  for (const key of candidates) {
+    if (key in schema.properties) return key;
+  }
+  return Object.keys(schema.properties)[0] ?? null;
+}
+
 export function AppSidebar({
   domains,
   selectedDomain,
   onDomainSelect,
   currentDomainLabel,
+  myItems = [],
+  activeProfileId,
+  onActiveProfileChange,
+  userSchemas,
 }: AppSidebarProps) {
   const navigate = useNavigate();
 
@@ -75,16 +94,47 @@ export function AppSidebar({
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        <SidebarSeparator />
+        <SidebarGroup>
+          <SidebarGroupLabel>My Profile(s)</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {myItems.map((profile) => {
+                const schema = userSchemas?.[profile.item_domain];
+                const titleKey = schema ? findTitleField(schema) : null;
+                const title = titleKey
+                  ? String(profile.item_state[titleKey] ?? 'Profile')
+                  : 'Profile';
+                const Icon = domainIcons[profile.item_domain] ?? Box;
+                const isActiveProfile = profile.item_id === activeProfileId;
+
+                return (
+                  <SidebarMenuItem key={profile.item_id}>
+                    <SidebarMenuButton
+                      isActive={isActiveProfile}
+                      onClick={() => onActiveProfileChange?.(profile.item_id)}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span className="truncate">{title}</span>
+                    </SidebarMenuButton>
+                    <SidebarMenuAction
+                      onClick={() => navigate(`/profile/${profile.item_id}/edit`)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </SidebarMenuAction>
+                  </SidebarMenuItem>
+                );
+              })}
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => navigate('/profile/new')}>
+                  <Plus className="h-4 w-4" />
+                  <span>Create Profile</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="border-t p-3">
-        <Button
-          className="w-full"
-          onClick={() => navigate('/profile/new')}
-        >
-          <Plus className="h-4 w-4" />
-          Create Profile
-        </Button>
-      </SidebarFooter>
     </ShadcnSidebar>
   );
 }

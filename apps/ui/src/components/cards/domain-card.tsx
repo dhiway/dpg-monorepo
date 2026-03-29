@@ -54,7 +54,7 @@ export function DomainCard({
 
   return (
     <Card
-      className="h-full flex flex-col cursor-pointer hover:shadow-md transition-shadow"
+      className="h-full flex flex-col transition-shadow"
       onClick={onClick}
     >
       <CardHeader>

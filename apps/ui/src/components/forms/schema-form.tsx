@@ -11,13 +11,21 @@ interface SchemaFormProps {
   mode?: 'full' | 'compact';
   disabled?: boolean;
   className?: string;
+  submitButtonText?: string;
+  id?: string;
+  hideSubmit?: boolean;
 }
 
 function generateUiSchema(
   schema: RJSFSchema,
-  mode: 'full' | 'compact'
+  mode: 'full' | 'compact',
+  submitButtonText?: string
 ): UiSchema {
   const uiSchema: Record<string, unknown> = {};
+
+  if (submitButtonText) {
+    uiSchema['ui:submitButtonOptions'] = { submitText: submitButtonText };
+  }
 
   for (const [key, prop] of Object.entries(schema.properties ?? {})) {
     const typed = prop as RJSFSchema & { private?: boolean; format?: string };
@@ -60,13 +68,20 @@ export function SchemaForm({
   mode = 'full',
   disabled = false,
   className,
+  submitButtonText,
+  id,
+  hideSubmit = false,
 }: SchemaFormProps) {
-  const uiSchema = generateUiSchema(schema, mode);
+  const uiSchema = generateUiSchema(schema, mode, hideSubmit ? undefined : submitButtonText);
+  if (hideSubmit) {
+    uiSchema['ui:submitButtonOptions'] = { norender: true };
+  }
   const schemaWithoutMeta = stripMetaSchema(schema);
 
   return (
     <div className={className}>
       <Form
+        id={id}
         schema={schemaWithoutMeta}
         uiSchema={uiSchema}
         formData={formData}

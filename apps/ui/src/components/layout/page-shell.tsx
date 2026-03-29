@@ -1,6 +1,8 @@
+import type { RJSFSchema } from '@rjsf/utils';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import type { DotNetworkDomain, ViewMode } from '@/engine/types';
+import type { Item } from '@/lib/item-api';
 import { TopBar } from './top-bar';
 import { AppSidebar } from './sidebar';
 
@@ -10,6 +12,10 @@ interface PageShellProps {
   selectedDomain: string | null;
   onDomainSelect: (domainName: string | null) => void;
   currentDomainLabel?: string;
+  myItems?: Item[];
+  activeProfileId?: string | null;
+  onActiveProfileChange?: (profileId: string) => void;
+  userSchemas?: Record<string, RJSFSchema>;
   search: string;
   onSearchChange: (value: string) => void;
   viewMode: ViewMode;
@@ -22,6 +28,10 @@ export function PageShell({
   selectedDomain,
   onDomainSelect,
   currentDomainLabel,
+  myItems,
+  activeProfileId,
+  onActiveProfileChange,
+  userSchemas,
   search,
   onSearchChange,
   viewMode,
@@ -35,6 +45,10 @@ export function PageShell({
           selectedDomain={selectedDomain}
           onDomainSelect={onDomainSelect}
           currentDomainLabel={currentDomainLabel}
+          myItems={myItems}
+          activeProfileId={activeProfileId}
+          onActiveProfileChange={onActiveProfileChange}
+          userSchemas={userSchemas}
         />
         <div className="flex flex-1 flex-col">
           <TopBar

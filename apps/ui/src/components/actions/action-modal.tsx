@@ -34,6 +34,8 @@ interface ActionModalProps {
   loading?: boolean;
 }
 
+const ACTION_FORM_ID = 'action-requirement-form';
+
 export function ActionModal({
   open,
   onOpenChange,
@@ -43,7 +45,7 @@ export function ActionModal({
 }: ActionModalProps) {
   const isMobile = useIsMobile();
   const [resolvedSchema, setResolvedSchema] = React.useState<RJSFSchema | null>(null);
-  const [formData, setFormData] = React.useState<Record<string, unknown>>({});
+
   React.useEffect(() => {
     if (!open) return;
 
@@ -62,9 +64,25 @@ export function ActionModal({
     }
   }, [open, actionSchema]);
 
-  const handleSubmit = () => {
-    onSubmit(formData);
-  };
+  // Shared form content — the Confirm button submits the RJSF form via id,
+  // which triggers validation before calling onSubmit with the validated data.
+  const formContent = resolvedSchema ? (
+    <SchemaForm
+      id={ACTION_FORM_ID}
+      schema={resolvedSchema}
+      hideSubmit
+      onSubmit={onSubmit}
+    />
+  ) : (
+    <p className="text-muted-foreground text-sm">
+      No additional information required.
+    </p>
+  );
+
+  // When there's no schema, Confirm fires onSubmit directly with empty data.
+  const confirmButtonProps = resolvedSchema
+    ? { type: 'submit' as const, form: ACTION_FORM_ID }
+    : { type: 'button' as const, onClick: () => onSubmit({}) };
 
   if (isMobile) {
     return (
@@ -77,21 +95,10 @@ export function ActionModal({
             </DrawerDescription>
           </DrawerHeader>
           <div className="px-4 pb-4 overflow-y-auto">
-            {resolvedSchema ? (
-              <SchemaForm
-                schema={resolvedSchema}
-                onSubmit={(data) => {
-                  setFormData(data);
-                }}
-              />
-            ) : (
-              <p className="text-muted-foreground text-sm">
-                No additional information required.
-              </p>
-            )}
+            {formContent}
           </div>
           <DrawerFooter>
-            <Button onClick={handleSubmit} disabled={loading}>
+            <Button {...confirmButtonProps} disabled={loading}>
               {loading ? 'Connecting...' : 'Confirm'}
             </Button>
             <Button
@@ -117,18 +124,7 @@ export function ActionModal({
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">
-          {resolvedSchema ? (
-            <SchemaForm
-              schema={resolvedSchema}
-              onSubmit={(data) => {
-                setFormData(data);
-              }}
-            />
-          ) : (
-            <p className="text-muted-foreground text-sm">
-              No additional information required.
-            </p>
-          )}
+          {formContent}
         </div>
         <DialogFooter>
           <Button
@@ -138,7 +134,7 @@ export function ActionModal({
           >
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={loading}>
+          <Button {...confirmButtonProps} disabled={loading}>
             {loading ? 'Connecting...' : 'Confirm'}
           </Button>
         </DialogFooter>

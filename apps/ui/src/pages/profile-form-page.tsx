@@ -68,19 +68,25 @@ export function ProfileFormPage() {
   React.useEffect(() => {
     if (!isEdit || !id || !resolvedNetwork) return;
 
+    let cancelled = false;
+
     const loadExistingProfile = async () => {
       try {
         // Search across all domains to find the item
         for (const domain of resolvedNetwork.domains ?? []) {
+          const itemTypeKeys = domain.item_schemas ? Object.keys(domain.item_schemas) : [];
+          const itemType = itemTypeKeys.length > 0 ? itemTypeKeys[0] : 'profile';
+
           const response = await fetchItems({
             item_network: educationNetwork.name,
             item_domain: domain.name,
-item_type: defaultItemType ?? 'profile',
+            item_type: itemType,
             item_id: id,
             limit: 1,
           });
 
           if (response.items.length > 0) {
+            if (cancelled) return;
             const item = response.items[0];
             setExistingItem(item);
             setSelectedDomain(item.item_domain);
@@ -89,14 +95,17 @@ item_type: defaultItemType ?? 'profile',
           }
         }
       } catch (err) {
-        console.error('Failed to load profile:', err);
-        toast.error('Failed to load profile');
+        if (!cancelled) {
+          console.error('Failed to load profile:', err);
+          toast.error('Failed to load profile');
+        }
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     };
 
     loadExistingProfile();
+    return () => { cancelled = true; };
   }, [isEdit, id, resolvedNetwork]);
 
   const network = resolvedNetwork;
@@ -160,8 +169,9 @@ item_type: defaultItemType ?? 'profile',
           createPayload.item_instance_url = domainInstance.instance_url;
         }
 
-        if (domainInstance?.schema_url) {
-          createPayload.item_schema_url = domainInstance.schema_url;
+        const customSchemaUrls = domainInstance?.custom_item_schema_urls as Record<string, string> | undefined;
+        if (defaultItemType && customSchemaUrls?.[defaultItemType]) {
+          createPayload.item_schema_url = customSchemaUrls[defaultItemType];
         }
 
         if (coordinates) {
@@ -282,6 +292,7 @@ item_type: defaultItemType ?? 'profile',
                 onSubmit={handleSubmit}
                 disabled={isSubmitting}
                 formData={initialData ?? undefined}
+                submitButtonText={isEdit ? 'Update' : undefined}
               />
             )}
           </CardContent>

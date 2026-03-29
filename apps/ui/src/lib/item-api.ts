@@ -83,7 +83,7 @@ export async function createItem(payload: CreateItemPayload): Promise<CreateItem
   return response.data;
 }
 
-export async function fetchItems(query: FetchItemsQuery): Promise<FetchItemsResponse> {
+export async function fetchItems(query: FetchItemsQuery, signal?: AbortSignal): Promise<FetchItemsResponse> {
   const params = new URLSearchParams();
 
   params.set('item_network', query.item_network);
@@ -97,7 +97,7 @@ export async function fetchItems(query: FetchItemsQuery): Promise<FetchItemsResp
   if (query.limit !== undefined) params.set('limit', String(query.limit));
   if (query.offset !== undefined) params.set('offset', String(query.offset));
 
-  const response = await apiClient.get<FetchItemsResponse>('/api/v1/item/fetch', { params });
+  const response = await apiClient.get<FetchItemsResponse>('/api/v1/item/fetch', { params, signal });
   return response.data;
 }
 
