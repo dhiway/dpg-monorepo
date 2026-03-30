@@ -48,6 +48,10 @@ export default defineConfig({
               slug: 'schemas/network-actions-domain',
             },
             { label: 'Example Networks', slug: 'schemas/examples' },
+            {
+              label: 'DOT Example Schemas',
+              slug: 'schemas/dot-examples',
+            },
           ],
         },
         {
@@ -71,6 +75,8 @@ export default defineConfig({
             { label: 'Database Package', slug: 'packages/database-package' },
             { label: 'Schemas Package', slug: 'packages/schemas-and-registry' },
             { label: 'Auth Package', slug: 'packages/auth-package' },
+            { label: 'API App', slug: 'apps/api' },
+            { label: 'UI App', slug: 'apps/ui' },
           ],
         },
       ],
