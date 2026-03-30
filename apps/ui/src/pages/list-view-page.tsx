@@ -39,8 +39,8 @@ export function ListViewPage({
           schemaName={schemaName}
           items={items}
           actions={actions}
-          onAction={(_itemId, type, actionSchema) => {
-            triggerAction(type, actionSchema);
+          onAction={(itemId, type, actionSchema) => {
+            triggerAction(type, actionSchema, itemId);
           }}
           loading={loading}
           emptyMessage={emptyMessage}

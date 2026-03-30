@@ -1,11 +1,19 @@
 import { useNavigate } from 'react-router-dom';
-import { Search, List, Map, LogIn } from 'lucide-react';
+import { Search, List, Map, LogIn, Server } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { UserMenu } from '@/components/auth/user-menu';
 import { useAuth } from '@/contexts/auth-context';
+import { apiConfig } from '@/lib/api-config';
 import type { ViewMode } from '@/engine/types';
 
 interface TopBarProps {
@@ -52,6 +60,25 @@ export function TopBar({
             <Map className="h-4 w-4" />
           </ToggleGroupItem>
         </ToggleGroup>
+
+        {apiConfig.isDevMode() && (
+          <Select
+            value={apiConfig.getSelectedKey() ?? 'default'}
+            onValueChange={(value) => apiConfig.setSelectedKey(value)}
+          >
+            <SelectTrigger className="w-[180px]" aria-label="Select API instance">
+              <Server className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Select API" />
+            </SelectTrigger>
+            <SelectContent>
+              {apiConfig.getEndpoints().map((ep) => (
+                <SelectItem key={ep.key} value={ep.key}>
+                  {ep.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
 
         {!isLoading && (
           isAuthenticated ? (
