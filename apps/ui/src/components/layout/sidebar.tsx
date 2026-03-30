@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import type { RJSFSchema } from '@rjsf/utils';
-import type { DotNetworkDomain } from '@/engine/types';
+import type { DotNetworkDomain, DotNetworkSchema } from '@/engine/types';
 import type { Item } from '@/lib/item-api';
 import {
   Sidebar as ShadcnSidebar,
@@ -15,10 +15,13 @@ import {
   SidebarHeader,
   SidebarSeparator,
 } from '@/components/ui/sidebar';
-import { LayoutGrid, Box, Plus, Pencil, GraduationCap, UserCheck, Building2 } from 'lucide-react';
+import { LayoutGrid, Box, Plus, Pencil, GraduationCap, UserCheck, Building2, Network } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 interface AppSidebarProps {
+  networks?: DotNetworkSchema[];
+  selectedNetwork?: string | null;
+  onNetworkSelect?: (networkName: string) => void;
   domains: DotNetworkDomain[];
   selectedDomain: string | null;
   onDomainSelect: (domainName: string | null) => void;
@@ -45,6 +48,9 @@ function findTitleField(schema: RJSFSchema): string | null {
 }
 
 export function AppSidebar({
+  networks = [],
+  selectedNetwork,
+  onNetworkSelect,
   domains,
   selectedDomain,
   onDomainSelect,
@@ -56,6 +62,8 @@ export function AppSidebar({
 }: AppSidebarProps) {
   const navigate = useNavigate();
 
+  const showNetworkSelector = networks.length > 0;
+
   return (
     <ShadcnSidebar>
       <SidebarHeader className="border-b px-4 py-3">
@@ -64,6 +72,27 @@ export function AppSidebar({
         </h2>
       </SidebarHeader>
       <SidebarContent>
+        {showNetworkSelector && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Networks</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {networks.map((network) => (
+                  <SidebarMenuItem key={network.name}>
+                    <SidebarMenuButton
+                      isActive={selectedNetwork === network.name}
+                      onClick={() => onNetworkSelect?.(network.name)}
+                    >
+                      <Network className="h-4 w-4" />
+                      <span>{network.display_name || network.name}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+        {showNetworkSelector && <SidebarSeparator />}
         <SidebarGroup>
           <SidebarGroupLabel>Browse</SidebarGroupLabel>
           <SidebarGroupContent>
