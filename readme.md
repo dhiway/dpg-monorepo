@@ -1,89 +1,166 @@
-# DPG Monorepo
+# DPG
 
-This monorepo adds support for managing multiple apps with shared basic configs.
+DPG is a network-aware backend for publishing, validating, discovering, and interacting with schema-typed items across many independent instances.
 
-- user interfaces
-- backend APIs
-- middlewares
-- authentication service setup
-- clean env control and setup
-- per app database setup
-- pnpm workspace flow
-- turborepo task orchestration
+The core model is:
 
-## Adding Apps / Packages
+- a network defines the shared contract
+- a domain defines a role inside that network
+- an instance serves one or more domains
+- an item is a versioned schema-typed record
+- an action is an interaction between items
+- an event is the structured result of that action
 
-1. Apps
+This repository contains the current DPG runtime, docs site, example network schemas, and shared packages used by the API.
 
-Apps are the services which holds runtime code. be it UI, Docs, API services or
-middlewares. these apps use and interacts with the packages to utilise there
-functionality and interacts with the environment variables. Apps can also hold
-there own local env variables and interact freely. global env secrets are
-supported by zod schema for validation which can be found in
-`./packages/config/src/secrets.ts`. it is recommended to use the validation to
-load env in apps with zod. ex: in `./apps/api/src/env.ts`
+## Repository Layout
 
-```ts
-const instance = InstanceSecretsSchema.parse(process.env);
-```
+- `apps/api`: Fastify API runtime
+- `apps/docs`: documentation site
+- `examples/schemas`: example network definitions such as `yellow_dot` and `blue_dot`
+- `examples/api`: example request payloads in Markdown
+- `packages/config`: env parsing and network config loading
+- `packages/database`: database helpers and partitioning
+- `packages/schemas`: API request schemas and network schema parsing
+- `packages/auth`: auth integration
 
-these env variables are then consumed by `./apps/api/src/config.ts` to create
-variables required by database and auth config
+## Current API Shape
 
-### package.json setup for any app or package
+Main route groups:
 
-All exports should be exported in index.ts
+- `/api/v1/item`
+- `/api/v1/action`
+- `/api/v1/event`
+- `/api/v1/network`
 
-```json
-{
-  "name": "package-name",
-  "version": "1.0.0",
-  "description": "package description",
-  "type": "module",
-  "private": true,
-  "main": "index.js",
-  "exports": {
-    ".": "./src/index.ts"
-  },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "packageManager": "pnpm@10.28.1",
-  "dependencies": {}
-}
-```
+Important behavior:
 
-## APPS / API
+- `POST /api/v1/item/create` creates an item on the current instance
+- `GET /api/v1/item/fetch` fetches items from the current instance only
+- `GET /api/v1/network/item/fetch` performs inter-instance fetch for a network/domain
+- `GET /api/v1/network/schema/:network/:domain/:itemType` returns one concrete item schema
+- `GET /api/v1/network/schemas` returns cached schemas known to the instance
+- `POST /api/v1/network/refetch_schemas` refreshes schema cache
 
-### Turbo commands (root)
+Item typing is schema-driven. `item_type` is not arbitrary; it should be a schema identifier defined by the network, for example `profile_1.0` or `profile_1.1`.
 
-- `pnpm dev:api` start API in watch mode
-- `pnpm build:api` build API
-- `pnpm preview:api` run built API
-- `pnpm start:api` run production entry for API
-- `pnpm db:generate:api` generate migrations
-- `pnpm db:migrate:api` run migrations
-- `pnpm db:studio:api` open drizzle studio
+## Quick Start
 
-### Local mode (host API + docker DBs)
-
-1. Start databases from root:
-   `docker compose up -d db redis`
-2. Keep `.env` using local values (`POSTGRES_HOST=127.0.0.1`,
-   `REDIS_HOST=127.0.0.1`, with matching ports).
-3. Run API from root:
-   `pnpm dev:api`
-
-### External DB mode (Dokploy or other hosted DBs)
-
-Use URL overrides in `.env`:
+### 1. Install dependencies
 
 ```bash
-POSTGRES_URL='postgres://user:password@host:5432/dbname'
-REDIS_URL='redis://:password@host:6379'
+pnpm install
 ```
 
-When these are set, API and drizzle-kit use them automatically.
+### 2. Configure environment
+
+Start from `.env.example` and set at least:
+
+```bash
+INSTANCE_ENV="development"
+API_DOMAIN="http://localhost"
+API_PORT="2742"
+SERVED_DOMAINS="yellow_dot/student"
+NETWORK_CONFIG_SOURCE="local"
+NETWORK_CONFIG_LOCAL_FILE="examples/schemas/yellow_dot/network.json"
+POSTGRES_HOST="127.0.0.1"
+POSTGRES_PORT="5432"
+REDIS_HOST="127.0.0.1"
+REDIS_PORT="5555"
+```
+
+For remote network configs, use:
+
+```bash
+NETWORK_CONFIG_SOURCE="remote"
+NETWORK_CONFIG_URLS="yellow_dot=https://registry.example.com/schemas/yellow_dot/network.json"
+```
+
+Or use `SCHEMA_REGISTRY_URL` with either:
+
+- one base URL
+- comma-separated `network=url` mappings
+
+### 3. Start PostgreSQL and Redis
+
+```bash
+docker compose up -d db redis
+```
+
+### 4. Run database migrations
+
+```bash
+pnpm db:migrate:api
+```
+
+### 5. Start the API
+
+```bash
+pnpm dev:api
+```
+
+Optional:
+
+```bash
+pnpm dev:docs
+```
+
+## Useful Commands
+
+- `pnpm dev:api`
+- `pnpm build:api`
+- `pnpm preview:api`
+- `pnpm start:api`
+- `pnpm db:pull:api`
+- `pnpm db:push:api`
+- `pnpm db:generate:api`
+- `pnpm db:migrate:api`
+- `pnpm db:studio:api`
+- `pnpm dev:docs`
+- `pnpm build:docs`
+
+## Examples
+
+Local schema examples:
+
+- `examples/schemas/yellow_dot/network.json`
+- `examples/schemas/blue_dot/network.json`
+
+API payload examples:
+
+- `examples/api/yellow_dot.md`
+- `examples/api/blue_dot.md`
+
+## Fetch Model
+
+DPG uses two fetch paths:
+
+- `GET /api/v1/item/fetch`: instance-local fetch, intended for local reads such as a user's own items; cached briefly in Redis
+- `GET /api/v1/network/item/fetch`: inter-instance fetch, which performs count-first discovery, selects only relevant peer instances, then fetches the required slices and caches the result in Redis
+
+## Documentation
+
+The full documentation lives in `apps/docs`. A good reading order is:
+
+1. `apps/docs/src/content/docs/index.md`
+2. `apps/docs/src/content/docs/concepts/vocabulary.md`
+3. `apps/docs/src/content/docs/concepts/architecture.md`
+4. `apps/docs/src/content/docs/getting-started.md`
+5. `apps/docs/src/content/docs/environment.md`
+6. `apps/docs/src/content/docs/schemas/authoring.md`
+7. `apps/docs/src/content/docs/apps/api.md`
+
+The docs cover:
+
+- vocabulary and architecture
+- local setup, Docker, Dokploy, and Nixpacks hosting
+- single-instance and multi-instance deployment
+- schema authoring and versioning
+- API behavior
+- onboarding new networks and domains
+
+## Notes
+
+- `item_type` values should come from the network schema, not from freeform client input.
+- The backend generates `item_instance_url` and `item_schema_url` during item creation.
+- Inter-instance schema fetching and caching are part of the network layer, not the item-local layer.
