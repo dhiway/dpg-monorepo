@@ -1,11 +1,10 @@
 import axios from 'axios';
 
 import type { FetchItemsQuery, FetchItemsResponse } from './item-api';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+import { apiConfig } from './api-config';
 
 const networkApiClient = axios.create({
-  baseURL: API_URL,
+  baseURL: apiConfig.getUrl(),
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
