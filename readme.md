@@ -11,12 +11,13 @@ The core model is:
 - an action is an interaction between items
 - an event is the structured result of that action
 
-This repository contains the current DPG runtime, docs site, example network schemas, and shared packages used by the API.
+This repository contains the current DPG API runtime, schema-driven UI app, docs site, example network schemas, and shared packages.
 
 ## Repository Layout
 
 - `apps/api`: Fastify API runtime
 - `apps/docs`: documentation site
+- `apps/ui`: schema-driven React UI for browsing domains, creating items, and triggering actions
 - `examples/schemas`: example network definitions such as `yellow_dot` and `blue_dot`
 - `examples/api`: example request payloads in Markdown
 - `packages/config`: env parsing and network config loading
@@ -43,6 +44,24 @@ Important behavior:
 - `POST /api/v1/network/refetch_schemas` refreshes schema cache
 
 Item typing is schema-driven. `item_type` is not arbitrary; it should be a schema identifier defined by the network, for example `profile_1.0` or `profile_1.1`.
+
+## UI App
+
+The UI app lives in `apps/ui`. It is a React 19 + Vite frontend that renders pages from network and item schemas instead of hard-coding per-domain forms and cards.
+
+Current UI responsibilities:
+
+- browse items by domain
+- create and edit schema-driven profiles
+- render public item cards
+- trigger action flows
+- show map-based views through a pluggable map provider layer
+
+UI runtime envs:
+
+- `VITE_API_URL`: base URL of the API app
+- `VITE_MAP_PROVIDER`: active map provider, default `leaflet`
+- `VITE_GEOCODING_API_URL`: optional geocoding override
 
 ## Quick Start
 
@@ -105,6 +124,19 @@ Optional:
 pnpm dev:docs
 ```
 
+To run the UI app:
+
+```bash
+pnpm dev:ui
+```
+
+Typical local UI env:
+
+```bash
+VITE_API_URL="http://localhost:2742"
+VITE_MAP_PROVIDER="leaflet"
+```
+
 ## Useful Commands
 
 - `pnpm dev:api`
@@ -118,6 +150,9 @@ pnpm dev:docs
 - `pnpm db:studio:api`
 - `pnpm dev:docs`
 - `pnpm build:docs`
+- `pnpm dev:ui`
+- `pnpm build:ui`
+- `pnpm preview:ui`
 
 ## Examples
 
@@ -149,6 +184,7 @@ The full documentation lives in `apps/docs`. A good reading order is:
 5. `apps/docs/src/content/docs/environment.md`
 6. `apps/docs/src/content/docs/schemas/authoring.md`
 7. `apps/docs/src/content/docs/apps/api.md`
+8. `apps/docs/src/content/docs/apps/ui.md`
 
 The docs cover:
 

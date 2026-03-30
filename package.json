@@ -20,7 +20,6 @@
     "dev:ui": "node scripts/turbo-with-root-env.mjs run dev --filter=ui",
     "build:ui": "node scripts/turbo-with-root-env.mjs run build --filter=ui",
     "preview:ui": "node scripts/turbo-with-root-env.mjs run preview --filter=ui",
-    "start:ui": "node scripts/turbo-with-root-env.mjs run start --filter=ui",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
