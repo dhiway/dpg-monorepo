@@ -49,23 +49,30 @@ export interface SessionResponse {
   } | null;
 }
 
+function normalizePhoneNumber(phoneNumber: string): string {
+  const digits = phoneNumber.replace(/\D/g, '');
+  if (phoneNumber.startsWith('+')) return phoneNumber;
+  if (digits.length === 10) return `+91${digits}`;
+  return `+${digits}`;
+}
+
 export async function checkUser(phoneNumber: string): Promise<CheckUserResponse> {
   const response = await apiClient.post<CheckUserResponse>('/api/auth/unified-otp/check-user', {
-    phoneNumber,
+    phoneNumber: normalizePhoneNumber(phoneNumber),
   });
   return response.data;
 }
 
 export async function requestOtp(phoneNumber: string): Promise<RequestOtpResponse> {
   const response = await apiClient.post<RequestOtpResponse>('/api/auth/unified-otp/request', {
-    phoneNumber,
+    phoneNumber: normalizePhoneNumber(phoneNumber),
   });
   return response.data;
 }
 
 export async function verifyOtp(phoneNumber: string, otp: string, name?: string): Promise<VerifyOtpResponse> {
   const response = await apiClient.post<VerifyOtpResponse>('/api/auth/unified-otp/verify', {
-    phoneNumber,
+    phoneNumber: normalizePhoneNumber(phoneNumber),
     otp,
     name: name || 'user',
   });
