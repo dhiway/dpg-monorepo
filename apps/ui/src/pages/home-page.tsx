@@ -16,6 +16,7 @@ import { ActionHandler } from '@/components/actions/action-handler';
 import { MapView } from '@/components/map/map-container';
 import '@/components/map/providers';
 import { fetchItems, performAction, type Item } from '@/lib/item-api';
+import { fetchNetworkItems } from '@/lib/network-api';
 import { useAuth } from '@/contexts/auth-context';
 import educationNetwork from '../../../../examples/schemas/yellow_dot/network.json';
 
@@ -139,6 +140,11 @@ export function HomePage() {
     return network.domains.filter((d) => targetNames.has(d.name));
   }, [network, currentDomain, myItem]);
 
+  const localProfileItemIds = React.useMemo(
+    () => new Set(myItems.map((item) => item.item_id)),
+    [myItems]
+  );
+
   // Fetch items for selected domain(s); when All tab (null) fetch all visible domains in parallel
   React.useEffect(() => {
     if (!network || visibleDomains.length === 0) {
@@ -156,11 +162,14 @@ export function HomePage() {
     Promise.all(
       domainsToFetch.map((domain) => {
         const itemType = getItemTypeForDomain(network, domain.name);
-        return fetchItems(
+        return fetchNetworkItems(
           { item_network: educationNetwork.name, item_domain: domain.name, item_type: itemType, limit: 100 },
           controller.signal
         )
-          .then((res) => ({ domain: domain.name, items: res.items }))
+          .then((res) => ({
+            domain: domain.name,
+            items: res.items.filter((item) => !localProfileItemIds.has(item.item_id)),
+          }))
           .catch(() => ({ domain: domain.name, items: [] as Item[] }));
       })
     )
@@ -175,7 +184,7 @@ export function HomePage() {
       });
 
     return () => { controller.abort(); };
-  }, [selectedDomain, visibleDomains, network]);
+  }, [selectedDomain, visibleDomains, network, localProfileItemIds]);
 
   // Active schema: from the selected browsing domain, or first visible domain
   const activeSchema = React.useMemo(() => {
