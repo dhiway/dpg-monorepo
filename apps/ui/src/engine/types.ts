@@ -38,12 +38,20 @@ export interface DotNetworkInteraction {
   event_schema: RJSFSchema;
 }
 
+export interface DotNetworkInstance {
+  domain_name: string;
+  instance_name?: string;
+  instance_url: string;
+  custom_item_schema_urls?: Record<string, string>;
+}
+
 export interface DotNetworkSchema {
   name: string;
   display_name: string;
   description: string;
   schema_standard: string;
   domains: DotNetworkDomain[];
+  instances?: DotNetworkInstance[];
   actions: {
     connect: {
       description: string;

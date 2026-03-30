@@ -16,20 +16,9 @@ import { ActionHandler } from '@/components/actions/action-handler';
 import { MapView } from '@/components/map/map-container';
 import '@/components/map/providers';
 import { fetchItems, performAction, type Item } from '@/lib/item-api';
-import { fetchNetworkItems } from '@/lib/network-api';
+import { fetchNetworkConfigs, fetchNetworkConfig, fetchNetworkItems } from '@/lib/network-api';
 import { useAuth } from '@/contexts/auth-context';
-import educationNetwork from '../../../../examples/schemas/yellow_dot/network.json';
-
-// Referenced schemas — imported at build time, resolved at runtime via refMap
-import studentProfileSchema from '../../../../examples/schemas/domain.json';
-import learnerProfileSchema from '../../../../examples/schemas/learner_domain.json';
-import tutorCounsellorProfileSchema from '../../../../examples/schemas/tutor_counsellor_domain.json';
-
-const schemaRefMap: Record<string, unknown> = {
-  './domain.json': studentProfileSchema,
-  './learner_domain.json': learnerProfileSchema,
-  './tutor_counsellor_domain.json': tutorCounsellorProfileSchema,
-};
+import { apiConfig } from '@/lib/api-config';
 
 function itemToCardItem(item: Item): { id: string; data: Record<string, unknown> } {
   return {
@@ -59,6 +48,10 @@ export function HomePage() {
     searchParams.get('domain')
   );
   const [resolvedNetwork, setResolvedNetwork] = React.useState<DotNetworkSchema | null>(null);
+  const [allNetworks, setAllNetworks] = React.useState<DotNetworkSchema[]>([]);
+  const [selectedNetworkName, setSelectedNetworkName] = React.useState<string | null>(
+    import.meta.env.VITE_NETWORK_NAME || null
+  );
   const [domainItems, setDomainItems] = React.useState<Record<string, Item[]>>({});
   const [myItems, setMyItems] = React.useState<Item[]>([]);
   const [activeProfileId, setActiveProfileId] = React.useState<string | null>(
@@ -66,12 +59,50 @@ export function HomePage() {
   );
   const [loading, setLoading] = React.useState(false);
 
-  // Eagerly resolve all $ref in network before rendering
+  // Fetch networks from API on mount
   React.useEffect(() => {
-    resolveNetworkRefs(educationNetwork, { refMap: schemaRefMap }).then((resolved) => {
-      setResolvedNetwork(resolved as DotNetworkSchema);
-    });
+    const controller = new AbortController();
+
+    fetchNetworkConfigs()
+      .then((networks) => {
+        if (controller.signal.aborted) return;
+        setAllNetworks(networks);
+
+        // If VITE_NETWORK_NAME is set, use that; otherwise use first available
+        const targetNetwork = import.meta.env.VITE_NETWORK_NAME || networks[0]?.name;
+        if (targetNetwork) {
+          setSelectedNetworkName(targetNetwork);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to fetch networks:', err);
+      });
+
+    return () => { controller.abort(); };
   }, []);
+
+  // Fetch and resolve the selected network
+  React.useEffect(() => {
+    if (!selectedNetworkName) return;
+
+    const controller = new AbortController();
+
+    fetchNetworkConfig(selectedNetworkName)
+      .then((config) => {
+        if (controller.signal.aborted) return;
+        // Resolve any $ref in the network config
+        return resolveNetworkRefs(config, { baseUrl: apiConfig.getUrl() });
+      })
+      .then((resolved) => {
+        if (controller.signal.aborted || !resolved) return;
+        setResolvedNetwork(resolved as DotNetworkSchema);
+      })
+      .catch((err) => {
+        console.error('Failed to fetch network config:', err);
+      });
+
+    return () => { controller.abort(); };
+  }, [selectedNetworkName]);
 
   const network = resolvedNetwork;
 
@@ -85,7 +116,7 @@ export function HomePage() {
     const domainFetches = network.domains.map((domain) => {
       const itemType = getItemTypeForDomain(network, domain.name);
       return fetchItems({
-        item_network: educationNetwork.name,
+        item_network: network.name,
         item_domain: domain.name,
         item_type: itemType,
         created_by_me: true,
@@ -163,7 +194,7 @@ export function HomePage() {
       domainsToFetch.map((domain) => {
         const itemType = getItemTypeForDomain(network, domain.name);
         return fetchNetworkItems(
-          { item_network: educationNetwork.name, item_domain: domain.name, item_type: itemType, limit: 100 },
+          { item_network: network.name, item_domain: domain.name, item_type: itemType, limit: 100 },
           controller.signal
         )
           .then((res) => ({
@@ -265,6 +296,14 @@ export function HomePage() {
     localStorage.setItem('activeProfileId', profileId);
   };
 
+  const handleNetworkSelect = (networkName: string) => {
+    setSelectedNetworkName(networkName);
+    setSelectedDomain(null);
+    setSearchParams({});
+  };
+
+  const showNetworkSelector = !import.meta.env.VITE_NETWORK_NAME && allNetworks.length > 1;
+
   const currentDomainLabel = visibleDomains.find(
     (d) => d.name === selectedDomain
   )?.description;
@@ -281,6 +320,9 @@ export function HomePage() {
 
   return (
     <PageShell
+      networks={showNetworkSelector ? allNetworks : []}
+      selectedNetwork={selectedNetworkName}
+      onNetworkSelect={handleNetworkSelect}
       domains={visibleDomains}
       selectedDomain={selectedDomain}
       onDomainSelect={handleDomainSelect}

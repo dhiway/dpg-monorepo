@@ -15,7 +15,6 @@ import {
 import { SchemaForm } from '@/components/forms/schema-form';
 import { resolveNetworkRefs } from '@/engine/schema/resolve-schema';
 import type { DotNetworkSchema } from '@/engine/types';
-import educationNetwork from '../../../../examples/schemas/yellow_dot/network.json';
 
 import {
   createItem,
@@ -25,18 +24,9 @@ import {
   type UpdateItemPayload,
   type Item,
 } from '@/lib/item-api';
+import { fetchNetworkConfig } from '@/lib/network-api';
 import { extractAndGeocode } from '@/lib/item-utils';
-
-// Referenced schemas — imported at build time, resolved at runtime via refMap
-import studentProfileSchema from '../../../../examples/schemas/domain.json';
-import learnerProfileSchema from '../../../../examples/schemas/learner_domain.json';
-import tutorCounsellorProfileSchema from '../../../../examples/schemas/tutor_counsellor_domain.json';
-
-const schemaRefMap: Record<string, unknown> = {
-  './domain.json': studentProfileSchema,
-  './learner_domain.json': learnerProfileSchema,
-  './tutor_counsellor_domain.json': tutorCounsellorProfileSchema,
-};
+import { apiConfig } from '@/lib/api-config';
 
 const domainIcons: Record<string, LucideIcon> = {
   student_profile: GraduationCap,
@@ -57,11 +47,25 @@ export function ProfileFormPage() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(isEdit);
 
-  // Eagerly resolve all $ref in network before rendering
+  // Fetch and resolve network config from API
   React.useEffect(() => {
-    resolveNetworkRefs(educationNetwork, { refMap: schemaRefMap }).then((resolved) => {
-      setResolvedNetwork(resolved as DotNetworkSchema);
-    });
+    const networkName = import.meta.env.VITE_NETWORK_NAME || 'yellow_dot';
+    const controller = new AbortController();
+
+    fetchNetworkConfig(networkName)
+      .then((config) => {
+        if (controller.signal.aborted) return;
+        return resolveNetworkRefs(config, { baseUrl: apiConfig.getUrl() });
+      })
+      .then((resolved) => {
+        if (controller.signal.aborted || !resolved) return;
+        setResolvedNetwork(resolved as DotNetworkSchema);
+      })
+      .catch((err) => {
+        console.error('Failed to fetch network config:', err);
+      });
+
+    return () => { controller.abort(); };
   }, []);
 
   // Fetch existing profile for edit mode
@@ -78,7 +82,7 @@ export function ProfileFormPage() {
           const itemType = itemTypeKeys.length > 0 ? itemTypeKeys[0] : 'profile';
 
           const response = await fetchItems({
-            item_network: educationNetwork.name,
+            item_network: resolvedNetwork.name,
             item_domain: domain.name,
             item_type: itemType,
             item_id: id,
@@ -130,9 +134,9 @@ export function ProfileFormPage() {
 
   // Get network-level instance URL and schema URL for the selected domain
   const domainInstance = React.useMemo(() => {
-    if (!selectedDomain) return null;
-    return educationNetwork.instances?.find((i) => i.domain_name === selectedDomain) ?? null;
-  }, [selectedDomain]);
+    if (!selectedDomain || !network) return null;
+    return network.instances?.find((i) => i.domain_name === selectedDomain) ?? null;
+  }, [selectedDomain, network]);
 
   const handleSubmit = async (data: Record<string, unknown>) => {
     if (!selectedDomain || !network) return;

@@ -1,7 +1,18 @@
 import axios from 'axios';
 
 import type { FetchItemsQuery, FetchItemsResponse } from './item-api';
+import type { DotNetworkSchema } from '../engine/types';
 import { apiConfig } from './api-config';
+
+interface CachedSchemaEntry {
+  cache_key: string;
+  kind: 'network_config' | 'domain_item_schema' | 'instance_custom_item_schema' | 'item_schema_url';
+  network?: string;
+  domain?: string;
+  item_type?: string;
+  schema_url?: string;
+  schema: DotNetworkSchema;
+}
 
 const networkApiClient = axios.create({
   baseURL: apiConfig.getUrl(),
@@ -42,4 +53,26 @@ export async function fetchNetworkItems(
     { params, signal }
   );
   return response.data;
+}
+
+export async function fetchNetworkConfigs(): Promise<DotNetworkSchema[]> {
+  const response = await networkApiClient.get<CachedSchemaEntry[]>(
+    '/api/v1/network/schemas'
+  );
+  const configs = response.data.filter((e) => e.kind === 'network_config');
+  return configs.map((c) => c.schema);
+}
+
+export async function fetchNetworkConfig(
+  networkName: string
+): Promise<DotNetworkSchema> {
+  const response = await networkApiClient.get<CachedSchemaEntry[]>(
+    '/api/v1/network/schemas',
+    { params: { network: networkName } }
+  );
+  const config = response.data.find((e) => e.kind === 'network_config');
+  if (!config) {
+    throw new Error(`Network "${networkName}" not found`);
+  }
+  return config.schema;
 }

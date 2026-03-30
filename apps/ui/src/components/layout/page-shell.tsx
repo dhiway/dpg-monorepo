@@ -1,13 +1,16 @@
 import type { RJSFSchema } from '@rjsf/utils';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import type { DotNetworkDomain, ViewMode } from '@/engine/types';
+import type { DotNetworkDomain, DotNetworkSchema, ViewMode } from '@/engine/types';
 import type { Item } from '@/lib/item-api';
 import { TopBar } from './top-bar';
 import { AppSidebar } from './sidebar';
 
 interface PageShellProps {
   children: React.ReactNode;
+  networks?: DotNetworkSchema[];
+  selectedNetwork?: string | null;
+  onNetworkSelect?: (networkName: string) => void;
   domains: DotNetworkDomain[];
   selectedDomain: string | null;
   onDomainSelect: (domainName: string | null) => void;
@@ -24,6 +27,9 @@ interface PageShellProps {
 
 export function PageShell({
   children,
+  networks,
+  selectedNetwork,
+  onNetworkSelect,
   domains,
   selectedDomain,
   onDomainSelect,
@@ -41,6 +47,9 @@ export function PageShell({
     <TooltipProvider>
       <SidebarProvider>
         <AppSidebar
+          networks={networks}
+          selectedNetwork={selectedNetwork}
+          onNetworkSelect={onNetworkSelect}
           domains={domains}
           selectedDomain={selectedDomain}
           onDomainSelect={onDomainSelect}
