@@ -23,6 +23,7 @@ type PageSlice = {
 };
 
 type FetchItemsResponse = Awaited<ReturnType<typeof fetchLocalItems>>;
+type FetchItemsResponseItem = FetchItemsResponse['items'][number];
 
 export function buildPagePlan(
   counts: InstanceCount[],
@@ -73,7 +74,9 @@ export async function fetchItemsAcrossInstances(input: {
   const cachedPage = await redis.get(pageCacheKey);
 
   if (cachedPage) {
-    return JSON.parse(cachedPage) as FetchItemsResponse;
+    return normalizeFetchItemsResponse(
+      JSON.parse(cachedPage) as FetchItemsResponse
+    );
   }
 
   const domainInstances = input.networkConfig.instances.filter(
@@ -91,7 +94,10 @@ export async function fetchItemsAcrossInstances(input: {
     }))
   );
 
-  const total = counts.reduce((sum, entry) => sum + entry.count, 0);
+  const total = counts.reduce(
+    (sum: number, entry: InstanceCount) => sum + entry.count,
+    0
+  );
   const slices = buildPagePlan(counts, input.filters.offset, input.filters.limit);
   const responses = await Promise.all(
     slices.map((slice) =>
@@ -218,7 +224,9 @@ async function fetchRemotePage(instanceUrl: string, filters: ItemFetchFilters) {
     );
   }
 
-  return (await response.json()) as FetchItemsResponse;
+  return normalizeFetchItemsResponse(
+    (await response.json()) as FetchItemsResponse
+  );
 }
 
 function buildCountCacheKey(
@@ -259,4 +267,27 @@ function stableStringify(value: unknown): string {
   }
 
   return JSON.stringify(value);
+}
+
+function normalizeFetchItemsResponse(
+  response: FetchItemsResponse
+): FetchItemsResponse {
+  return {
+    ...response,
+    items: response.items.map(normalizeFetchItemsResponseItem),
+  };
+}
+
+function normalizeFetchItemsResponseItem(
+  item: FetchItemsResponseItem
+): FetchItemsResponseItem {
+  return {
+    ...item,
+    created_at: normalizeDateValue(item.created_at),
+    updated_at: normalizeDateValue(item.updated_at),
+  };
+}
+
+function normalizeDateValue(value: Date | string): Date {
+  return value instanceof Date ? value : new Date(value);
 }

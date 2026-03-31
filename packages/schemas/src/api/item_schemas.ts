@@ -33,27 +33,29 @@ const FetchItemsSchemaBase = z.object({
   cache_ttl_seconds: z.coerce.number().int().positive().optional(),
 });
 
-function withGeoSearchRefinement<T extends z.ZodTypeAny>(schema: T) {
+type FetchItemsSchemaShape = z.infer<typeof FetchItemsSchemaBase>;
+
+function withGeoSearchRefinement<T extends z.ZodType<FetchItemsSchemaShape>>(schema: T) {
   return schema.refine(
-  (data) => {
-    const hasCoordinates =
-      data.item_latitude !== undefined || data.item_longitude !== undefined;
+    (data) => {
+      const hasCoordinates =
+        data.item_latitude !== undefined || data.item_longitude !== undefined;
 
-    if (!hasCoordinates) {
-      return true;
+      if (!hasCoordinates) {
+        return true;
+      }
+
+      return (
+        data.item_latitude !== undefined &&
+        data.item_longitude !== undefined &&
+        data.radius_meters !== undefined
+      );
+    },
+    {
+      message:
+        'item_latitude, item_longitude, and radius_meters must be provided together for geosearch',
+      path: ['radius_meters'],
     }
-
-    return (
-      data.item_latitude !== undefined &&
-      data.item_longitude !== undefined &&
-      data.radius_meters !== undefined
-    );
-  },
-  {
-    message:
-      'item_latitude, item_longitude, and radius_meters must be provided together for geosearch',
-    path: ['radius_meters'],
-  }
   );
 }
 

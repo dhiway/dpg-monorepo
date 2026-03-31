@@ -44,7 +44,7 @@ export const fetch_item: FastifyPluginAsyncZod = async function (fastify) {
         }),
       },
     },
-    handler: fetch_network_item_handler as any,
+    handler: fetch_network_item_handler,
   });
 
   fastify.route({
@@ -59,7 +59,7 @@ export const fetch_item: FastifyPluginAsyncZod = async function (fastify) {
         }),
       },
     },
-    handler: count_local_items_handler as any,
+    handler: count_local_items_handler,
   });
 
   fastify.route({
@@ -79,7 +79,7 @@ export const fetch_item: FastifyPluginAsyncZod = async function (fastify) {
         }),
       },
     },
-    handler: fetch_local_items_handler as any,
+    handler: fetch_local_items_handler,
   });
 };
 
@@ -106,7 +106,7 @@ const fetch_network_item_handler = async (
   try {
     const networkConfig = await getNetworkConfigByName(item_network);
     const domainExists = networkConfig.domains.some(
-      (domain) => domain.name === item_domain
+      (domain: typeof networkConfig.domains) => domain.name === item_domain
     );
 
     if (!domainExists) {

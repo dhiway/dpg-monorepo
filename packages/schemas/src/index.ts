@@ -10,6 +10,7 @@ export {
   getInstanceCustomItemSchemaUrl,
   NetworkConfigSchema,
   parseNetworkConfigDocument,
+  type NetworkConfigDocument,
   validateAgainstJsonSchema,
 } from './network_workflow';
 export default z;
