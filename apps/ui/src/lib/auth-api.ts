@@ -43,6 +43,7 @@ export interface VerifyOtpResponse {
 
 export interface SessionResponse {
   user: User | null;
+  token: string | null;
   session: {
     id: string;
     expiresAt: string;
