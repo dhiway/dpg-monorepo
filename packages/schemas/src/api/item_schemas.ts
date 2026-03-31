@@ -76,9 +76,6 @@ export const FetchItemsBodySchema = withGeoSearchRefinement(FetchItemsSchemaBase
 }));
 
 export const UpdateItemParamsSchema = z.object({
-  itemNetwork: z.string().min(1),
-  itemDomain: z.string().min(1),
-  itemType: z.string().min(1),
   itemId: z.uuid(),
 });
 
