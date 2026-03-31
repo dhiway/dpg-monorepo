@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 import { apiConfig } from './api-config';
+import { getAuthToken } from './auth-token';
 
 const apiClient = axios.create({
   baseURL: apiConfig.getUrl(),
@@ -8,6 +9,14 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+});
+
+apiClient.interceptors.request.use((config) => {
+  const token = getAuthToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 export interface CreateItemPayload {

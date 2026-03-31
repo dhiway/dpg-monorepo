@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { getSession, signOut as apiSignOut, type User } from '@/lib/auth-api';
+import { setAuthToken, clearAuthToken } from '@/lib/auth-token';
 
 interface AuthContextType {
   user: User | null;
@@ -20,6 +21,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchSession = useCallback(async () => {
     try {
       const session = await getSession();
+      if (session.token) {
+        setAuthToken(session.token);
+      }
       setUser(session.user);
     } catch {
       setUser(null);
@@ -46,6 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const verifyOtp = useCallback(async (phoneNumber: string, otp: string, name?: string): Promise<void> => {
     const { verifyOtp: verifyOtpApi } = await import('@/lib/auth-api');
     const response = await verifyOtpApi(phoneNumber, otp, name);
+    setAuthToken(response.token);
     setUser(response.user);
   }, []);
 
@@ -53,6 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await apiSignOut();
     } finally {
+      clearAuthToken();
       setUser(null);
     }
   }, []);

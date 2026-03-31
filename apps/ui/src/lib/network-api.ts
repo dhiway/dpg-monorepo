@@ -3,6 +3,7 @@ import axios from 'axios';
 import type { FetchItemsQuery, FetchItemsResponse } from './item-api';
 import type { DotNetworkSchema } from '../engine/types';
 import { apiConfig } from './api-config';
+import { getAuthToken } from './auth-token';
 
 interface CachedSchemaEntry {
   cache_key: string;
@@ -20,6 +21,14 @@ const networkApiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+});
+
+networkApiClient.interceptors.request.use((config) => {
+  const token = getAuthToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 export interface FetchNetworkItemsQuery
