@@ -1,23 +1,6 @@
-import axios from 'axios';
+import { createApiClient } from './api-client';
 
-import { apiConfig } from './api-config';
-import { getAuthToken } from './auth-token';
-
-const apiClient = axios.create({
-  baseURL: apiConfig.getUrl(),
-  withCredentials: true,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-apiClient.interceptors.request.use((config) => {
-  const token = getAuthToken();
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+const apiClient = createApiClient();
 
 export interface CreateItemPayload {
   item_network: string;

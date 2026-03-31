@@ -1,14 +1,6 @@
-import axios from 'axios';
+import { createApiClient } from './api-client';
 
-import { apiConfig } from './api-config';
-
-const apiClient = axios.create({
-  baseURL: apiConfig.getUrl(),
-  withCredentials: true,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+const apiClient = createApiClient();
 
 export interface CheckUserResponse {
   userExists: boolean;

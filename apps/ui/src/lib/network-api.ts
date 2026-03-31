@@ -1,9 +1,6 @@
-import axios from 'axios';
-
 import type { FetchItemsQuery, FetchItemsResponse } from './item-api';
 import type { DotNetworkSchema } from '../engine/types';
-import { apiConfig } from './api-config';
-import { getAuthToken } from './auth-token';
+import { createApiClient } from './api-client';
 
 interface CachedSchemaEntry {
   cache_key: string;
@@ -15,21 +12,7 @@ interface CachedSchemaEntry {
   schema: DotNetworkSchema;
 }
 
-const networkApiClient = axios.create({
-  baseURL: apiConfig.getUrl(),
-  withCredentials: true,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-networkApiClient.interceptors.request.use((config) => {
-  const token = getAuthToken();
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+const networkApiClient = createApiClient();
 
 export interface FetchNetworkItemsQuery
   extends Omit<FetchItemsQuery, 'created_by_me'> {
