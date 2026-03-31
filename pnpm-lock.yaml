@@ -124,7 +124,7 @@ importers:
         specifier: ^3.0.1
         version: 3.0.1(ajv@8.18.0)
       axios:
-        specifier: ^1.13.6
+        specifier: 1.13.6
         version: 1.13.6
       class-variance-authority:
         specifier: ^0.7.1
