@@ -172,8 +172,8 @@ export function HomePage() {
   }, [network, currentDomain, myItem]);
 
   const localProfileItemIds = React.useMemo(
-    () => new Set(myItems.map((item) => item.item_id)),
-    [myItems]
+    () => new Set(myItems.filter((item) => item.item_domain === currentDomain).map((item) => item.item_id)),
+    [myItems, currentDomain]
   );
 
   // Fetch items for selected domain(s); when All tab (null) fetch all visible domains in parallel
