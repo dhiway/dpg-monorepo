@@ -93,12 +93,16 @@ export interface ActionButton {
 
 // ─── Map Types ─────────────────────────────────────────────────
 
+export type MapMarkerPrecision = 'exact' | 'geocoded_pincode' | 'geocoded_full_address' | 'geocoded_city_only';
+
 export interface MapMarker {
   id: string;
   lat: number;
   lng: number;
   label: string;
   data: Record<string, unknown>;
+  precision: MapMarkerPrecision;
+  geocodedFrom?: string;
 }
 
 export interface MapProviderProps {

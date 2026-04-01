@@ -3,7 +3,24 @@ interface GeoCoordinate {
   lng: number;
 }
 
-const cache = new Map<string, GeoCoordinate | null>();
+const pincodeCache = new Map<string, GeoCoordinate | null>();
+const addressCache = new Map<string, GeoCoordinate | null>();
+
+// Rate limiting for Nominatim (1 request per second max)
+let lastRequestTime = 0;
+const MIN_REQUEST_INTERVAL = 1000; // 1 second
+
+async function rateLimit<T>(fn: () => Promise<T>): Promise<T> {
+  const now = Date.now();
+  const timeSinceLastRequest = now - lastRequestTime;
+  
+  if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
+    await new Promise(resolve => setTimeout(resolve, MIN_REQUEST_INTERVAL - timeSinceLastRequest));
+  }
+  
+  lastRequestTime = Date.now();
+  return fn();
+}
 
 /**
  * Geocodes a pincode string to latitude/longitude coordinates.
@@ -20,7 +37,7 @@ export async function geocodePincode(pincode: string): Promise<GeoCoordinate | n
   if (!pincode || typeof pincode !== 'string') return null;
 
   const key = pincode.trim();
-  if (cache.has(key)) return cache.get(key)!;
+  if (pincodeCache.has(key)) return pincodeCache.get(key)!;
 
   const customUrl = import.meta.env.VITE_GEOCODING_API_URL;
 
@@ -33,10 +50,10 @@ export async function geocodePincode(pincode: string): Promise<GeoCoordinate | n
       result = await geocodeFromPostalApi(key);
     }
 
-    cache.set(key, result);
+    pincodeCache.set(key, result);
     return result;
   } catch {
-    cache.set(key, null);
+    pincodeCache.set(key, null);
     return null;
   }
 }
@@ -83,8 +100,74 @@ async function geocodeFromCustomApi(
 }
 
 /**
- * Clears the geocoding cache. Useful for testing.
+ * Geocodes an address string to latitude/longitude coordinates using OpenStreetMap Nominatim.
+ * Results are cached in memory to avoid repeated API calls.
+ * Supports both full address format ("City, State, Country") and city-only format.
+ *
+ * Rate limited to 1 request per second to comply with Nominatim usage policy.
+ *
+ * @param address - The address string to geocode
+ * @param format - Whether to use full address or city-only format for better matching
+ * @returns GeoCoordinate or null if geocoding fails
+ */
+export async function geocodeAddress(
+  address: string,
+  format: 'full' | 'city-only' = 'full'
+): Promise<GeoCoordinate | null> {
+  if (!address || typeof address !== 'string') return null;
+
+  const key = `${format}:${address.trim()}`;
+  if (addressCache.has(key)) return addressCache.get(key)!;
+
+  try {
+    const result = await rateLimit(() => geocodeFromNominatim(address, format));
+    addressCache.set(key, result);
+    return result;
+  } catch {
+    addressCache.set(key, null);
+    return null;
+  }
+}
+
+async function geocodeFromNominatim(
+  address: string,
+  format: 'full' | 'city-only'
+): Promise<GeoCoordinate | null> {
+  // Build query based on format preference
+  let query = address;
+  
+  if (format === 'city-only') {
+    // Extract just the city/primary location component
+    const parts = address.split(',');
+    query = parts[0].trim();
+  }
+
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`;
+  
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': 'DPG-Map-Viewer/1.0'
+    }
+  });
+  
+  if (!response.ok) return null;
+
+  const data = await response.json();
+
+  if (Array.isArray(data) && data.length > 0 && data[0].lat && data[0].lon) {
+    return {
+      lat: Number(data[0].lat),
+      lng: Number(data[0].lon),
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Clears both the pincode and address geocoding caches. Useful for testing.
  */
 export function clearGeocodingCache(): void {
-  cache.clear();
+  pincodeCache.clear();
+  addressCache.clear();
 }
