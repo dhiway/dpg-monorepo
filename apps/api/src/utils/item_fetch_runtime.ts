@@ -7,6 +7,7 @@ export type ItemFetchFilters = {
   item_network: string;
   item_domain: string;
   item_type?: string;
+  created_by?: string;
   item_instance_url?: string | null;
   item_schema_url?: string | null;
   item_state?: Record<string, unknown>;
@@ -29,6 +30,10 @@ function buildWhereClause(filters: Omit<ItemFetchFilters, 'limit' | 'offset'>) {
 
   if (filters.item_type) {
     conditions.push(eq(items.item_type, filters.item_type));
+  }
+
+  if (filters.created_by) {
+    conditions.push(eq(items.created_by, filters.created_by));
   }
 
   if (filters.item_instance_url) {

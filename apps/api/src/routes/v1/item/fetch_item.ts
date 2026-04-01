@@ -46,6 +46,7 @@ const fetch_items_handler = async (
   request: FetchItemsRequest,
   reply: FastifyReply
 ) => {
+  const userId = request.user?.id;
   const {
     item_id,
     item_network,
@@ -61,6 +62,13 @@ const fetch_items_handler = async (
     offset,
   } = request.query;
 
+  if (!userId) {
+    return reply.code(401).send({
+      error: 'UNAUTHORIZED',
+      message: 'Authenticated user is required to fetch items',
+    });
+  }
+
   if (!isServedDomainBinding(item_network, item_domain)) {
     return await replyForUnservedDomain(reply, item_network, item_domain);
   }
@@ -71,6 +79,7 @@ const fetch_items_handler = async (
       item_network,
       item_type,
       item_domain,
+      created_by: userId,
       item_instance_url,
       item_schema_url,
       item_state,
@@ -84,7 +93,7 @@ const fetch_items_handler = async (
       fetchLocalItems(filters)
     );
 
-    return reply.code(200).send(result);
+    return reply.code(200).send(normalizeFetchItemsResponse(result));
   } catch (err) {
     request.log.error({ err, query: request.query }, 'Failed to fetch items');
 
@@ -94,3 +103,22 @@ const fetch_items_handler = async (
     });
   }
 };
+
+function normalizeFetchItemsResponse(
+  response: Awaited<ReturnType<typeof fetchLocalItems>>
+) {
+  return {
+    ...response,
+    items: response.items.map((item) => ({
+      ...item,
+      created_at:
+        item.created_at instanceof Date
+          ? item.created_at
+          : new Date(item.created_at),
+      updated_at:
+        item.updated_at instanceof Date
+          ? item.updated_at
+          : new Date(item.updated_at),
+    })),
+  };
+}
