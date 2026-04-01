@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { RJSFSchema } from '@rjsf/utils';
 import type { DotNetworkDomain, DotNetworkSchema } from '@/engine/types';
@@ -15,7 +16,7 @@ import {
   SidebarHeader,
   SidebarSeparator,
 } from '@/components/ui/sidebar';
-import { LayoutGrid, Box, Plus, Pencil, GraduationCap, UserCheck, Building2, Network } from 'lucide-react';
+import { LayoutGrid, Box, Plus, Pencil, GraduationCap, UserCheck, Building2, Network, ChevronRight } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 interface AppSidebarProps {
@@ -47,6 +48,13 @@ function findTitleField(schema: RJSFSchema): string | null {
   return Object.keys(schema.properties)[0] ?? null;
 }
 
+function getDomainLabel(domainName: string): string {
+  return domainName
+    .split('_')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
 export function AppSidebar({
   networks = [],
   selectedNetwork,
@@ -61,6 +69,47 @@ export function AppSidebar({
   userSchemas,
 }: AppSidebarProps) {
   const navigate = useNavigate();
+
+  // Group profiles by domain
+  const profilesByDomain = myItems.reduce<Record<string, Item[]>>((acc, item) => {
+    const key = item.item_domain;
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(item);
+    return acc;
+  }, {});
+
+  const domainKeys = Object.keys(profilesByDomain);
+
+  // Find which domain the active profile belongs to
+  const activeDomain = myItems.find((i) => i.item_id === activeProfileId)?.item_domain ?? null;
+
+  // Expanded state: default open the domain of the active profile (or all if none)
+  const [expandedDomains, setExpandedDomains] = useState<Set<string>>(() => {
+    if (activeDomain) return new Set([activeDomain]);
+    return new Set(domainKeys);
+  });
+
+  // When active profile changes, ensure its domain is expanded
+  useEffect(() => {
+    if (activeDomain) {
+      setExpandedDomains((prev) => {
+        if (prev.has(activeDomain)) return prev;
+        return new Set([...prev, activeDomain]);
+      });
+    }
+  }, [activeDomain]);
+
+  function toggleDomain(domainName: string) {
+    setExpandedDomains((prev) => {
+      const next = new Set(prev);
+      if (next.has(domainName)) {
+        next.delete(domainName);
+      } else {
+        next.add(domainName);
+      }
+      return next;
+    });
+  }
 
   const showNetworkSelector = networks.length > 0;
 
@@ -127,40 +176,103 @@ export function AppSidebar({
         <SidebarGroup>
           <SidebarGroupLabel>My Profile(s)</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {myItems.map((profile) => {
-                const schema = userSchemas?.[profile.item_domain];
-                const titleKey = schema ? findTitleField(schema) : null;
-                const title = titleKey
-                  ? String(profile.item_state[titleKey] ?? 'Profile')
-                  : 'Profile';
-                const Icon = domainIcons[profile.item_domain] ?? Box;
-                const isActiveProfile = profile.item_id === activeProfileId;
+            {domainKeys.length === 0 ? (
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton onClick={() => navigate('/profile/new')}>
+                    <Plus className="h-4 w-4" />
+                    <span>Create Profile</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            ) : (
+              <div className="space-y-1">
+                {domainKeys.map((domainName) => {
+                  const profiles = profilesByDomain[domainName];
+                  const Icon = domainIcons[domainName] ?? Box;
+                  const label = getDomainLabel(domainName);
+                  const isExpanded = expandedDomains.has(domainName);
+                  const hasActiveProfile = profiles.some((p) => p.item_id === activeProfileId);
 
-                return (
-                  <SidebarMenuItem key={profile.item_id}>
-                    <SidebarMenuButton
-                      isActive={isActiveProfile}
-                      onClick={() => onActiveProfileChange?.(profile.item_id)}
-                    >
-                      <Icon className="h-4 w-4" />
-                      <span className="truncate">{title}</span>
+                  return (
+                    <div key={domainName}>
+                      {/* Accordion header */}
+                      <button
+                        onClick={() => toggleDomain(domainName)}
+                        className={[
+                          'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
+                          'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                          hasActiveProfile
+                            ? 'font-semibold text-primary'
+                            : 'text-sidebar-foreground/70',
+                        ].join(' ')}
+                      >
+                        <Icon className="h-3.5 w-3.5 shrink-0" />
+                        <span className="flex-1 truncate text-left">{label}</span>
+                        <span className="text-xs text-muted-foreground tabular-nums">
+                          {profiles.length}
+                        </span>
+                        <ChevronRight
+                          className={[
+                            'h-3.5 w-3.5 shrink-0 transition-transform duration-200',
+                            isExpanded ? 'rotate-90' : '',
+                          ].join(' ')}
+                        />
+                      </button>
+
+                      {/* Accordion body */}
+                      {isExpanded && (
+                        <div className="ml-3 mt-0.5 border-l border-border pl-2">
+                          <SidebarMenu>
+                            {profiles.map((profile) => {
+                              const schema = userSchemas?.[profile.item_domain];
+                              const titleKey = schema ? findTitleField(schema) : null;
+                              const title = titleKey
+                                ? String(profile.item_state[titleKey] ?? 'Profile')
+                                : 'Profile';
+                              const isActiveProfile = profile.item_id === activeProfileId;
+
+                              return (
+                                <SidebarMenuItem key={profile.item_id}>
+                                  <SidebarMenuButton
+                                    onClick={() => onActiveProfileChange?.(profile.item_id)}
+                                    className={
+                                      isActiveProfile
+                                        ? 'relative bg-primary/10 text-primary font-medium border-l-2 border-primary rounded-l-none pl-2 hover:bg-primary/15'
+                                        : ''
+                                    }
+                                  >
+                                    <span className="truncate">{title}</span>
+                                    {isActiveProfile && (
+                                      <span className="ml-auto shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground leading-none">
+                                        active
+                                      </span>
+                                    )}
+                                  </SidebarMenuButton>
+                                  <SidebarMenuAction
+                                    onClick={() => navigate(`/profile/${profile.item_id}/edit`)}
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </SidebarMenuAction>
+                                </SidebarMenuItem>
+                              );
+                            })}
+                          </SidebarMenu>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                <SidebarMenu className="mt-1">
+                  <SidebarMenuItem>
+                    <SidebarMenuButton onClick={() => navigate('/profile/new')}>
+                      <Plus className="h-4 w-4" />
+                      <span>Create Profile</span>
                     </SidebarMenuButton>
-                    <SidebarMenuAction
-                      onClick={() => navigate(`/profile/${profile.item_id}/edit`)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </SidebarMenuAction>
                   </SidebarMenuItem>
-                );
-              })}
-              <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => navigate('/profile/new')}>
-                  <Plus className="h-4 w-4" />
-                  <span>Create Profile</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
+                </SidebarMenu>
+              </div>
+            )}
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
