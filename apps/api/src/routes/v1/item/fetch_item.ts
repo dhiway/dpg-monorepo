@@ -89,41 +89,8 @@ const fetch_items_handler = async (
       limit,
       offset,
     };
-    request.log.info(
-      {
-        auth_user_id: userId,
-        filters,
-      },
-      'Local item fetch resolved filters'
-    );
-
-    const result = await getCachedLocalItemFetch(
-      filters,
-      () => fetchLocalItems(filters),
-      {
-        onCacheEvent: ({ cacheKey, hit }) => {
-          request.log.info(
-            {
-              auth_user_id: userId,
-              cache_key: cacheKey,
-              cache_hit: hit,
-            },
-            'Local item fetch cache event'
-          );
-        },
-      }
-    );
-
-    request.log.info(
-      {
-        auth_user_id: userId,
-        result_total: result.meta.total,
-        returned_item_count: result.items.length,
-        returned_created_by_values: [
-          ...new Set(result.items.map((item) => item.created_by)),
-        ],
-      },
-      'Local item fetch result summary'
+    const result = await getCachedLocalItemFetch(filters, () =>
+      fetchLocalItems(filters)
     );
 
     return reply.code(200).send(normalizeFetchItemsResponse(result));

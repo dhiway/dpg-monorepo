@@ -5,20 +5,15 @@ const LOCAL_ITEM_FETCH_CACHE_TTL_SECONDS = 1;
 
 export async function getCachedLocalItemFetch<T>(
   filters: ItemFetchFilters,
-  loader: () => Promise<T>,
-  options?: {
-    onCacheEvent?: (input: { cacheKey: string; hit: boolean }) => void;
-  }
+  loader: () => Promise<T>
 ) {
   const cacheKey = buildLocalItemFetchCacheKey(filters);
   const cached = await redis.get(cacheKey);
 
   if (cached) {
-    options?.onCacheEvent?.({ cacheKey, hit: true });
     return JSON.parse(cached) as T;
   }
 
-  options?.onCacheEvent?.({ cacheKey, hit: false });
   const result = await loader();
   await redis.set(
     cacheKey,
