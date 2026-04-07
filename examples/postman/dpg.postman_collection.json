@@ -1,0 +1,347 @@
+{
+  "info": {
+    "name": "DPG API",
+    "_postman_id": "7f0b5b7f-c2b5-4f7d-a472-44d64f820001",
+    "description": "Postman collection for DPG auth, item, action, event, and network schema APIs.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:2742" },
+    { "key": "email", "value": "demo@example.com" },
+    { "key": "phone_number", "value": "+911234567890" },
+    { "key": "user_name", "value": "Demo User" },
+    { "key": "otp", "value": "777666" },
+    { "key": "auth_token", "value": "" },
+    { "key": "session_cookie", "value": "" },
+    { "key": "user_id", "value": "" },
+    { "key": "user_email", "value": "" },
+    { "key": "user_phone", "value": "" },
+    { "key": "user_display_name", "value": "" },
+    { "key": "network", "value": "yellow_dot" },
+    { "key": "domain", "value": "student" },
+    { "key": "item_type", "value": "profile_1.0" },
+    { "key": "item_id", "value": "" },
+    { "key": "source_item_network", "value": "yellow_dot" },
+    { "key": "source_item_domain", "value": "student" },
+    { "key": "source_item_type", "value": "profile_1.0" },
+    { "key": "source_item_id", "value": "" },
+    { "key": "target_item_network", "value": "yellow_dot" },
+    { "key": "target_item_domain", "value": "tutor" },
+    { "key": "target_item_type", "value": "profile_1.0" },
+    { "key": "target_item_id", "value": "" },
+    { "key": "action_name", "value": "connect" },
+    { "key": "action_id", "value": "" },
+    { "key": "event_type", "value": "action_response" },
+    { "key": "requester_event_url", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Unified OTP auth flow. Postman cookie jar should retain the Better Auth session cookie automatically. The test scripts also persist the raw set-cookie header and response fields into collection variables.",
+      "item": [
+        {
+          "name": "Check User",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"phoneNumber\": \"{{phone_number}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/unified-otp/check-user",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "unified-otp", "check-user"]
+            },
+            "description": "Checks whether a user already exists for the provided email or phone number."
+          }
+        },
+        {
+          "name": "Request OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"phoneNumber\": \"{{phone_number}}\",\n  \"name\": \"{{user_name}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/unified-otp/request",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "unified-otp", "request"]
+            },
+            "description": "Requests a login/signup OTP. If CREATE_TEST_OTP=true, use the configured predictable OTP value in the Verify OTP request."
+          }
+        },
+        {
+          "name": "Verify OTP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Verify OTP returns 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const setCookie = pm.response.headers.get('set-cookie');",
+                  "if (setCookie) {",
+                  "  pm.collectionVariables.set('session_cookie', setCookie);",
+                  "}",
+                  "",
+                  "const data = pm.response.json();",
+                  "if (data.token) pm.collectionVariables.set('auth_token', data.token);",
+                  "if (data.user?.id) pm.collectionVariables.set('user_id', data.user.id);",
+                  "if (data.user?.email) pm.collectionVariables.set('user_email', data.user.email);",
+                  "if (data.user?.phoneNumber) pm.collectionVariables.set('user_phone', data.user.phoneNumber);",
+                  "if (data.user?.name) pm.collectionVariables.set('user_display_name', data.user.name);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"phoneNumber\": \"{{phone_number}}\",\n  \"name\": \"{{user_name}}\",\n  \"otp\": \"{{otp}}\",\n  \"rememberMe\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/unified-otp/verify",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "unified-otp", "verify"]
+            },
+            "description": "Verifies the OTP, creates a session, and stores token/user details in collection variables."
+          }
+        },
+        {
+          "name": "Get Session",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/auth/get-session",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "get-session"]
+            },
+            "description": "Uses the Postman cookie jar session cookie set by Verify OTP."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Network Schemas",
+      "item": [
+        {
+          "name": "Fetch Cached Schemas",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/network/schemas?network={{network}}&domain={{domain}}&item_type={{item_type}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "network", "schemas"],
+              "query": [
+                { "key": "network", "value": "{{network}}" },
+                { "key": "domain", "value": "{{domain}}" },
+                { "key": "item_type", "value": "{{item_type}}" }
+              ]
+            },
+            "description": "Returns cached network/item schemas known to the instance."
+          }
+        },
+        {
+          "name": "Fetch Concrete Item Schema",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/network/schema/{{network}}/{{domain}}/{{item_type}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "network", "schema", "{{network}}", "{{domain}}", "{{item_type}}"]
+            },
+            "description": "Use this request to inspect the schema before filling item_state, requirements_snapshot, or event_payload."
+          }
+        },
+        {
+          "name": "Refetch Schemas",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/api/v1/network/refetch_schemas",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "network", "refetch_schemas"]
+            },
+            "description": "Refreshes consumed schemas. Requires auth middleware if enabled."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Items",
+      "item": [
+        {
+          "name": "Create Item",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Create item returns 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (data.item_id) {",
+                  "  pm.collectionVariables.set('item_id', data.item_id);",
+                  "  pm.collectionVariables.set('source_item_id', data.item_id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"item_network\": \"{{network}}\",\n  \"item_domain\": \"{{domain}}\",\n  \"item_type\": \"{{item_type}}\",\n  \"item_state\": {\n    \"name\": \"{{user_display_name}}\",\n    \"grade\": \"10\",\n    \"city\": \"Bengaluru\",\n    \"preferred_subject\": \"math\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/item/create",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "item", "create"]
+            },
+            "description": "Creates an item on the current instance. Use the Fetch Concrete Item Schema request first and adapt item_state accordingly."
+          }
+        },
+        {
+          "name": "Fetch My Local Items",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/item/fetch?item_network={{network}}&item_domain={{domain}}&item_type={{item_type}}&limit=20&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "item", "fetch"],
+              "query": [
+                { "key": "item_network", "value": "{{network}}" },
+                { "key": "item_domain", "value": "{{domain}}" },
+                { "key": "item_type", "value": "{{item_type}}" },
+                { "key": "limit", "value": "20" },
+                { "key": "offset", "value": "0" }
+              ]
+            },
+            "description": "Instance-local user-scoped fetch. This route returns only items owned by the authenticated user."
+          }
+        },
+        {
+          "name": "Fetch Network Items",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/network/item/fetch?item_network={{network}}&item_domain={{domain}}&item_type={{item_type}}&limit=20&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "network", "item", "fetch"],
+              "query": [
+                { "key": "item_network", "value": "{{network}}" },
+                { "key": "item_domain", "value": "{{domain}}" },
+                { "key": "item_type", "value": "{{item_type}}" },
+                { "key": "limit", "value": "20" },
+                { "key": "offset", "value": "0" }
+              ]
+            },
+            "description": "Inter-instance fetch across the network/domain. This route is not user-scoped."
+          }
+        },
+        {
+          "name": "Update Item",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"item_state\": {\n    \"name\": \"{{user_display_name}} Updated\",\n    \"grade\": \"11\",\n    \"city\": \"Bengaluru\",\n    \"preferred_subject\": \"science\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/item/{{item_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "item", "{{item_id}}"]
+            },
+            "description": "Updates an owned item by id."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Actions",
+      "item": [
+        {
+          "name": "Perform Action",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Perform action returns 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (data.action_id) pm.collectionVariables.set('action_id', data.action_id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action_name\": \"{{action_name}}\",\n  \"source_item\": {\n    \"item_network\": \"{{source_item_network}}\",\n    \"item_domain\": \"{{source_item_domain}}\",\n    \"item_type\": \"{{source_item_type}}\",\n    \"item_id\": \"{{source_item_id}}\"\n  },\n  \"target_item\": {\n    \"item_network\": \"{{target_item_network}}\",\n    \"item_domain\": \"{{target_item_domain}}\",\n    \"item_type\": \"{{target_item_type}}\",\n    \"item_id\": \"{{target_item_id}}\"\n  },\n  \"requirements_snapshot\": {\n    \"message\": \"Interested in connecting\"\n  },\n  \"created_by\": \"{{user_id}}\",\n  \"response_event_type\": \"{{event_type}}\",\n  \"response_event_payload\": {\n    \"status\": \"pending\"\n  },\n  \"response_event_metadata\": {},\n  \"requester_event_url\": \"{{requester_event_url}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/action/perform",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "action", "perform"]
+            },
+            "description": "Validate requirements_snapshot and response_event_payload against the network action schema before sending."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Events",
+      "item": [
+        {
+          "name": "Store Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event_type\": \"{{event_type}}\",\n  \"action_name\": \"{{action_name}}\",\n  \"action_id\": \"{{action_id}}\",\n  \"source_item\": {\n    \"item_network\": \"{{source_item_network}}\",\n    \"item_domain\": \"{{source_item_domain}}\",\n    \"item_type\": \"{{source_item_type}}\",\n    \"item_id\": \"{{source_item_id}}\"\n  },\n  \"target_item\": {\n    \"item_network\": \"{{target_item_network}}\",\n    \"item_domain\": \"{{target_item_domain}}\",\n    \"item_type\": \"{{target_item_type}}\",\n    \"item_id\": \"{{target_item_id}}\"\n  },\n  \"event_payload\": {\n    \"status\": \"accepted\"\n  },\n  \"event_metadata\": {},\n  \"created_by\": \"{{user_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/event/store",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "event", "store"]
+            },
+            "description": "Stores an event for a previously created action. Validate event_payload against the network action event schema first."
+          }
+        }
+      ]
+    }
+  ]
+}
