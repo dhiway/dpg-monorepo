@@ -54,23 +54,31 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
   pnpm install --frozen-lockfile --prod
 
-
 FROM node:24-alpine AS runner
 
-# Runtime image contains only the pruned production install, workspace sources
-# needed by internal package symlinks, and the built API artifact.
-RUN apk add --no-cache libc6-compat
+RUN apk add --no-cache libc6-compat && corepack enable
 
 WORKDIR /app
+
 ENV NODE_ENV=production
 ENV API_PORT=2742
+ENV PNPM_HOME=/pnpm
+ENV PATH=$PNPM_HOME:$PATH
 
-COPY --from=builder /app/package.json ./package.json
+# Copy ONLY what is needed to install deps correctly
+COPY --from=builder /app/pnpm-lock.yaml ./pnpm-lock.yaml
 COPY --from=builder /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
-COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
+
 COPY --from=builder /app/apps/api/package.json ./apps/api/package.json
-COPY --from=builder /app/apps/api/dist ./apps/api/dist
 COPY --from=builder /app/packages ./packages
+
+# Install ONLY api production deps
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+  pnpm install --prod --filter=api...
+
+# Copy built output AFTER install (important for layer caching)
+COPY --from=builder /app/apps/api/dist ./apps/api/dist
 
 EXPOSE ${API_PORT}
 USER node
