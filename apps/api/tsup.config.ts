@@ -2,6 +2,7 @@ import { defineConfig } from 'tsup';
 
 export default defineConfig({
   entry: ['src/server.ts'],
+  tsconfig: './tsconfig.json',
   format: ['esm'],
   platform: 'node',
   target: 'node20',

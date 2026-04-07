@@ -1,4 +1,4 @@
-import { authInstance } from 'apps/api/src/routes/auth/create_auth';
+import { authInstance } from '../../src/routes/auth/create_auth';
 import { FastifyReply, FastifyRequest } from 'fastify';
 
 export async function validate_api_key(

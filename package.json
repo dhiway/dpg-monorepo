@@ -30,9 +30,9 @@
   },
   "packageManager": "pnpm@10.28.1",
   "devDependencies": {
-    "@types/node": "^25.5.0",
-    "turbo": "^2.8.20",
+    "@types/node": "^25.5.2",
+    "turbo": "^2.9.4",
     "tsup": "^8.5.1",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.2"
   }
 }

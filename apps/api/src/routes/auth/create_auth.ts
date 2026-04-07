@@ -1,8 +1,8 @@
 import { createAuth } from '@dpg/auth';
 import { allowed_origins, admin_domains } from '@dpg/config';
 import { api, instance, auth, notification } from '../../config';
-import { db } from 'apps/api/db/postgres/drizzle_config';
-import { redis } from 'apps/api/db/secondary/redis';
+import { db } from '../../../db/postgres/drizzle_config';
+import { redis } from '../../../db/secondary/redis';
 import { getNotificationClient } from '../../utils/notificationClient';
 
 export const authInstance = createAuth({

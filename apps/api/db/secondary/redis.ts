@@ -1,4 +1,4 @@
-import { databasesConfig } from 'apps/api/src/config';
+import { databasesConfig } from '../../src/config';
 import Redis from 'ioredis';
 export const redis = new Redis(databasesConfig.redis_url);
 

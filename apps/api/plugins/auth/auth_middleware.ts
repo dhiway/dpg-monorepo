@@ -1,6 +1,6 @@
-import { authInstance } from 'apps/api/src/routes/auth/create_auth';
+import { authInstance } from '../../src/routes/auth/create_auth';
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { authConfig } from 'apps/api/src/config';
+import { authConfig } from '../../src/config';
 
 export async function auth_middleware(
   request: FastifyRequest,

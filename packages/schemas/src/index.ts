@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export { FetchSchema, fetchSchema } from './schema_registry';
 export * from './api/action_schemas';
+export * from './api/item_schemas';
 export {
   getActionInteraction,
   getDomainMinimumCacheTtlSeconds,
