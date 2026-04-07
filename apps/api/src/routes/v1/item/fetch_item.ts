@@ -1,17 +1,16 @@
-import z from '@dpg/schemas';
-import { FastifyReply, FastifyRequest } from 'fastify';
-import { type FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
-import { auth_middleware_if_enabled } from 'apps/api/plugins/auth/auth_middleware';
-import {
+import z, {
   FetchItemsQuerySchema,
   ItemSelectSchema,
-} from 'packages/schemas/src/api/item_schemas';
+} from '@dpg/schemas';
+import { FastifyReply, FastifyRequest } from 'fastify';
+import { type FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import { auth_middleware_if_enabled } from '../../../../plugins/auth/auth_middleware';
 import {
   isServedDomainBinding,
   replyForUnservedDomain,
-} from 'apps/api/src/utils/served_domain_guard';
-import { fetchLocalItems } from 'apps/api/src/utils/item_fetch_runtime';
-import { getCachedLocalItemFetch } from 'apps/api/src/utils/item_fetch_cache';
+} from '../../../utils/served_domain_guard';
+import { fetchLocalItems } from '../../../utils/item_fetch_runtime';
+import { getCachedLocalItemFetch } from '../../../utils/item_fetch_cache';
 
 type FetchItemsRequest = FastifyRequest<{
   Querystring: z.infer<typeof FetchItemsQuerySchema>;

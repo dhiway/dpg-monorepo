@@ -1,4 +1,4 @@
-import { redis } from 'apps/api/db/secondary/redis';
+import { redis } from '../../db/secondary/redis';
 import type { ItemFetchFilters } from './item_fetch_runtime';
 
 const LOCAL_ITEM_FETCH_CACHE_TTL_SECONDS = 1;

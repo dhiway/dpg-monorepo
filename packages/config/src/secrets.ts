@@ -7,7 +7,7 @@ export const InstanceSecretsSchema = z.object({
 
 export const ApiSecretsSchema = z.object({
   API_DOMAIN: z.string(),
-  API_PORT: z.coerce.number().default(4441),
+  API_PORT: z.coerce.number().default(2742),
 });
 
 export const AuthSecretsSchema = z.object({

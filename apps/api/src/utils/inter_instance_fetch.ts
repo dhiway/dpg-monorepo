@@ -2,9 +2,9 @@ import {
   getDomainMinimumCacheTtlSeconds,
   type NetworkConfigDocument,
 } from '@dpg/schemas';
-import { redis } from 'apps/api/db/secondary/redis';
-import { getCurrentApiBaseUrl } from 'apps/api/src/config';
-import { isServedDomainBinding } from 'apps/api/src/utils/served_domain_guard';
+import { redis } from '../../db/secondary/redis';
+import { getCurrentApiBaseUrl } from '../config';
+import { isServedDomainBinding } from './served_domain_guard';
 import {
   countLocalItems,
   fetchLocalItems,

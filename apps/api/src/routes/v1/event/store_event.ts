@@ -5,14 +5,14 @@ import z, {
 } from '@dpg/schemas';
 import { type FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { db } from 'apps/api/db/postgres/drizzle_config';
-import { auth_middleware_if_enabled } from 'apps/api/plugins/auth/auth_middleware';
+import { db } from '../../../../db/postgres/drizzle_config';
+import { auth_middleware_if_enabled } from '../../../../plugins/auth/auth_middleware';
 import { action_events, ensureActionEventPartition } from '@dpg/database';
-import { getNetworkConfigByName } from 'apps/api/src/network_configs';
+import { getNetworkConfigByName } from '../../../network_configs';
 import {
   isServedDomainBinding,
   replyForUnservedDomain,
-} from 'apps/api/src/utils/served_domain_guard';
+} from '../../../utils/served_domain_guard';
 
 type StoreEventRequest = FastifyRequest<{
   Body: z.infer<typeof StoreEventBodySchema>;

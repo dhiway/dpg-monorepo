@@ -1,7 +1,7 @@
 import z from '@dpg/schemas';
 import { type FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
-import { auth_middleware_if_enabled } from 'apps/api/plugins/auth/auth_middleware';
-import { refreshConsumedSchemas } from 'apps/api/src/network_schema_cache';
+import { auth_middleware_if_enabled } from '../../../../../plugins/auth/auth_middleware';
+import { refreshConsumedSchemas } from '../../../../network_schema_cache';
 
 export const refetch_schema: FastifyPluginAsyncZod =
   async function (fastify) {

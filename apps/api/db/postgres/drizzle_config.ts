@@ -1,6 +1,6 @@
 import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from './schema';
-import { databasesConfig } from 'apps/api/src/config';
+import { databasesConfig } from '../../src/config';
 import { Pool } from '@dpg/database';
 
 const pool = new Pool({

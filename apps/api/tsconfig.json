@@ -7,12 +7,16 @@
     "baseUrl": ".",
     "paths": {
       "@dpg/*": [
-        "packages/*/src"
+        "../../packages/*/src"
       ]
     },
     "strict": true,
-    "declaration": true,
-    "composite": true,
+    "declaration": false,
+    "composite": false,
     "skipLibCheck": true
-  }
+  },
+  "include": [
+    "src",
+    "types.d.ts"
+  ]
 }

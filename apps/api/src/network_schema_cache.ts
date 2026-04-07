@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { fetchSchema, type NetworkConfigDocument } from '@dpg/schemas';
-import { db } from 'apps/api/db/postgres/drizzle_config';
+import { db } from '../db/postgres/drizzle_config';
 import { items } from '@dpg/database';
 import { and, eq } from 'drizzle-orm';
 import { getNetworkConfigs, refreshNetworkConfigs } from './network_configs';

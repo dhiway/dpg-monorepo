@@ -1,22 +1,21 @@
-import z from '@dpg/schemas';
-import { FastifyReply, FastifyRequest } from 'fastify';
-import { type FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
-import {
+import z, {
   FetchItemsBodySchema,
   FetchItemsCountBodySchema,
   FetchItemsQuerySchema,
   ItemSelectSchema,
-} from 'packages/schemas/src/api/item_schemas';
+} from '@dpg/schemas';
+import { FastifyReply, FastifyRequest } from 'fastify';
+import { type FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import {
   isServedDomainBinding,
   replyForUnservedDomain,
-} from 'apps/api/src/utils/served_domain_guard';
+} from '../../../../utils/served_domain_guard';
 import {
   countLocalItems,
   fetchLocalItems,
-} from 'apps/api/src/utils/item_fetch_runtime';
-import { getNetworkConfigByName } from 'apps/api/src/network_configs';
-import { fetchItemsAcrossInstances } from 'apps/api/src/utils/inter_instance_fetch';
+} from '../../../../utils/item_fetch_runtime';
+import { getNetworkConfigByName } from '../../../../network_configs';
+import { fetchItemsAcrossInstances } from '../../../../utils/inter_instance_fetch';
 
 type FetchItemsAggregateRequest = FastifyRequest<{
   Querystring: z.infer<typeof FetchItemsQuerySchema>;

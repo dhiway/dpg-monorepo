@@ -1,24 +1,23 @@
 import { type FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
-import z from '@dpg/schemas';
-import { FastifyReply, FastifyRequest } from 'fastify';
-import { db } from 'apps/api/db/postgres/drizzle_config';
-import { DrizzleQueryError } from 'drizzle-orm';
-import { CreateItemBodySchema } from 'packages/schemas/src/api/item_schemas';
-import { DatabaseError, ensureItemPartition, items } from '@dpg/database';
-import { auth_middleware_if_enabled } from 'apps/api/plugins/auth/auth_middleware';
-import {
-  isServedDomainBinding,
-  replyForUnservedDomain,
-} from 'apps/api/src/utils/served_domain_guard';
-import {
-  getDomainItemTypes,
+import z, {
+  CreateItemBodySchema,
   getDomainItemSchema,
+  getDomainItemTypes,
   getInstanceCustomItemSchemaUrl,
   validateAgainstJsonSchema,
 } from '@dpg/schemas';
-import { getNetworkConfigByName } from 'apps/api/src/network_configs';
-import { getOrFetchSchemaByUrl } from 'apps/api/src/network_schema_cache';
-import { getCurrentApiBaseUrl } from 'apps/api/src/config';
+import { FastifyReply, FastifyRequest } from 'fastify';
+import { db } from '../../../../db/postgres/drizzle_config';
+import { DrizzleQueryError } from 'drizzle-orm';
+import { DatabaseError, ensureItemPartition, items } from '@dpg/database';
+import { auth_middleware_if_enabled } from '../../../../plugins/auth/auth_middleware';
+import {
+  isServedDomainBinding,
+  replyForUnservedDomain,
+} from '../../../utils/served_domain_guard';
+import { getNetworkConfigByName } from '../../../network_configs';
+import { getOrFetchSchemaByUrl } from '../../../network_schema_cache';
+import { getCurrentApiBaseUrl } from '../../../config';
 
 type CreateItemRequest = FastifyRequest<{
   Body: z.infer<typeof CreateItemBodySchema>;
