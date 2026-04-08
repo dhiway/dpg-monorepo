@@ -78,9 +78,14 @@ export function HomePage() {
   const [resolvedNetwork, setResolvedNetwork] = React.useState<DotNetworkSchema | null>(null);
   const [allNetworks, setAllNetworks] = React.useState<DotNetworkSchema[]>([]);
   const configuredNetworkNames = parseNetworkNames(import.meta.env.VITE_NETWORK_NAME);
-  const [selectedNetworkName, setSelectedNetworkName] = React.useState<string | null>(
-    configuredNetworkNames[0] || null
-  );
+  
+  // Get network from URL query param, fallback to env config
+  const networkFromUrl = searchParams.get('network');
+  const initialNetworkName = networkFromUrl && configuredNetworkNames.includes(networkFromUrl)
+    ? networkFromUrl
+    : (configuredNetworkNames[0] || null);
+  
+  const [selectedNetworkName, setSelectedNetworkName] = React.useState<string | null>(initialNetworkName);
   const [domainItems, setDomainItems] = React.useState<Record<string, Item[]>>({});
   const [myItems, setMyItems] = React.useState<Item[]>([]);
   const [activeProfileId, setActiveProfileId] = React.useState<string | null>(
@@ -332,7 +337,11 @@ export function HomePage() {
   const handleNetworkSelect = (networkName: string) => {
     setSelectedNetworkName(networkName);
     setSelectedDomain(null);
-    setSearchParams({});
+    setSearchParams((prev) => {
+      prev.set('network', networkName);
+      prev.delete('domain'); // Remove domain since it's network-specific
+      return prev;
+    });
   };
 
   const showNetworkSelector = allNetworks.length > 1;
