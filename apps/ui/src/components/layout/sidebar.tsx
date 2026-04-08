@@ -265,7 +265,7 @@ export function AppSidebar({
                 })}
                 <SidebarMenu className="mt-1">
                   <SidebarMenuItem>
-                    <SidebarMenuButton onClick={() => navigate('/profile/new')}>
+                    <SidebarMenuButton onClick={() => navigate(`/profile/new?network=${selectedNetwork ?? ''}`)}>
                       <Plus className="h-4 w-4" />
                       <span>Create Profile</span>
                     </SidebarMenuButton>
