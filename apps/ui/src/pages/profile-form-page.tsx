@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { ArrowLeft, GraduationCap, UserCheck, Building2 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -43,6 +43,7 @@ const domainIcons: Record<string, LucideIcon> = {
 export function ProfileFormPage() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const isEdit = !!id;
 
   const [selectedDomain, setSelectedDomain] = React.useState<string | null>(null);
@@ -52,14 +53,18 @@ export function ProfileFormPage() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(isEdit);
 
-  // Fetch and resolve network config from API
+  // Get network from URL query param, fallback to env config
   const configuredNetworkNames = parseNetworkNames(import.meta.env.VITE_NETWORK_NAME);
-  const defaultNetworkName = configuredNetworkNames[0] || 'yellow_dot';
+  const networkFromUrl = searchParams.get('network');
+  const targetNetworkName = networkFromUrl && configuredNetworkNames.includes(networkFromUrl)
+    ? networkFromUrl
+    : (configuredNetworkNames[0] || 'yellow_dot');
 
+  // Fetch and resolve network config from API
   React.useEffect(() => {
     const controller = new AbortController();
 
-    fetchNetworkConfig(defaultNetworkName)
+    fetchNetworkConfig(targetNetworkName)
       .then((config) => {
         if (controller.signal.aborted) return;
         return resolveNetworkRefs(config, { baseUrl: apiConfig.getUrl() });
@@ -73,7 +78,7 @@ export function ProfileFormPage() {
       });
 
     return () => { controller.abort(); };
-  }, []);
+  }, [targetNetworkName]);
 
   // Fetch existing profile for edit mode
   React.useEffect(() => {
