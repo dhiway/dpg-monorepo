@@ -45,6 +45,11 @@ export interface DotNetworkInstance {
   custom_item_schema_urls?: Record<string, string>;
 }
 
+export interface DotNetworkAction {
+  description: string;
+  interactions: DotNetworkInteraction[];
+}
+
 export interface DotNetworkSchema {
   name: string;
   display_name: string;
@@ -52,12 +57,7 @@ export interface DotNetworkSchema {
   schema_standard: string;
   domains: DotNetworkDomain[];
   instances?: DotNetworkInstance[];
-  actions: {
-    connect: {
-      description: string;
-      interactions: DotNetworkInteraction[];
-    };
-  };
+  actions: Record<string, DotNetworkAction>;
 }
 
 // ─── Schema Input Types ────────────────────────────────────────

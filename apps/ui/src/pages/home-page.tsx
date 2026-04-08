@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import type {
   DotNetworkSchema,
   DotActionSchema,
+  DotNetworkInteraction,
   ViewMode,
 } from '@/engine/types';
 import { filterSchemaByPrivacy } from '@/engine/schema/schema-privacy';
@@ -37,6 +38,33 @@ function getItemTypeForDomain(network: DotNetworkSchema, domainName: string): st
   return itemTypeKeys.length > 0 ? itemTypeKeys[0] : 'profile';
 }
 
+function parseNetworkNames(networkEnv: string | undefined): string[] {
+  if (!networkEnv) return [];
+  return networkEnv.split(',').map(n => n.trim()).filter(Boolean);
+}
+
+function getAllInteractions(network: DotNetworkSchema): Array<{ actionType: string; interaction: DotNetworkInteraction }> {
+  const interactions: Array<{ actionType: string; interaction: DotNetworkInteraction }> = [];
+  for (const [actionType, action] of Object.entries(network.actions)) {
+    for (const interaction of action.interactions) {
+      interactions.push({ actionType, interaction });
+    }
+  }
+  return interactions;
+}
+
+function findInteraction(
+  network: DotNetworkSchema,
+  fromDomain: string,
+  toDomain: string
+): { actionType: string; interaction: DotNetworkInteraction } | null {
+  for (const [actionType, action] of Object.entries(network.actions)) {
+    const found = action.interactions.find(i => i.from_domain === fromDomain && i.to_domain === toDomain);
+    if (found) return { actionType, interaction: found };
+  }
+  return null;
+}
+
 export function HomePage() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -49,8 +77,9 @@ export function HomePage() {
   );
   const [resolvedNetwork, setResolvedNetwork] = React.useState<DotNetworkSchema | null>(null);
   const [allNetworks, setAllNetworks] = React.useState<DotNetworkSchema[]>([]);
+  const configuredNetworkNames = parseNetworkNames(import.meta.env.VITE_NETWORK_NAME);
   const [selectedNetworkName, setSelectedNetworkName] = React.useState<string | null>(
-    import.meta.env.VITE_NETWORK_NAME || null
+    configuredNetworkNames[0] || null
   );
   const [domainItems, setDomainItems] = React.useState<Record<string, Item[]>>({});
   const [myItems, setMyItems] = React.useState<Item[]>([]);
@@ -66,12 +95,17 @@ export function HomePage() {
     fetchNetworkConfigs()
       .then((networks) => {
         if (controller.signal.aborted) return;
-        setAllNetworks(networks);
+        
+        // Filter by configured networks if VITE_NETWORK_NAME is set, otherwise use all
+        const targetNetworks = configuredNetworkNames.length > 0
+          ? networks.filter(n => configuredNetworkNames.includes(n.name))
+          : networks;
+        setAllNetworks(targetNetworks);
 
-        // If VITE_NETWORK_NAME is set, use that; otherwise use first available
-        const targetNetwork = import.meta.env.VITE_NETWORK_NAME || networks[0]?.name;
-        if (targetNetwork) {
-          setSelectedNetworkName(targetNetwork);
+        // Use first configured network, or first available
+        const defaultNetwork = targetNetworks[0]?.name;
+        if (defaultNetwork && !selectedNetworkName) {
+          setSelectedNetworkName(defaultNetwork);
         }
       })
       .catch((err) => {
@@ -162,11 +196,12 @@ export function HomePage() {
     if (!network) return [];
     // No profile yet — show all domains so user can browse and create
     if (!myItem) return network.domains;
-    // Has profile — show domains the active profile can connect to
+    // Has profile — show domains the active profile can perform actions on
+    const allInteractions = getAllInteractions(network);
     const targetNames = new Set(
-      network.actions.connect.interactions
-        .filter((i) => i.from_domain === currentDomain)
-        .map((i) => i.to_domain)
+      allInteractions
+        .filter(({ interaction }) => interaction.from_domain === currentDomain)
+        .map(({ interaction }) => interaction.to_domain)
     );
     return network.domains.filter((d) => targetNames.has(d.name));
   }, [network, currentDomain, myItem]);
@@ -242,16 +277,14 @@ export function HomePage() {
     if (!network || !myItem) return null;
     const toDomain = selectedDomain ?? visibleDomains[0]?.name;
     if (!toDomain) return null;
-    const interaction = network.actions.connect.interactions.find(
-      (i) => i.from_domain === currentDomain && i.to_domain === toDomain
-    );
-    if (!interaction) return null;
+    const found = findInteraction(network, currentDomain, toDomain);
+    if (!found) return null;
     return {
-      action_type: 'connect',
-      from_domain: interaction.from_domain,
-      to_domain: interaction.to_domain,
-      requirement_schema: interaction.requirement_schema,
-      event_schema: interaction.event_schema,
+      action_type: found.actionType,
+      from_domain: found.interaction.from_domain,
+      to_domain: found.interaction.to_domain,
+      requirement_schema: found.interaction.requirement_schema,
+      event_schema: found.interaction.event_schema,
     };
   }, [network, currentDomain, selectedDomain, visibleDomains, myItem]);
 
@@ -302,7 +335,7 @@ export function HomePage() {
     setSearchParams({});
   };
 
-  const showNetworkSelector = !import.meta.env.VITE_NETWORK_NAME && allNetworks.length > 1;
+  const showNetworkSelector = allNetworks.length > 1;
 
   const currentDomainLabel = visibleDomains.find(
     (d) => d.name === selectedDomain
@@ -383,17 +416,15 @@ export function HomePage() {
                   const domainSchema = domain.item_schemas
                     ? (Object.values(domain.item_schemas)[0] as import('@rjsf/utils').RJSFSchema)
                     : undefined;
-                  const domainInteraction = network.actions.connect.interactions.find(
-                    (i) => i.from_domain === currentDomain && i.to_domain === domain.name
-                  );
+                  const found = findInteraction(network, currentDomain, domain.name);
                   const domainAction: DotActionSchema | null =
-                    myItem && domainInteraction
+                    myItem && found
                       ? {
-                          action_type: 'connect',
-                          from_domain: domainInteraction.from_domain,
-                          to_domain: domainInteraction.to_domain,
-                          requirement_schema: domainInteraction.requirement_schema,
-                          event_schema: domainInteraction.event_schema,
+                          action_type: found.actionType,
+                          from_domain: found.interaction.from_domain,
+                          to_domain: found.interaction.to_domain,
+                          requirement_schema: found.interaction.requirement_schema,
+                          event_schema: found.interaction.event_schema,
                         }
                       : null;
                   return (filteredDomainItems[domain.name] ?? []).map((item) => ({
