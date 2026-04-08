@@ -19,6 +19,6 @@
   "dependencies": {
     "@types/pg": "^8.16.0",
     "pg": "^8.17.2",
-    "drizzle-orm": "^0.45.1"
+    "drizzle-orm": "^0.45.2"
   }
 }
