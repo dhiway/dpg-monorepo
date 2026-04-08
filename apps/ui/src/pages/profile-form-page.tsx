@@ -28,6 +28,11 @@ import { fetchNetworkConfig } from '@/lib/network-api';
 import { extractAndGeocode } from '@/lib/item-utils';
 import { apiConfig } from '@/lib/api-config';
 
+function parseNetworkNames(networkEnv: string | undefined): string[] {
+  if (!networkEnv) return [];
+  return networkEnv.split(',').map(n => n.trim()).filter(Boolean);
+}
+
 const domainIcons: Record<string, LucideIcon> = {
   student_profile: GraduationCap,
   learner_profile: GraduationCap,
@@ -48,11 +53,13 @@ export function ProfileFormPage() {
   const [isLoading, setIsLoading] = React.useState(isEdit);
 
   // Fetch and resolve network config from API
+  const configuredNetworkNames = parseNetworkNames(import.meta.env.VITE_NETWORK_NAME);
+  const defaultNetworkName = configuredNetworkNames[0] || 'yellow_dot';
+
   React.useEffect(() => {
-    const networkName = import.meta.env.VITE_NETWORK_NAME || 'yellow_dot';
     const controller = new AbortController();
 
-    fetchNetworkConfig(networkName)
+    fetchNetworkConfig(defaultNetworkName)
       .then((config) => {
         if (controller.signal.aborted) return;
         return resolveNetworkRefs(config, { baseUrl: apiConfig.getUrl() });
