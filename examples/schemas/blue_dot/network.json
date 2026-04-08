@@ -14,28 +14,51 @@
           "title": "Job Seeker Profile 1.0",
           "type": "object",
           "additionalProperties": false,
-          "required": ["name", "skills", "preferred_city", "experience_years"],
+          "required": ["name", "gender", "location", "age", "phone"],
           "properties": {
             "name": {
               "type": "string",
               "minLength": 1
             },
-            "skills": {
-              "type": "array",
-              "minItems": 1,
-              "items": {
-                "type": "string"
-              }
+            "gender": {
+              "type": "string",
+              "minItems": 1
             },
-            "preferred_city": {
+            "location": {
               "type": "string"
             },
-            "experience_years": {
-              "type": "integer",
-              "minimum": 0
+            "phone": {
+              "type": "string",
+              "minimum": 10
             },
-            "open_to_remote": {
-              "type": "boolean"
+            "age": {
+              "type": "integer",
+              "minimum": 14,
+              "maximum": 65
+            },
+            "workExperience": {
+              "type": "string",
+              "enum": ["Fresher", "Worked before", "Returning after a break"]
+            },
+            "workExperienceYearsConditional": {
+              "type": "string",
+              "enum": ["0", "< 1 Year", "1 Year", "2 Years", "3 Years", "3-5 Years", "5-10 Years", "10-15 Years", "15+ Years", "Other"]
+            },
+            "highestQualificationOrSkill": {
+              "type": "string",
+              "enum": ["School", "College", "ITI / Other Vocational Trainings", "Certification / Learned on the job"]
+            },
+            "natureOfJobsInterestedIn": {
+              "type": "string",
+              "enum": ["Internship", "Apprenticeship", "Full-time", "Flexible"]
+            },
+            "nameOfJobRolesInterestedIn": {
+              "type": "string",
+              "minLength": 1
+            },
+            "otherHelpNeeded": {
+              "type": "string",
+              "enum": ["Training", "Accommodation", "Travel", "Other"]
             }
           }
         }
@@ -51,31 +74,82 @@
           "title": "Job Posting 1.0",
           "type": "object",
           "additionalProperties": false,
-          "required": ["company_name", "role", "city", "employment_type"],
+          "required": ["jobProviderName", "role", "jobProviderLocation", "hiringManagerName", "hiringManagerPhoneNumber", "hiringManagerEmail", "positions", "natureOfJob"],
           "properties": {
-            "company_name": {
+            "jobProviderName": {
               "type": "string",
               "minLength": 1
+            },
+            "jobProviderLocation": {
+              "type": "string"
+            },
+            "hiringManagerName": {
+              "type": "string",
+              "minLength": 1
+            },
+            "hiringManagerPhoneNumber": {
+              "type": "string"
+            },
+            "hiringManagerEmail": {
+              "type": "string"
             },
             "role": {
               "type": "string",
               "minLength": 1
             },
-            "city": {
-              "type": "string"
+            "positions": {
+              "type": "integer",
+              "minimum": 1
             },
-            "employment_type": {
+            "natureOfJob": {
               "type": "string",
-              "enum": ["full_time", "part_time", "contract", "internship"]
+              "enum": ["Internship", "Apprenticeship", "Full-time", "Flexible"]
             },
-            "salary_range": {
-              "type": "string"
+            "stipendMin": {
+              "type": "number",
+              "title": "Monthly In-hand Stipend (INR) min",
+              "minimum": 0
             },
-            "required_skills": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
+            "stipendMax": {
+              "type": "number",
+              "title": "Monthly In-hand Stipend (INR) max",
+              "minimum": 0
+             },
+            "salaryMin": {
+              "type": "number",
+              "title": "Monthly In-hand Salary (INR) min",
+              "minimum": 0
+            },
+            "salaryMax": {
+              "type": "number",
+              "title": "Monthly In-hand Salary (INR) max",
+              "minimum": 0
+            },
+            "taskRateMin": {
+                "type": "number",
+                "title": "Per Task (INR) min",
+                "minimum": 0
+            },
+            "taskRateMax": {
+                "type": "number",
+                "title": "Per Task (INR) max",
+                "minimum": 0
+            },
+            "candidateExperienceType": {
+              "type": "string",
+              "enum": ["Fresher", "Worked before", "Returning after a break"]
+            },
+            "minEducationalInstitute": {
+              "type": "string",
+              "enum": ["School", "College", "ITI", "Other Vocational Training", "Certifications", "None"]
+            },
+            "workExperienceYears": {
+              "type": "string",
+              "enum": ["0", "< 1 Year", "1 Year", "2 Years", "3 Years", "3-5 Years", "5-10 Years", "10-15 Years", "15+ Years", "Other"]
+            },
+            "lastRoleHeld": {
+              "type": "string",
+              "minLength": 1
             }
           }
         }
@@ -86,21 +160,19 @@
     {
       "domain_name": "seeker",
       "instance_name": "Blue Dot Seeker",
-      "instance_url": "https://seeker.bluedot.example.com",
+      "instance_url": "https://ubi-backend.onest.dhiway.net",
       "custom_item_schema_urls": {}
     },
     {
       "domain_name": "provider",
       "instance_name": "Blue Dot Provider",
-      "instance_url": "https://provider.bluedot.example.com",
-      "custom_item_schema_urls": {
-        "job_posting_1.1": "https://provider.bluedot.example.com/schemas/job_posting_1.1.json"
-      }
+      "instance_url": "https://ubi-backend.onest.dhiway.net",
+      "custom_item_schema_urls": {}
     }
   ],
   "actions": {
     "apply": {
-      "description": "Lets a seeker apply to a provider's job posting.",
+      "description": "Lets a seeker and provider to invite each other.",
       "interactions": [
         {
           "from_network": "blue_dot",
@@ -112,19 +184,20 @@
             "title": "Job Application Requirement",
             "type": "object",
             "additionalProperties": false,
-            "required": ["job_id", "cover_note"],
+            "required": ["role", "cover_note"],
             "properties": {
-              "job_id": {
+              "role": {
                 "type": "string",
                 "minLength": 1
               },
-              "cover_note": {
-                "type": "string",
-                "minLength": 1
+              "age": {
+                "type": "integer",
+                "minimum": 14,
+                "maximum": 65
               },
-              "resume_url": {
+              "workExperience": {
                 "type": "string",
-                "format": "uri"
+                "enum": ["Fresher", "Worked before", "Returning after a break"]
               }
             }
           },
@@ -138,6 +211,52 @@
               "status": {
                 "type": "string",
                 "enum": ["submitted", "shortlisted", "rejected"]
+              },
+              "message": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "from_network": "blue_dot",
+          "from_domain": "provider",
+          "to_network": "blue_dot",
+          "to_domain": "seeker",
+          "requirement_schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "title": "Interview Invitation Requirement",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["job_id", "interview_time", "interview_mode"],
+            "properties": {
+              "job_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "interview_time": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "interview_mode": {
+                "type": "string",
+                "enum": ["in_person", "online", "phone"]
+              },
+              "message_to_candidate": {
+                "type": "string"
+              }
+            }
+          },
+          "event_schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "title": "Interview Invitation Event",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["status", "message"],
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": ["invited", "accepted", "rejected"]
               },
               "message": {
                 "type": "string"
