@@ -6,18 +6,9 @@ import type { AuthRuntimeConfig } from './types';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { emailOtpHtmlTemplate } from './templates/otp_email';
 
-function getCookieDomain(apiDomain: string) {
-  try {
-    return new URL(apiDomain).hostname;
-  } catch {
-    return apiDomain.replace(/:\d+$/, '').replace(/\/$/, '');
-  }
-}
-
 export function createAuth(config: AuthRuntimeConfig) {
   const redis = config.redis;
   const nc = config.notificationClient;
-  const cookieDomain = getCookieDomain(config.apiDomain);
   const apiKeyConfig: ApiKeyConfigurationOptions = {
     rateLimit: {
       timeWindow: 1000 * 60 * 60,
@@ -44,8 +35,7 @@ export function createAuth(config: AuthRuntimeConfig) {
       useSecureCookies: config.nodeEnv === 'production',
 
       crossSubDomainCookies: {
-        enabled: config.nodeEnv === 'production',
-        domain: cookieDomain,
+        enabled: false,
       },
 
       defaultCookieAttributes: {
