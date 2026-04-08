@@ -199,7 +199,7 @@ export function ProfileFormPage() {
         toast.success('Profile created!', { description: `ID: ${result.item_id}` });
       }
 
-      navigate('/');
+      navigate(`/?network=${resolvedNetwork?.name ?? ''}`);
     } catch (err: unknown) {
       console.error('Failed to save profile:', err);
 
@@ -243,7 +243,7 @@ export function ProfileFormPage() {
           <Button
             variant="ghost"
             className="mb-4 gap-2"
-            onClick={() => navigate('/')}
+            onClick={() => navigate(`/?network=${targetNetworkName}`)}
           >
             <ArrowLeft className="h-4 w-4" />
             Back
@@ -287,7 +287,7 @@ export function ProfileFormPage() {
         <Button
           variant="ghost"
           className="mb-4 gap-2"
-          onClick={() => (selectedDomain && !isEdit ? setSelectedDomain(null) : navigate('/'))}
+          onClick={() => (selectedDomain && !isEdit ? setSelectedDomain(null) : navigate(`/?network=${resolvedNetwork?.name ?? ''}`))}
         >
           <ArrowLeft className="h-4 w-4" />
           {selectedDomain && !isEdit ? 'Choose different role' : 'Back'}
