@@ -28,7 +28,7 @@ export type NetworkActionInteraction = {
   to_network?: string;
   to_domain: string;
   requirement_schema: JsonSchemaDocument;
-  event_schema: JsonSchemaDocument;
+  event_schema?: JsonSchemaDocument;
 };
 
 type NetworkActionConfig = {

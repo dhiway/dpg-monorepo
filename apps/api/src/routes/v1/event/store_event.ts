@@ -4,19 +4,28 @@ import z, {
   validateAgainstJsonSchema,
 } from '@dpg/schemas';
 import { type FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
-import { FastifyReply, FastifyRequest } from 'fastify';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 import { db } from '../../../../db/postgres/drizzle_config';
 import { auth_middleware_if_enabled } from '../../../../plugins/auth/auth_middleware';
-import { action_events, ensureActionEventPartition } from '@dpg/database';
+import { ensureActionEventPartition } from '@dpg/database';
 import { getNetworkConfigByName } from '../../../network_configs';
 import {
   isServedDomainBinding,
   replyForUnservedDomain,
 } from '../../../utils/served_domain_guard';
+import { insertActionEvent } from '../utils/action_event_runtime';
 
 type StoreEventRequest = FastifyRequest<{
   Body: z.infer<typeof StoreEventBodySchema>;
 }>;
+
+const StoreEventResponseSchema = z.object({
+  event_id: z.string().nullable(),
+  action_id: z.string(),
+  action_name: z.string(),
+  action_status: z.string(),
+  update_count: z.number().int().nonnegative(),
+});
 
 export const store_event: FastifyPluginAsyncZod = async function (fastify) {
   fastify.route({
@@ -27,10 +36,7 @@ export const store_event: FastifyPluginAsyncZod = async function (fastify) {
       tags: ['event'],
       body: StoreEventBodySchema,
       response: {
-        201: z.object({
-          event_id: z.string(),
-          event_type: z.string(),
-        }),
+        201: StoreEventResponseSchema,
       },
     },
     handler: store_event_handler,
@@ -66,11 +72,13 @@ export const store_event_handler = async (
       toDomain: body.target_item.item_domain,
     });
 
-    validateAgainstJsonSchema(
-      interaction.event_schema,
-      body.event_payload,
-      'event payload'
-    );
+    if (interaction.event_schema) {
+      validateAgainstJsonSchema(
+        interaction.event_schema,
+        body.event_payload,
+        'event payload'
+      );
+    }
   } catch (err) {
     return reply.code(400).send({
       error: 'INVALID_EVENT_REQUEST',
@@ -79,12 +87,13 @@ export const store_event_handler = async (
   }
 
   try {
-    await ensureActionEventPartition(db, body.event_type);
+    await ensureActionEventPartition(db, body.action_name);
   } catch (err) {
     request.log.error(
       {
         err,
-        event_type: body.event_type,
+        action_name: body.action_name,
+        action_id: body.action_id,
       },
       'Failed to ensure event partition'
     );
@@ -95,28 +104,13 @@ export const store_event_handler = async (
     });
   }
 
-  const [created] = await db
-    .insert(action_events)
-    .values({
-      event_type: body.event_type,
-      action_name: body.action_name,
-      action_id: body.action_id,
-      source_item_network: body.source_item.item_network,
-      source_item_domain: body.source_item.item_domain,
-      source_item_type: body.source_item.item_type,
-      source_item_id: body.source_item.item_id,
-      target_item_network: body.target_item.item_network,
-      target_item_domain: body.target_item.item_domain,
-      target_item_type: body.target_item.item_type,
-      target_item_id: body.target_item.item_id,
-      event_payload: body.event_payload,
-      event_metadata: body.event_metadata,
-      created_by: body.created_by,
-    })
-    .returning({
-      event_id: action_events.event_id,
-      event_type: action_events.event_type,
-    });
+  const created = await insertActionEvent(db, body);
 
-  return reply.code(201).send(created);
+  return reply.code(201).send({
+    event_id: created?.event_id ?? null,
+    action_id: body.action_id,
+    action_name: body.action_name,
+    action_status: body.action_status,
+    update_count: body.update_count,
+  });
 };

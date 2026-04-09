@@ -5,6 +5,7 @@ const ItemRefSchema = z.object({
   item_domain: z.string().min(1),
   item_type: z.string().min(1),
   item_id: z.uuid(),
+  item_instance_url: z.url(),
 });
 
 export const PerformActionBodySchema = z.object({
@@ -12,20 +13,27 @@ export const PerformActionBodySchema = z.object({
   source_item: ItemRefSchema,
   target_item: ItemRefSchema,
   requirements_snapshot: z.record(z.string(), z.unknown()),
-  created_by: z.string().min(1),
-  response_event_type: z.string().min(1).default('action_response'),
-  response_event_payload: z.record(z.string(), z.unknown()),
-  response_event_metadata: z.record(z.string(), z.unknown()).default({}),
-  requester_event_url: z.url().optional(),
+});
+
+export const UpdateActionStatusBodySchema = z.object({
+  action_id: z.uuid(),
+  action_status: z.string().min(1),
+  event_payload: z.record(z.string(), z.unknown()).default({}),
+  remarks: z.string().min(1).optional(),
 });
 
 export const StoreEventBodySchema = z.object({
-  event_type: z.string().min(1),
+  origin_instance_domain: z.url(),
   action_name: z.string().min(1),
   action_id: z.uuid(),
+  action_status: z.string().min(1),
+  update_count: z.int().nonnegative(),
   source_item: ItemRefSchema,
   target_item: ItemRefSchema,
-  event_payload: z.record(z.string(), z.unknown()),
-  event_metadata: z.record(z.string(), z.unknown()).default({}),
-  created_by: z.string().min(1),
+  source_item_latitude: z.number().nullable().optional(),
+  source_item_longitude: z.number().nullable().optional(),
+  target_item_latitude: z.number().nullable().optional(),
+  target_item_longitude: z.number().nullable().optional(),
+  event_payload: z.record(z.string(), z.unknown()).default({}),
+  remarks: z.string().min(1).optional(),
 });

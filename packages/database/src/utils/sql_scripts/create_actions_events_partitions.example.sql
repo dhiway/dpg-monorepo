@@ -16,6 +16,6 @@ CREATE TABLE IF NOT EXISTS connect_action
 PARTITION OF item_actions
 FOR VALUES IN ('connect');
 
-CREATE TABLE IF NOT EXISTS action_response_event
+CREATE TABLE IF NOT EXISTS connect_event
 PARTITION OF action_events
-FOR VALUES IN ('action_response');
+FOR VALUES IN ('connect');

@@ -4,26 +4,39 @@ import z, {
   validateAgainstJsonSchema,
 } from '@dpg/schemas';
 import { type FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
-import { FastifyReply, FastifyRequest } from 'fastify';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 import { db } from '../../../../db/postgres/drizzle_config';
+import { auth_middleware_if_enabled } from '../../../../plugins/auth/auth_middleware';
 import {
-  auth_middleware_if_enabled,
-} from '../../../../plugins/auth/auth_middleware';
-import {
-  action_events,
   ensureActionEventPartition,
   ensureActionPartition,
   item_actions,
 } from '@dpg/database';
+import { getCurrentApiBaseUrl } from '../../../config';
 import { getNetworkConfigByName } from '../../../network_configs';
 import {
   isServedDomainBinding,
   replyForUnservedDomain,
 } from '../../../utils/served_domain_guard';
+import {
+  fetchLocalItemSnapshot,
+  insertActionEvent,
+  isCurrentInstanceItem,
+  mirrorActionEventToSourceInstance,
+} from 'src/utils/action_event_runtime';
 
 type PerformActionRequest = FastifyRequest<{
   Body: z.infer<typeof PerformActionBodySchema>;
 }>;
+
+const PerformActionResponseSchema = z.object({
+  action_id: z.string(),
+  action_name: z.string(),
+  action_status: z.string(),
+  update_count: z.number().int().nonnegative(),
+  source_item_id: z.string(),
+  target_item_id: z.string(),
+});
 
 export const perform_action: FastifyPluginAsyncZod = async function (fastify) {
   fastify.route({
@@ -34,13 +47,7 @@ export const perform_action: FastifyPluginAsyncZod = async function (fastify) {
       tags: ['action'],
       body: PerformActionBodySchema,
       response: {
-        201: z.object({
-          action_id: z.string(),
-          action_name: z.string(),
-          status: z.string(),
-          response_event_type: z.string(),
-          response_event_payload: z.record(z.string(), z.unknown()),
-        }),
+        201: PerformActionResponseSchema,
       },
     },
     handler: perform_action_handler,
@@ -66,9 +73,19 @@ export const perform_action_handler = async (
     );
   }
 
+  if (!isCurrentInstanceItem(body.target_item)) {
+    return reply.code(400).send({
+      error: 'INVALID_TARGET_INSTANCE',
+      message: 'Actions must be created on the target item instance',
+    });
+  }
+
+  let interaction: ReturnType<typeof getActionInteraction>;
   try {
-    const networkConfig = await getNetworkConfigByName(body.target_item.item_network);
-    const interaction = getActionInteraction(networkConfig, {
+    const networkConfig = await getNetworkConfigByName(
+      body.target_item.item_network
+    );
+    interaction = getActionInteraction(networkConfig, {
       actionName: body.action_name,
       fromNetwork: body.source_item.item_network,
       fromDomain: body.source_item.item_domain,
@@ -81,12 +98,6 @@ export const perform_action_handler = async (
       body.requirements_snapshot,
       'action requirements'
     );
-
-    validateAgainstJsonSchema(
-      interaction.event_schema,
-      body.response_event_payload,
-      'action response event payload'
-    );
   } catch (err) {
     return reply.code(400).send({
       error: 'INVALID_ACTION_REQUEST',
@@ -94,20 +105,34 @@ export const perform_action_handler = async (
     });
   }
 
-  const status =
-    typeof body.response_event_payload.status === 'string'
-      ? body.response_event_payload.status
-      : 'pending';
+  const targetItemSnapshot = await fetchLocalItemSnapshot(db, body.target_item);
+  if (!targetItemSnapshot) {
+    return reply.code(404).send({
+      error: 'TARGET_ITEM_NOT_FOUND',
+      message: 'Target item does not exist on this instance',
+    });
+  }
+
+  let sourceItemSnapshot = null;
+  if (isCurrentInstanceItem(body.source_item)) {
+    sourceItemSnapshot = await fetchLocalItemSnapshot(db, body.source_item);
+
+    if (!sourceItemSnapshot) {
+      return reply.code(404).send({
+        error: 'SOURCE_ITEM_NOT_FOUND',
+        message: 'Source item does not exist on this instance',
+      });
+    }
+  }
 
   try {
     await ensureActionPartition(db, body.action_name);
-    await ensureActionEventPartition(db, body.response_event_type);
+    await ensureActionEventPartition(db, body.action_name);
   } catch (err) {
     request.log.error(
       {
         err,
         action_name: body.action_name,
-        response_event_type: body.response_event_type,
       },
       'Failed to ensure action/event partitions'
     );
@@ -118,71 +143,58 @@ export const perform_action_handler = async (
     });
   }
 
+  const actionStatus = 'created';
+  const updateCount = 0;
+  const eventPayload =
+    interaction.event_schema && Object.keys(interaction.event_schema).length > 0
+      ? {}
+      : {};
+
   const [created] = await db
     .insert(item_actions)
     .values({
       action_name: body.action_name,
+      action_status: actionStatus,
+      update_count: updateCount,
       source_item_network: body.source_item.item_network,
       source_item_domain: body.source_item.item_domain,
       source_item_type: body.source_item.item_type,
       source_item_id: body.source_item.item_id,
+      source_item_instance_url: body.source_item.item_instance_url,
       target_item_network: body.target_item.item_network,
       target_item_domain: body.target_item.item_domain,
       target_item_type: body.target_item.item_type,
       target_item_id: body.target_item.item_id,
-      status,
+      target_item_instance_url: body.target_item.item_instance_url,
       requirements_snapshot: body.requirements_snapshot,
-      created_by: body.created_by,
+      remarks: null,
     })
     .returning({
       action_id: item_actions.action_id,
       action_name: item_actions.action_name,
-      status: item_actions.status,
+      action_status: item_actions.action_status,
+      update_count: item_actions.update_count,
+      source_item_id: item_actions.source_item_id,
+      target_item_id: item_actions.target_item_id,
     });
 
-  await db.insert(action_events).values({
-    event_type: body.response_event_type,
+  const storedEvent = {
+    origin_instance_domain: getCurrentApiBaseUrl(),
     action_name: created.action_name,
     action_id: created.action_id,
-    source_item_network: body.source_item.item_network,
-    source_item_domain: body.source_item.item_domain,
-    source_item_type: body.source_item.item_type,
-    source_item_id: body.source_item.item_id,
-    target_item_network: body.target_item.item_network,
-    target_item_domain: body.target_item.item_domain,
-    target_item_type: body.target_item.item_type,
-    target_item_id: body.target_item.item_id,
-    event_payload: body.response_event_payload,
-    event_metadata: body.response_event_metadata,
-    created_by: body.created_by,
-  });
+    action_status: created.action_status,
+    update_count: created.update_count,
+    source_item: body.source_item,
+    target_item: body.target_item,
+    source_item_latitude: sourceItemSnapshot?.item_latitude ?? null,
+    source_item_longitude: sourceItemSnapshot?.item_longitude ?? null,
+    target_item_latitude: targetItemSnapshot.item_latitude ?? null,
+    target_item_longitude: targetItemSnapshot.item_longitude ?? null,
+    event_payload: eventPayload,
+  };
 
-  if (body.requester_event_url) {
-    void fetch(body.requester_event_url, {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        event_type: body.response_event_type,
-        action_name: created.action_name,
-        action_id: created.action_id,
-        source_item: body.source_item,
-        target_item: body.target_item,
-        event_payload: body.response_event_payload,
-        event_metadata: body.response_event_metadata,
-        created_by: body.created_by,
-      }),
-    }).catch((err) => {
-      request.log.error({ err }, 'Failed to forward action response event');
-    });
-  }
+  await insertActionEvent(db, storedEvent);
+  void mirrorActionEventToSourceInstance(storedEvent, request.log);
 
-  return reply.code(201).send({
-    action_id: created.action_id,
-    action_name: created.action_name,
-    status: created.status,
-    response_event_type: body.response_event_type,
-    response_event_payload: body.response_event_payload,
-  });
+  return reply.code(201).send(created);
 };
