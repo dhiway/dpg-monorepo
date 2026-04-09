@@ -184,7 +184,7 @@
             "title": "Job Application Requirement",
             "type": "object",
             "additionalProperties": false,
-            "required": ["role", "cover_note"],
+            "required": ["role", "age", "workExperience"],
             "properties": {
               "role": {
                 "type": "string",
@@ -228,9 +228,9 @@
             "title": "Interview Invitation Requirement",
             "type": "object",
             "additionalProperties": false,
-            "required": ["job_id", "interview_time", "interview_mode"],
+            "required": ["role", "interview_time", "interview_mode"],
             "properties": {
-              "job_id": {
+              "role": {
                 "type": "string",
                 "minLength": 1
               },
