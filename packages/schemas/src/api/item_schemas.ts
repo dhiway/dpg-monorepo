@@ -35,9 +35,10 @@ const FetchItemsSchemaBase = z.object({
 
 type FetchItemsSchemaShape = z.infer<typeof FetchItemsSchemaBase>;
 
-function withGeoSearchRefinement<T extends z.ZodType<FetchItemsSchemaShape>>(schema: T) {
+function withGeoSearchRefinement<T extends z.ZodTypeAny>(schema: T) {
   return schema.refine(
-    (data) => {
+    (rawData) => {
+      const data = rawData as Partial<FetchItemsSchemaShape>;
       const hasCoordinates =
         data.item_latitude !== undefined || data.item_longitude !== undefined;
 

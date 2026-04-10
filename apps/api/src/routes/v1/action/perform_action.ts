@@ -1,29 +1,18 @@
-import z, {
-  getActionInteraction,
-  PerformActionBodySchema,
-  validateAgainstJsonSchema,
-} from '@dpg/schemas';
+import z, { PerformActionBodySchema } from '@dpg/schemas';
 import { type FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { db } from '../../../../db/postgres/drizzle_config';
 import { auth_middleware_if_enabled } from '../../../../plugins/auth/auth_middleware';
-import {
-  ensureActionEventPartition,
-  ensureActionPartition,
-  item_actions,
-} from '@dpg/database';
 import { getCurrentApiBaseUrl } from '../../../config';
+import {
+  buildNetworkActionTargetItem,
+  fetchLocalItemSnapshot,
+} from '../../../utils/action_event_runtime';
+import { db } from '../../../../db/postgres/drizzle_config';
 import { getNetworkConfigByName } from '../../../network_configs';
 import {
   isServedDomainBinding,
   replyForUnservedDomain,
 } from '../../../utils/served_domain_guard';
-import {
-  fetchLocalItemSnapshot,
-  insertActionEvent,
-  isCurrentInstanceItem,
-  mirrorActionEventToSourceInstance,
-} from 'src/utils/action_event_runtime';
 
 type PerformActionRequest = FastifyRequest<{
   Body: z.infer<typeof PerformActionBodySchema>;
@@ -59,142 +48,115 @@ export const perform_action_handler = async (
   reply: FastifyReply
 ) => {
   const body = request.body;
+  const sourceInstanceUrl = getCurrentApiBaseUrl();
 
   if (
     !isServedDomainBinding(
-      body.target_item.item_network,
-      body.target_item.item_domain
+      body.source_item.item_network,
+      body.source_item.item_domain
     )
   ) {
     return await replyForUnservedDomain(
       reply,
-      body.target_item.item_network,
-      body.target_item.item_domain
+      body.source_item.item_network,
+      body.source_item.item_domain
     );
   }
 
-  if (!isCurrentInstanceItem(body.target_item)) {
-    return reply.code(400).send({
-      error: 'INVALID_TARGET_INSTANCE',
-      message: 'Actions must be created on the target item instance',
-    });
-  }
+  const sourceItem = {
+    ...body.source_item,
+    item_instance_url: sourceInstanceUrl,
+  };
+  const targetItem = buildNetworkActionTargetItem(body.target_item);
 
-  let interaction: ReturnType<typeof getActionInteraction>;
-  try {
-    const networkConfig = await getNetworkConfigByName(
-      body.target_item.item_network
-    );
-    interaction = getActionInteraction(networkConfig, {
-      actionName: body.action_name,
-      fromNetwork: body.source_item.item_network,
-      fromDomain: body.source_item.item_domain,
-      toNetwork: body.target_item.item_network,
-      toDomain: body.target_item.item_domain,
-    });
-
-    validateAgainstJsonSchema(
-      interaction.requirement_schema,
-      body.requirements_snapshot,
-      'action requirements'
-    );
-  } catch (err) {
-    return reply.code(400).send({
-      error: 'INVALID_ACTION_REQUEST',
-      message: err instanceof Error ? err.message : 'Invalid action request',
-    });
-  }
-
-  const targetItemSnapshot = await fetchLocalItemSnapshot(db, body.target_item);
-  if (!targetItemSnapshot) {
+  const sourceItemSnapshot = await fetchLocalItemSnapshot(db, sourceItem);
+  if (!sourceItemSnapshot) {
     return reply.code(404).send({
-      error: 'TARGET_ITEM_NOT_FOUND',
-      message: 'Target item does not exist on this instance',
+      error: 'SOURCE_ITEM_NOT_FOUND',
+      message: 'Source item does not exist on this instance',
     });
   }
 
-  let sourceItemSnapshot = null;
-  if (isCurrentInstanceItem(body.source_item)) {
-    sourceItemSnapshot = await fetchLocalItemSnapshot(db, body.source_item);
+  try {
+    const networkConfig = await getNetworkConfigByName(targetItem.item_network);
+    const matchedDomain = networkConfig.domains.find(
+      (domain) => domain.name === targetItem.item_domain
+    );
 
-    if (!sourceItemSnapshot) {
-      return reply.code(404).send({
-        error: 'SOURCE_ITEM_NOT_FOUND',
-        message: 'Source item does not exist on this instance',
+    if (!matchedDomain) {
+      return reply.code(400).send({
+        error: 'INVALID_TARGET_ITEM',
+        message: `Domain "${targetItem.item_domain}" is not defined for network "${targetItem.item_network}".`,
       });
     }
-  }
 
-  try {
-    await ensureActionPartition(db, body.action_name);
-    await ensureActionEventPartition(db, body.action_name);
+    const allowedInstance = networkConfig.instances.some(
+      (instance) =>
+        instance.domain_name === targetItem.item_domain &&
+        instance.instance_url === targetItem.item_instance_url
+    );
+
+    if (!allowedInstance) {
+      return reply.code(400).send({
+        error: 'INVALID_TARGET_INSTANCE',
+        message: 'Target item instance URL is not allowed for this network/domain',
+      });
+    }
   } catch (err) {
     request.log.error(
       {
         err,
         action_name: body.action_name,
+        target_item_id: body.target_item.item_id,
+        target_instance_url: body.target_item.item_instance_url,
       },
-      'Failed to ensure action/event partitions'
+      'Failed to validate target item instance'
     );
 
-    return reply.code(500).send({
-      error: 'PARTITION_SETUP_FAILED',
-      message: 'Failed to prepare storage for action or event type',
+    return reply.code(400).send({
+      error: 'INVALID_TARGET_INSTANCE',
+      message:
+        err instanceof Error ? err.message : 'Invalid target item instance',
     });
   }
 
-  const actionStatus = 'created';
-  const updateCount = 0;
-  const eventPayload =
-    interaction.event_schema && Object.keys(interaction.event_schema).length > 0
-      ? {}
-      : {};
+  try {
+    const response = await fetch(
+      new URL('/api/v1/network/action/perform', targetItem.item_instance_url),
+      {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          action_name: body.action_name,
+          source_item: sourceItem,
+          target_item: targetItem,
+          requirements_snapshot: body.requirements_snapshot,
+        }),
+      }
+    );
 
-  const [created] = await db
-    .insert(item_actions)
-    .values({
-      action_name: body.action_name,
-      action_status: actionStatus,
-      update_count: updateCount,
-      source_item_network: body.source_item.item_network,
-      source_item_domain: body.source_item.item_domain,
-      source_item_type: body.source_item.item_type,
-      source_item_id: body.source_item.item_id,
-      source_item_instance_url: body.source_item.item_instance_url,
-      target_item_network: body.target_item.item_network,
-      target_item_domain: body.target_item.item_domain,
-      target_item_type: body.target_item.item_type,
-      target_item_id: body.target_item.item_id,
-      target_item_instance_url: body.target_item.item_instance_url,
-      requirements_snapshot: body.requirements_snapshot,
-      remarks: null,
-    })
-    .returning({
-      action_id: item_actions.action_id,
-      action_name: item_actions.action_name,
-      action_status: item_actions.action_status,
-      update_count: item_actions.update_count,
-      source_item_id: item_actions.source_item_id,
-      target_item_id: item_actions.target_item_id,
+    const responseBody = (await response.json()) as Record<string, unknown>;
+
+    if (!response.ok) {
+      return reply.code(response.status).send(responseBody);
+    }
+
+    return reply.code(201).send(responseBody);
+  } catch (err) {
+    request.log.error(
+      {
+        err,
+        action_name: body.action_name,
+        target_instance_url: targetItem.item_instance_url,
+      },
+      'Failed to call target instance perform action API'
+    );
+
+    return reply.code(502).send({
+      error: 'TARGET_INSTANCE_UNAVAILABLE',
+      message: 'Failed to reach the target instance perform action API',
     });
-
-  const storedEvent = {
-    origin_instance_domain: getCurrentApiBaseUrl(),
-    action_name: created.action_name,
-    action_id: created.action_id,
-    action_status: created.action_status,
-    update_count: created.update_count,
-    source_item: body.source_item,
-    target_item: body.target_item,
-    source_item_latitude: sourceItemSnapshot?.item_latitude ?? null,
-    source_item_longitude: sourceItemSnapshot?.item_longitude ?? null,
-    target_item_latitude: targetItemSnapshot.item_latitude ?? null,
-    target_item_longitude: targetItemSnapshot.item_longitude ?? null,
-    event_payload: eventPayload,
-  };
-
-  await insertActionEvent(db, storedEvent);
-  void mirrorActionEventToSourceInstance(storedEvent, request.log);
-
-  return reply.code(201).send(created);
+  }
 };

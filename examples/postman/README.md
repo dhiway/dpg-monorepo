@@ -15,7 +15,7 @@ Files:
   - `user_email`
   - `user_phone`
   - `user_display_name`
-- includes item, action, event, and network schema requests
+- includes item, action, network action, event, and network schema requests
 
 Postman should also keep the Better Auth session cookie in its cookie jar automatically for the same host.
 
@@ -29,7 +29,8 @@ Postman should also keep the Better Auth session cookie in its cookie jar automa
 6. `Items / Create Item`
 7. `Items / Fetch My Local Items`
 8. `Actions / Perform Action`
-9. `Events / Store Event`
+9. `Actions / Perform Network Action` for internal target-instance testing only
+10. `Events / Store Event`
 
 ## About Schema Import
 
@@ -50,5 +51,13 @@ So in the current collection:
 - schema fetch requests are included
 - request bodies are prefilled with example payloads
 - variables are used where possible
+
+## Action Payload Notes
+
+- `Actions / Perform Action` is the public source-instance API
+- it sends the selected target item's `item_instance_url`
+- it does not send `source_instance_url`; the service derives that from its own runtime config
+- `Actions / Perform Network Action` is the internal target-instance API for direct server-to-server testing
+- `Events / Store Event` now uses the latest event contract with `origin_instance_domain`, `action_status`, `update_count`, and item instance URLs
 
 If you want, a next step is to generate a second collection variant that embeds more concrete payload examples for `yellow_dot` and `blue_dot`.

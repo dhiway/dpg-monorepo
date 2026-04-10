@@ -189,7 +189,11 @@ export function getInstanceCustomItemSchemaUrl(
     return null;
   }
 
-  return instanceConfig.custom_item_schema_urls[input.itemType] ?? null;
+  return (
+    (instanceConfig.custom_item_schema_urls as Record<string, string>)[
+      input.itemType
+    ] ?? null
+  );
 }
 
 export function validateAgainstJsonSchema(

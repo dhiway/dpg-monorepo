@@ -1,0 +1,200 @@
+import z, {
+  getActionInteraction,
+  PerformNetworkActionBodySchema,
+  validateAgainstJsonSchema,
+} from '@dpg/schemas';
+import { type FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import type { FastifyReply, FastifyRequest } from 'fastify';
+import { db } from '../../../../../db/postgres/drizzle_config';
+import {
+  ensureActionEventPartition,
+  ensureActionPartition,
+  item_actions,
+} from '@dpg/database';
+import { getCurrentApiBaseUrl } from '../../../../config';
+import { getNetworkConfigByName } from '../../../../network_configs';
+import {
+  isServedDomainBinding,
+  replyForUnservedDomain,
+} from '../../../../utils/served_domain_guard';
+import {
+  fetchLocalItemSnapshot,
+  insertActionEvent,
+  isCurrentInstanceItem,
+  mirrorActionEventToSourceInstance,
+} from '../../../../utils/action_event_runtime';
+
+type PerformNetworkActionRequest = FastifyRequest<{
+  Body: z.infer<typeof PerformNetworkActionBodySchema>;
+}>;
+
+const PerformNetworkActionResponseSchema = z.object({
+  action_id: z.string(),
+  action_name: z.string(),
+  action_status: z.string(),
+  update_count: z.number().int().nonnegative(),
+  source_item_id: z.string(),
+  target_item_id: z.string(),
+});
+
+export const perform_network_action: FastifyPluginAsyncZod = async function (
+  fastify
+) {
+  fastify.route({
+    url: '/action/perform',
+    method: 'POST',
+    schema: {
+      tags: ['network'],
+      body: PerformNetworkActionBodySchema,
+      response: {
+        201: PerformNetworkActionResponseSchema,
+      },
+    },
+    handler: perform_network_action_handler,
+  });
+};
+
+export const perform_network_action_handler = async (
+  request: PerformNetworkActionRequest,
+  reply: FastifyReply
+) => {
+  const body = request.body;
+
+  if (
+    !isServedDomainBinding(
+      body.target_item.item_network,
+      body.target_item.item_domain
+    )
+  ) {
+    return await replyForUnservedDomain(
+      reply,
+      body.target_item.item_network,
+      body.target_item.item_domain
+    );
+  }
+
+  if (!isCurrentInstanceItem(body.target_item)) {
+    return reply.code(400).send({
+      error: 'INVALID_TARGET_INSTANCE',
+      message: 'Actions must be created on the target item instance',
+    });
+  }
+
+  let interaction: ReturnType<typeof getActionInteraction>;
+  try {
+    const networkConfig = await getNetworkConfigByName(
+      body.target_item.item_network
+    );
+    interaction = getActionInteraction(networkConfig, {
+      actionName: body.action_name,
+      fromNetwork: body.source_item.item_network,
+      fromDomain: body.source_item.item_domain,
+      toNetwork: body.target_item.item_network,
+      toDomain: body.target_item.item_domain,
+    });
+
+    validateAgainstJsonSchema(
+      interaction.requirement_schema,
+      body.requirements_snapshot,
+      'action requirements'
+    );
+  } catch (err) {
+    return reply.code(400).send({
+      error: 'INVALID_ACTION_REQUEST',
+      message: err instanceof Error ? err.message : 'Invalid action request',
+    });
+  }
+
+  const targetItemSnapshot = await fetchLocalItemSnapshot(db, body.target_item);
+  if (!targetItemSnapshot) {
+    return reply.code(404).send({
+      error: 'TARGET_ITEM_NOT_FOUND',
+      message: 'Target item does not exist on this instance',
+    });
+  }
+
+  let sourceItemSnapshot = null;
+  if (isCurrentInstanceItem(body.source_item)) {
+    sourceItemSnapshot = await fetchLocalItemSnapshot(db, body.source_item);
+
+    if (!sourceItemSnapshot) {
+      return reply.code(404).send({
+        error: 'SOURCE_ITEM_NOT_FOUND',
+        message: 'Source item does not exist on this instance',
+      });
+    }
+  }
+
+  try {
+    await ensureActionPartition(db, body.action_name);
+    await ensureActionEventPartition(db, body.action_name);
+  } catch (err) {
+    request.log.error(
+      {
+        err,
+        action_name: body.action_name,
+      },
+      'Failed to ensure action/event partitions'
+    );
+
+    return reply.code(500).send({
+      error: 'PARTITION_SETUP_FAILED',
+      message: 'Failed to prepare storage for action or event type',
+    });
+  }
+
+  const actionStatus = 'created';
+  const updateCount = 0;
+  const eventPayload =
+    interaction.event_schema && Object.keys(interaction.event_schema).length > 0
+      ? {}
+      : {};
+
+  const [created] = await db
+    .insert(item_actions)
+    .values({
+      action_name: body.action_name,
+      action_status: actionStatus,
+      update_count: updateCount,
+      source_item_network: body.source_item.item_network,
+      source_item_domain: body.source_item.item_domain,
+      source_item_type: body.source_item.item_type,
+      source_item_id: body.source_item.item_id,
+      source_item_instance_url: body.source_item.item_instance_url,
+      target_item_network: body.target_item.item_network,
+      target_item_domain: body.target_item.item_domain,
+      target_item_type: body.target_item.item_type,
+      target_item_id: body.target_item.item_id,
+      target_item_instance_url: body.target_item.item_instance_url,
+      requirements_snapshot: body.requirements_snapshot,
+      remarks: null,
+    })
+    .returning({
+      action_id: item_actions.action_id,
+      action_name: item_actions.action_name,
+      action_status: item_actions.action_status,
+      update_count: item_actions.update_count,
+      source_item_id: item_actions.source_item_id,
+      target_item_id: item_actions.target_item_id,
+    });
+
+  const storedEvent = {
+    origin_instance_domain: getCurrentApiBaseUrl(),
+    action_name: created.action_name,
+    action_id: created.action_id,
+    action_status: created.action_status,
+    update_count: created.update_count,
+    source_item: body.source_item,
+    target_item: body.target_item,
+    source_item_latitude: sourceItemSnapshot?.item_latitude ?? null,
+    source_item_longitude: sourceItemSnapshot?.item_longitude ?? null,
+    target_item_latitude: targetItemSnapshot.item_latitude ?? null,
+    target_item_longitude: targetItemSnapshot.item_longitude ?? null,
+    event_payload: eventPayload,
+  };
+
+  await insertActionEvent(db, storedEvent);
+  void mirrorActionEventToSourceInstance(storedEvent, request.log);
+
+  return reply.code(201).send(created);
+};

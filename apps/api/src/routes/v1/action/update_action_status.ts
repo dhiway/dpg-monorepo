@@ -18,7 +18,7 @@ import {
   fetchLocalItemSnapshot,
   insertActionEvent,
   mirrorActionEventToSourceInstance,
-} from '../utils/action_event_runtime';
+} from '../../../utils/action_event_runtime';
 
 type UpdateActionStatusRequest = FastifyRequest<{
   Body: z.infer<typeof UpdateActionStatusBodySchema>;

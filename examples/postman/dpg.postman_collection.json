@@ -31,8 +31,12 @@
     { "key": "target_item_id", "value": "" },
     { "key": "action_name", "value": "connect" },
     { "key": "action_id", "value": "" },
-    { "key": "event_type", "value": "action_response" },
-    { "key": "requester_event_url", "value": "" }
+    { "key": "target_base_url", "value": "http://127.0.0.1:2742" },
+    { "key": "source_instance_url", "value": "http://127.0.0.1:2742" },
+    { "key": "target_instance_url", "value": "http://127.0.0.1:2742" },
+    { "key": "origin_instance_domain", "value": "http://127.0.0.1:2742" },
+    { "key": "action_status", "value": "created" },
+    { "key": "update_count", "value": "0" }
   ],
   "item": [
     {
@@ -218,7 +222,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "v1", "item", "create"]
             },
-            "description": "Creates an item on the current instance. Use the Fetch Concrete Item Schema request first and adapt item_state accordingly."
+            "description": "Creates an item on the current instance. The response includes `item_instance_url`, which should be reused when selecting a target item for action requests."
           }
         },
         {
@@ -307,14 +311,50 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"action_name\": \"{{action_name}}\",\n  \"source_item\": {\n    \"item_network\": \"{{source_item_network}}\",\n    \"item_domain\": \"{{source_item_domain}}\",\n    \"item_type\": \"{{source_item_type}}\",\n    \"item_id\": \"{{source_item_id}}\"\n  },\n  \"target_item\": {\n    \"item_network\": \"{{target_item_network}}\",\n    \"item_domain\": \"{{target_item_domain}}\",\n    \"item_type\": \"{{target_item_type}}\",\n    \"item_id\": \"{{target_item_id}}\"\n  },\n  \"requirements_snapshot\": {\n    \"message\": \"Interested in connecting\"\n  },\n  \"created_by\": \"{{user_id}}\",\n  \"response_event_type\": \"{{event_type}}\",\n  \"response_event_payload\": {\n    \"status\": \"pending\"\n  },\n  \"response_event_metadata\": {},\n  \"requester_event_url\": \"{{requester_event_url}}\"\n}"
+              "raw": "{\n  \"action_name\": \"{{action_name}}\",\n  \"source_item\": {\n    \"item_network\": \"{{source_item_network}}\",\n    \"item_domain\": \"{{source_item_domain}}\",\n    \"item_type\": \"{{source_item_type}}\",\n    \"item_id\": \"{{source_item_id}}\"\n  },\n  \"target_item\": {\n    \"item_network\": \"{{target_item_network}}\",\n    \"item_domain\": \"{{target_item_domain}}\",\n    \"item_type\": \"{{target_item_type}}\",\n    \"item_id\": \"{{target_item_id}}\",\n    \"item_instance_url\": \"{{target_instance_url}}\"\n  },\n  \"requirements_snapshot\": {\n    \"subject\": \"math\",\n    \"goal\": \"Prepare for board exams\"\n  }\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/action/perform",
               "host": ["{{base_url}}"],
               "path": ["api", "v1", "action", "perform"]
             },
-            "description": "Validate requirements_snapshot and response_event_payload against the network action schema before sending."
+            "description": "Source-instance API. The client sends the selected target item's `item_instance_url`; the source instance still derives its own URL locally before calling the target instance."
+          }
+        },
+        {
+          "name": "Perform Network Action",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Perform network action returns 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (data.action_id) pm.collectionVariables.set('action_id', data.action_id);",
+                  "if (data.action_status) pm.collectionVariables.set('action_status', data.action_status);",
+                  "if (typeof data.update_count === 'number') pm.collectionVariables.set('update_count', String(data.update_count));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action_name\": \"{{action_name}}\",\n  \"source_item\": {\n    \"item_network\": \"{{source_item_network}}\",\n    \"item_domain\": \"{{source_item_domain}}\",\n    \"item_type\": \"{{source_item_type}}\",\n    \"item_id\": \"{{source_item_id}}\",\n    \"item_instance_url\": \"{{source_instance_url}}\"\n  },\n  \"target_item\": {\n    \"item_network\": \"{{target_item_network}}\",\n    \"item_domain\": \"{{target_item_domain}}\",\n    \"item_type\": \"{{target_item_type}}\",\n    \"item_id\": \"{{target_item_id}}\",\n    \"item_instance_url\": \"{{target_instance_url}}\"\n  },\n  \"requirements_snapshot\": {\n    \"subject\": \"math\",\n    \"goal\": \"Prepare for board exams\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{target_base_url}}/api/v1/network/action/perform",
+              "host": ["{{target_base_url}}"],
+              "path": ["api", "v1", "network", "action", "perform"]
+            },
+            "description": "Target-instance internal API. Use this only for direct server-to-server testing; normal clients should call Perform Action instead."
           }
         }
       ]
@@ -331,14 +371,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"event_type\": \"{{event_type}}\",\n  \"action_name\": \"{{action_name}}\",\n  \"action_id\": \"{{action_id}}\",\n  \"source_item\": {\n    \"item_network\": \"{{source_item_network}}\",\n    \"item_domain\": \"{{source_item_domain}}\",\n    \"item_type\": \"{{source_item_type}}\",\n    \"item_id\": \"{{source_item_id}}\"\n  },\n  \"target_item\": {\n    \"item_network\": \"{{target_item_network}}\",\n    \"item_domain\": \"{{target_item_domain}}\",\n    \"item_type\": \"{{target_item_type}}\",\n    \"item_id\": \"{{target_item_id}}\"\n  },\n  \"event_payload\": {\n    \"status\": \"accepted\"\n  },\n  \"event_metadata\": {},\n  \"created_by\": \"{{user_id}}\"\n}"
+              "raw": "{\n  \"origin_instance_domain\": \"{{origin_instance_domain}}\",\n  \"action_name\": \"{{action_name}}\",\n  \"action_id\": \"{{action_id}}\",\n  \"action_status\": \"{{action_status}}\",\n  \"update_count\": {{update_count}},\n  \"source_item\": {\n    \"item_network\": \"{{source_item_network}}\",\n    \"item_domain\": \"{{source_item_domain}}\",\n    \"item_type\": \"{{source_item_type}}\",\n    \"item_id\": \"{{source_item_id}}\",\n    \"item_instance_url\": \"{{source_instance_url}}\"\n  },\n  \"target_item\": {\n    \"item_network\": \"{{target_item_network}}\",\n    \"item_domain\": \"{{target_item_domain}}\",\n    \"item_type\": \"{{target_item_type}}\",\n    \"item_id\": \"{{target_item_id}}\",\n    \"item_instance_url\": \"{{target_instance_url}}\"\n  },\n  \"source_item_latitude\": null,\n  \"source_item_longitude\": null,\n  \"target_item_latitude\": null,\n  \"target_item_longitude\": null,\n  \"event_payload\": {\n    \"status\": \"accepted\"\n  }\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/event/store",
               "host": ["{{base_url}}"],
               "path": ["api", "v1", "event", "store"]
             },
-            "description": "Stores an event for a previously created action. Validate event_payload against the network action event schema first."
+            "description": "Stores or mirrors an action event. This payload now includes origin instance, action status/update count, and instance URLs for both items."
           }
         }
       ]

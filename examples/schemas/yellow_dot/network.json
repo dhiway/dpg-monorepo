@@ -167,13 +167,61 @@
   "instances": [
     {
       "domain_name": "student",
+      "instance_name": "Yellow Dot Student Localhost",
+      "instance_url": "http://localhost:2742",
+      "custom_item_schema_urls": {}
+    },
+    {
+      "domain_name": "student",
       "instance_name": "Yellow Dot Student",
+      "instance_url": "http://127.0.0.1:2742",
+      "custom_item_schema_urls": {}
+    },
+    {
+      "domain_name": "student",
+      "instance_name": "Yellow Dot Student Localhost Secondary",
+      "instance_url": "http://localhost:7777",
+      "custom_item_schema_urls": {}
+    },
+    {
+      "domain_name": "student",
+      "instance_name": "Yellow Dot Student Secondary",
+      "instance_url": "http://127.0.0.1:7777",
+      "custom_item_schema_urls": {}
+    },
+    {
+      "domain_name": "student",
+      "instance_name": "Yellow Dot Student Remote",
       "instance_url": "https://ubi-backend.onest.dhiway.net",
       "custom_item_schema_urls": {}
     },
     {
       "domain_name": "tutor",
+      "instance_name": "Yellow Dot Tutor Localhost",
+      "instance_url": "http://localhost:2742",
+      "custom_item_schema_urls": {}
+    },
+    {
+      "domain_name": "tutor",
       "instance_name": "Yellow Dot Tutor",
+      "instance_url": "http://127.0.0.1:2742",
+      "custom_item_schema_urls": {}
+    },
+    {
+      "domain_name": "tutor",
+      "instance_name": "Yellow Dot Tutor Localhost Secondary",
+      "instance_url": "http://localhost:7777",
+      "custom_item_schema_urls": {}
+    },
+    {
+      "domain_name": "tutor",
+      "instance_name": "Yellow Dot Tutor Secondary",
+      "instance_url": "http://127.0.0.1:7777",
+      "custom_item_schema_urls": {}
+    },
+    {
+      "domain_name": "tutor",
+      "instance_name": "Yellow Dot Tutor Remote",
       "instance_url": "https://ubi-backend.onest.dhiway.net",
       "custom_item_schema_urls": {}
     }

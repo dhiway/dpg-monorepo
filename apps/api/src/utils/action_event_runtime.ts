@@ -1,18 +1,53 @@
 import { and, eq } from 'drizzle-orm';
 import type { FastifyBaseLogger } from 'fastify';
-import z, { PerformActionBodySchema, StoreEventBodySchema } from '@dpg/schemas';
+import z, {
+  PerformActionBodySchema,
+  PerformNetworkActionBodySchema,
+  StoreEventBodySchema,
+} from '@dpg/schemas';
 import { action_events, items } from '@dpg/database';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { getCurrentApiBaseUrl } from 'src/config';
+import { getCurrentApiBaseUrl } from '../config';
 
-type ActionItemRef = z.infer<typeof PerformActionBodySchema>['source_item'];
+type ActionItemRef = z.infer<typeof PerformNetworkActionBodySchema>['source_item'];
+type PerformActionTargetItemRef = z.infer<
+  typeof PerformActionBodySchema
+>['target_item'];
 export type StoredActionEvent = z.infer<typeof StoreEventBodySchema>;
+
+function normalizeInstanceUrl(url: string) {
+  const parsedUrl = new URL(url);
+
+  if (
+    parsedUrl.hostname === 'localhost' ||
+    parsedUrl.hostname === '127.0.0.1' ||
+    parsedUrl.hostname === '::1'
+  ) {
+    parsedUrl.hostname = 'localhost';
+  }
+
+  if (
+    (parsedUrl.protocol === 'http:' && parsedUrl.port === '80') ||
+    (parsedUrl.protocol === 'https:' && parsedUrl.port === '443')
+  ) {
+    parsedUrl.port = '';
+  }
+
+  return parsedUrl.toString().replace(/\/$/, '');
+}
 
 export async function fetchLocalItemSnapshot(
   db: NodePgDatabase<any>,
   item: ActionItemRef
 ) {
-  const [result] = await db
+  const baseConditions = and(
+    eq(items.item_network, item.item_network),
+    eq(items.item_domain, item.item_domain),
+    eq(items.item_type, item.item_type),
+    eq(items.item_id, item.item_id)
+  );
+
+  const [exactResult] = await db
     .select({
       item_id: items.item_id,
       item_instance_url: items.item_instance_url,
@@ -20,18 +55,39 @@ export async function fetchLocalItemSnapshot(
       item_longitude: items.item_longitude,
     })
     .from(items)
-    .where(
-      and(
-        eq(items.item_network, item.item_network),
-        eq(items.item_domain, item.item_domain),
-        eq(items.item_type, item.item_type),
-        eq(items.item_id, item.item_id),
-        eq(items.item_instance_url, item.item_instance_url)
-      )
-    )
+    .where(and(baseConditions, eq(items.item_instance_url, item.item_instance_url)))
     .limit(1);
 
-  return result ?? null;
+  if (exactResult) {
+    return exactResult;
+  }
+
+  const normalizedItemInstanceUrl = normalizeInstanceUrl(item.item_instance_url);
+  const normalizedCurrentInstanceUrl = normalizeInstanceUrl(getCurrentApiBaseUrl());
+  if (normalizedItemInstanceUrl !== normalizedCurrentInstanceUrl) {
+    return null;
+  }
+
+  const [localAliasResult] = await db
+    .select({
+      item_id: items.item_id,
+      item_instance_url: items.item_instance_url,
+      item_latitude: items.item_latitude,
+      item_longitude: items.item_longitude,
+    })
+    .from(items)
+    .where(baseConditions)
+    .limit(1);
+
+  if (
+    localAliasResult &&
+    normalizeInstanceUrl(localAliasResult.item_instance_url) ===
+      normalizedCurrentInstanceUrl
+  ) {
+    return localAliasResult;
+  }
+
+  return null;
 }
 
 export async function insertActionEvent(
@@ -83,7 +139,22 @@ export async function insertActionEvent(
 }
 
 export function isCurrentInstanceItem(item: ActionItemRef) {
-  return item.item_instance_url === getCurrentApiBaseUrl();
+  return (
+    normalizeInstanceUrl(item.item_instance_url) ===
+    normalizeInstanceUrl(getCurrentApiBaseUrl())
+  );
+}
+
+export function buildNetworkActionTargetItem(
+  item: PerformActionTargetItemRef
+): ActionItemRef {
+  return {
+    item_network: item.item_network,
+    item_domain: item.item_domain,
+    item_type: item.item_type,
+    item_id: item.item_id,
+    item_instance_url: item.item_instance_url,
+  };
 }
 
 export async function mirrorActionEventToSourceInstance(

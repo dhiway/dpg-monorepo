@@ -13,7 +13,7 @@ import {
   isServedDomainBinding,
   replyForUnservedDomain,
 } from '../../../utils/served_domain_guard';
-import { insertActionEvent } from '../utils/action_event_runtime';
+import { insertActionEvent } from '../../../utils/action_event_runtime';
 
 type StoreEventRequest = FastifyRequest<{
   Body: z.infer<typeof StoreEventBodySchema>;

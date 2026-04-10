@@ -105,7 +105,8 @@ const fetch_network_item_handler = async (
   try {
     const networkConfig = await getNetworkConfigByName(item_network);
     const domainExists = networkConfig.domains.some(
-      (domain: typeof networkConfig.domains) => domain.name === item_domain
+      (domain: (typeof networkConfig.domains)[number]) =>
+        domain.name === item_domain
     );
 
     if (!domainExists) {
