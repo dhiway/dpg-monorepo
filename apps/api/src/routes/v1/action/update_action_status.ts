@@ -139,11 +139,13 @@ export const update_action_status_handler = async (
       source_item_type: item_actions.source_item_type,
       source_item_id: item_actions.source_item_id,
       source_item_instance_url: item_actions.source_item_instance_url,
+      source_item_owner: item_actions.source_item_owner,
       target_item_network: item_actions.target_item_network,
       target_item_domain: item_actions.target_item_domain,
       target_item_type: item_actions.target_item_type,
       target_item_id: item_actions.target_item_id,
       target_item_instance_url: item_actions.target_item_instance_url,
+      target_item_owner: item_actions.target_item_owner,
       remarks: item_actions.remarks,
     });
 
@@ -185,6 +187,10 @@ export const update_action_status_handler = async (
       item_id: updatedAction.target_item_id,
       item_instance_url: updatedAction.target_item_instance_url,
     },
+    source_item_owner:
+      updatedAction.source_item_owner ?? sourceItemSnapshot?.created_by ?? null,
+    target_item_owner:
+      updatedAction.target_item_owner ?? targetItemSnapshot?.created_by ?? null,
     source_item_latitude: sourceItemSnapshot?.item_latitude ?? null,
     source_item_longitude: sourceItemSnapshot?.item_longitude ?? null,
     target_item_latitude: targetItemSnapshot?.item_latitude ?? null,

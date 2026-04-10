@@ -132,6 +132,7 @@ export const perform_action_handler = async (
           action_name: body.action_name,
           source_item: sourceItem,
           target_item: targetItem,
+          source_item_owner: sourceItemSnapshot.created_by,
           requirements_snapshot: body.requirements_snapshot,
         }),
       }

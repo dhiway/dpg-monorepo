@@ -28,6 +28,7 @@ export const action_events = pgTable(
     source_item_type: text('source_item_type').notNull(),
     source_item_id: uuid('source_item_id').notNull(),
     source_item_instance_url: text('source_item_instance_url').notNull(),
+    source_item_owner: text('source_item_owner'),
     source_item_latitude: doublePrecision('source_item_latitude'),
     source_item_longitude: doublePrecision('source_item_longitude'),
 
@@ -36,6 +37,7 @@ export const action_events = pgTable(
     target_item_type: text('target_item_type').notNull(),
     target_item_id: uuid('target_item_id').notNull(),
     target_item_instance_url: text('target_item_instance_url').notNull(),
+    target_item_owner: text('target_item_owner'),
     target_item_latitude: doublePrecision('target_item_latitude'),
     target_item_longitude: doublePrecision('target_item_longitude'),
 
@@ -71,11 +73,19 @@ export const action_events = pgTable(
       table.source_item_id,
       table.created_at
     ),
+    index('action_events_source_owner_idx').on(
+      table.source_item_owner,
+      table.created_at
+    ),
     index('action_events_target_item_idx').on(
       table.target_item_network,
       table.target_item_domain,
       table.target_item_type,
       table.target_item_id,
+      table.created_at
+    ),
+    index('action_events_target_owner_idx').on(
+      table.target_item_owner,
       table.created_at
     ),
   ]

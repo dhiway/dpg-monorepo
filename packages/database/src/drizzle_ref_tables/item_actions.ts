@@ -1,4 +1,5 @@
 import {
+  index,
   integer,
   jsonb,
   pgTable,
@@ -22,12 +23,14 @@ export const item_actions = pgTable(
     source_item_type: text('source_item_type').notNull(),
     source_item_id: uuid('source_item_id').notNull(),
     source_item_instance_url: text('source_item_instance_url').notNull(),
+    source_item_owner: text('source_item_owner'),
 
     target_item_network: text('target_item_network').notNull(),
     target_item_domain: text('target_item_domain').notNull(),
     target_item_type: text('target_item_type').notNull(),
     target_item_id: uuid('target_item_id').notNull(),
     target_item_instance_url: text('target_item_instance_url').notNull(),
+    target_item_owner: text('target_item_owner'),
 
     requirements_snapshot: jsonb('requirements_snapshot')
       .$type<Record<string, unknown>>()
@@ -46,5 +49,13 @@ export const item_actions = pgTable(
     primaryKey({
       columns: [table.action_name, table.action_id],
     }),
+    index('item_actions_source_owner_idx').on(
+      table.source_item_owner,
+      table.updated_at
+    ),
+    index('item_actions_target_owner_idx').on(
+      table.target_item_owner,
+      table.updated_at
+    ),
   ]
 );

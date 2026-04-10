@@ -51,6 +51,7 @@ export async function fetchLocalItemSnapshot(
     .select({
       item_id: items.item_id,
       item_instance_url: items.item_instance_url,
+      created_by: items.created_by,
       item_latitude: items.item_latitude,
       item_longitude: items.item_longitude,
     })
@@ -72,6 +73,7 @@ export async function fetchLocalItemSnapshot(
     .select({
       item_id: items.item_id,
       item_instance_url: items.item_instance_url,
+      created_by: items.created_by,
       item_latitude: items.item_latitude,
       item_longitude: items.item_longitude,
     })
@@ -107,6 +109,7 @@ export async function insertActionEvent(
       source_item_type: event.source_item.item_type,
       source_item_id: event.source_item.item_id,
       source_item_instance_url: event.source_item.item_instance_url,
+      source_item_owner: event.source_item_owner,
       source_item_latitude: event.source_item_latitude ?? null,
       source_item_longitude: event.source_item_longitude ?? null,
       target_item_network: event.target_item.item_network,
@@ -114,6 +117,7 @@ export async function insertActionEvent(
       target_item_type: event.target_item.item_type,
       target_item_id: event.target_item.item_id,
       target_item_instance_url: event.target_item.item_instance_url,
+      target_item_owner: event.target_item_owner,
       target_item_latitude: event.target_item_latitude ?? null,
       target_item_longitude: event.target_item_longitude ?? null,
       event_payload: event.event_payload,

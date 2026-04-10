@@ -1,7 +1,9 @@
 import { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import { fetch_events } from './fetch_events';
 import { store_event } from './store_event';
 
 const event_routes: FastifyPluginAsyncZod = async (fastify) => {
+  fastify.register(fetch_events);
   fastify.register(store_event);
 };
 

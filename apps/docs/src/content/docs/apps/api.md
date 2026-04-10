@@ -64,10 +64,32 @@ Updates an owned item.
 
 ## Action And Event Routes
 
+- `GET /action/fetch`
 - `POST /action/perform`
+- `POST /action/update-status`
+- `GET /event/fetch`
 - `POST /event/store`
 
 These routes validate payloads against the network action contract.
+
+### `GET /action/fetch`
+
+Returns actions visible to the authenticated user.
+
+The route filters directly on stored ownership snapshots:
+
+- `source_item_owner`
+- `target_item_owner`
+
+Use `ownership_role=initiated`, `received`, or `all` to control which side of ownership is returned.
+
+### `GET /event/fetch`
+
+Returns events visible to the authenticated user.
+
+It uses the same ownership model as `GET /action/fetch`, based on stored `source_item_owner` and `target_item_owner`.
+
+For existing databases, add the new owner columns before using these routes. The repo includes `packages/database/src/utils/sql_scripts/add_action_owner_columns.sql` for that upgrade.
 
 ## Network Routes
 

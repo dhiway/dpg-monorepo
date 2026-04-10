@@ -11,12 +11,14 @@ CREATE TABLE IF NOT EXISTS item_actions (
   source_item_type TEXT NOT NULL,
   source_item_id UUID NOT NULL,
   source_item_instance_url TEXT NOT NULL,
+  source_item_owner TEXT,
 
   target_item_network TEXT NOT NULL,
   target_item_domain TEXT NOT NULL,
   target_item_type TEXT NOT NULL,
   target_item_id UUID NOT NULL,
   target_item_instance_url TEXT NOT NULL,
+  target_item_owner TEXT,
 
   requirements_snapshot JSONB NOT NULL DEFAULT '{}'::jsonb,
   remarks TEXT,
@@ -57,6 +59,12 @@ ON item_actions (
   created_at DESC
 );
 
+CREATE INDEX IF NOT EXISTS item_actions_source_owner_idx
+ON item_actions (source_item_owner, updated_at DESC);
+
+CREATE INDEX IF NOT EXISTS item_actions_target_owner_idx
+ON item_actions (target_item_owner, updated_at DESC);
+
 CREATE INDEX IF NOT EXISTS item_actions_status_idx
 ON item_actions (action_status, created_at DESC);
 
@@ -79,6 +87,7 @@ CREATE TABLE IF NOT EXISTS action_events (
   source_item_type TEXT NOT NULL,
   source_item_id UUID NOT NULL,
   source_item_instance_url TEXT NOT NULL,
+  source_item_owner TEXT,
   source_item_latitude DOUBLE PRECISION,
   source_item_longitude DOUBLE PRECISION,
 
@@ -87,6 +96,7 @@ CREATE TABLE IF NOT EXISTS action_events (
   target_item_type TEXT NOT NULL,
   target_item_id UUID NOT NULL,
   target_item_instance_url TEXT NOT NULL,
+  target_item_owner TEXT,
   target_item_latitude DOUBLE PRECISION,
   target_item_longitude DOUBLE PRECISION,
 
@@ -121,6 +131,12 @@ ON action_events (
   target_item_id,
   created_at DESC
 );
+
+CREATE INDEX IF NOT EXISTS action_events_source_owner_idx
+ON action_events (source_item_owner, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS action_events_target_owner_idx
+ON action_events (target_item_owner, created_at DESC);
 
 CREATE INDEX IF NOT EXISTS action_events_payload_gin_idx
 ON action_events USING GIN (event_payload);
