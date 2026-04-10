@@ -32,7 +32,6 @@ export const PerformNetworkActionBodySchema = z.object({
 export const UpdateActionStatusBodySchema = z.object({
   action_id: z.uuid(),
   action_status: z.string().min(1),
-  event_payload: z.record(z.string(), z.unknown()).default({}),
   remarks: z.string().min(1).optional(),
 });
 

@@ -31,6 +31,16 @@ const UpdateActionStatusResponseSchema = z.object({
   update_count: z.number().int().nonnegative(),
 });
 
+function buildActionEventPayload(
+  actionStatus: string,
+  remarks?: string
+): Record<string, unknown> {
+  return {
+    status: actionStatus,
+    message: remarks ?? `Action status updated to ${actionStatus}`,
+  };
+}
+
 export const update_action_status: FastifyPluginAsyncZod = async function (fastify) {
   fastify.route({
     url: '/update-status',
@@ -65,6 +75,8 @@ export const update_action_status_handler = async (
     });
   }
 
+  const eventPayload = buildActionEventPayload(body.action_status, body.remarks);
+
   try {
     const networkConfig = await getNetworkConfigByName(existingAction.target_item_network);
     const interaction = getActionInteraction(networkConfig, {
@@ -78,7 +90,7 @@ export const update_action_status_handler = async (
     if (interaction.event_schema) {
       validateAgainstJsonSchema(
         interaction.event_schema,
-        body.event_payload,
+        eventPayload,
         'event payload'
       );
     }
@@ -177,7 +189,7 @@ export const update_action_status_handler = async (
     source_item_longitude: sourceItemSnapshot?.item_longitude ?? null,
     target_item_latitude: targetItemSnapshot?.item_latitude ?? null,
     target_item_longitude: targetItemSnapshot?.item_longitude ?? null,
-    event_payload: body.event_payload,
+    event_payload: eventPayload,
     remarks: body.remarks,
   };
 
