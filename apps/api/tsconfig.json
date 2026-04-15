@@ -17,6 +17,7 @@
   },
   "include": [
     "src",
+    "scripts",
     "types.d.ts"
   ]
 }

@@ -9,6 +9,8 @@
     "build": "tsup",
     "preview": "node dist/server.js",
     "start": "node dist/server.js",
+    "backup:live-db": "bash scripts/backup_live_db.sh",
+    "migrate:jobstack-csv": "tsx scripts/migrate_jobstack_csv.ts",
     "db:pull": "drizzle-kit pull",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
