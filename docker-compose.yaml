@@ -90,6 +90,14 @@ services:
       - api
     networks:
       - dpg_internal
+  schemas:
+    image: nginx:1.27-alpine
+    container_name: dpg-schemas
+    restart: always
+    volumes:
+      - ./examples/schemas:/usr/share/nginx/html:ro
+    networks:
+      - dpg_internal
 networks:
   dpg_internal:
     name: dpg_internal
