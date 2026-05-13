@@ -1,4 +1,3 @@
-version: '3.8'
 services:
   db:
     image: postgres:18-alpine
@@ -64,8 +63,6 @@ services:
       API_PORT: 2742
     ports:
       - '${API_PORT:-2742}:2742'
-    volumes:
-      - ./examples:/app/examples:ro
     depends_on:
       db:
         condition: service_healthy
@@ -79,8 +76,6 @@ services:
       dockerfile: apps/ui/Dockerfile
       args:
         VITE_DEFAULT_API_URL: ${API_DOMAIN}:${API_PORT}
-        VITE_API_URL: ${VITE_API_URL:-}
-        VITE_API_URLS: ${VITE_API_URLS:-}
     image: dpg-monorepo/ui:local
     container_name: dpg-ui
     restart: always
