@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS items (
     (item_latitude IS NOT NULL AND item_longitude IS NOT NULL)
   )
 )
-PARTITION BY LIST (item_network, item_domain, item_type);
+PARTITION BY LIST (item_network);
 
 CREATE INDEX IF NOT EXISTS items_lookup_idx
 ON items (item_network, item_domain, created_at DESC);

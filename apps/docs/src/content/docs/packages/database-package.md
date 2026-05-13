@@ -130,14 +130,21 @@ As a rule: if changing the field would change the meaning of the event, it belon
 
 ## Partition strategy
 
-The schema uses hierarchical list partitioning with strict domain separation for items.
+The schema uses multi-level LIST partitioning that mirrors the business hierarchy for items.
 
 For `items`:
 
-- parent table partitions by `(item_network, item_domain, item_type)`
-- partition tables are named as `i_p_{network}_{domain}_{type}`
+- Level 1: `items` partitions by `item_network`
+- Level 2: each network partition sub-partitions by `item_domain`
+- Level 3: each domain partition sub-partitions by `item_type`
 
-This design ensures that items from different domains are stored in distinct tables even if they share the same item type.
+Partition table naming:
+
+- Network partitions: `i_p_{network}`
+- Domain partitions: `i_p_{network}_{domain}`
+- Type leaf partitions: `i_p_{network}_{domain}_{type}`
+
+This design ensures that items from different networks, domains, and types are stored in distinct tables. Partition pruning works at each level — a query filtering by `item_network` only scans that network partition, and adding `item_domain` or `item_type` narrows further.
 
 ## How the scripts work
 
@@ -154,14 +161,14 @@ It also creates shared indexes:
 The parent tables are defined with:
 
 ```sql
-PARTITION BY LIST (item_network, item_domain, item_type)
+PARTITION BY LIST (item_network)
 ```
 
-That means rows are routed by the combination of network, domain, and type.
+That means rows are first routed by network. Each network partition is further sub-partitioned by `item_domain`, and each domain partition by `item_type`.
 
 ### `create_items_partitions.example.sql`
 
-This is an example deployment script. It shows concrete item-type partitions.
+This is an example deployment script. It shows multi-level LIST partition creation.
 
 It first verifies that:
 
@@ -169,8 +176,9 @@ It first verifies that:
 
 Then it creates:
 
-- `i_p_yellowdot_student_profile10`
-- `i_p_yellowdot_tutor_profile10`
+- Level 1 (network): `i_p_yellowdot` — partitions of `items` by `item_network`, sub-partitioned by `item_domain`
+- Level 2 (domain): `i_p_yellowdot_student`, `i_p_yellowdot_tutor` — partitions of the network partition by `item_domain`, sub-partitioned by `item_type`
+- Level 3 (type): `i_p_yellowdot_student_profile10`, `i_p_yellowdot_tutor_profile10` — leaf partitions by `item_type`
 
 ## Runtime partition helpers
 
@@ -184,7 +192,9 @@ This helper creates missing partitions lazily with `CREATE TABLE IF NOT EXISTS`.
 
 `ensureItemPartition()` creates:
 
-1. `i_p_{network}_{domain}_{type}`
+1. `i_p_{network}` (level 1 — if not exists)
+2. `i_p_{network}_{domain}` (level 2 — if not exists)
+3. `i_p_{network}_{domain}_{type}` (level 3 — if not exists)
 
 `ensureActionPartition()` creates:
 
@@ -200,13 +210,13 @@ The helper accepts any non-empty partition key up to 120 characters. It normaliz
 
 Partition pruning only works well when the query includes the partition key columns.
 
-For `items`, the partition key consists of:
+For `items`, the partition keys are hierarchical:
 
-- `item_network`
-- `item_domain`
-- `item_type`
+- `item_network` (level 1)
+- `item_domain` (level 2)
+- `item_type` (level 3)
 
-All three should be included in `where` clauses to allow PostgreSQL to scan only the relevant partition.
+Including more levels in the `WHERE` clause allows PostgreSQL to prune deeper into the partition tree.
 
 ## Example table layout
 
@@ -219,8 +229,11 @@ you would expect tables like:
 
 ```text
 items
-i_p_yellowdot_student_profile10
-i_p_yellowdot_tutor_profile10
+└── i_p_yellowdot
+    ├── i_p_yellowdot_student
+    │   └── i_p_yellowdot_student_profile10
+    └── i_p_yellowdot_tutor
+        └── i_p_yellowdot_tutor_profile10
 ```
 
 ## Example Drizzle queries
@@ -386,6 +399,5 @@ const events = await db
 ## Practical rules
 
 - Always run `create_items.sql` before creating partitions
-- Include partition keys in queries whenever possible
-- Call `ensureItemPartition()` before inserting items into a new path
-- Treat the Drizzle tables in the package as reference tables for the partitioned parents, not as migration-managed tables
+- Include partition key columns in queries whenever possible — more keys = deeper pruning
+- Call `ensureItemPartition()` before inserting items into a new path — it creates all three levels lazily
