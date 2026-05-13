@@ -9,13 +9,15 @@ BEGIN
   END IF;
 END $$;
 
-CREATE TABLE IF NOT EXISTS profile_item
+-- Updated to the new i_p_{network}_{domain}_{type} format
+CREATE TABLE IF NOT EXISTS i_p_yellowdot_student_profile10
 PARTITION OF items
-FOR VALUES IN ('profile');
+FOR VALUES IN (('yellow_dot', 'student', 'profile_1.0'));
 
-CREATE TABLE IF NOT EXISTS notify_event_item
+CREATE TABLE IF NOT EXISTS i_p_yellowdot_tutor_profile10
 PARTITION OF items
-FOR VALUES IN ('notify_event');
+FOR VALUES IN (('yellow_dot', 'tutor', 'profile_1.0'));
 
+-- Default partition for items that don't match any specific domain partition
 CREATE TABLE IF NOT EXISTS items_default
 PARTITION OF items DEFAULT;

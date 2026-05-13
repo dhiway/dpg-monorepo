@@ -7,17 +7,28 @@ const MAX_PARTITION_KEY_LENGTH = 120;
 
 export async function ensureItemPartition(
   db: NodePgDatabase<any>,
-  _network: string,
-  _domain: string,
+  network: string,
+  domain: string,
   type: string
 ) {
-  assertValidPartitionKey(type, 'item_type');
+  const values = [network, domain, type];
+  values.forEach((v) => assertValidPartitionKey(v, 'item_type_part'));
 
   try {
-    const partitionTableName = await ensurePartitionForValue(db, 'items', type, 'item');
-    await assertPartitionAttachedForValue(db, 'items', partitionTableName, type);
+    const partitionTableName = await ensurePartitionForValues(
+      db,
+      'items',
+      values,
+      'i'
+    );
+    await assertPartitionAttachedForValues(
+      db,
+      'items',
+      partitionTableName,
+      values
+    );
   } catch (err) {
-    handlePartitionError(err, `item_type partition "${type}"`);
+    handlePartitionError(err, `item partition "${values.join('/')}"`);
   }
 }
 
@@ -28,17 +39,17 @@ export async function ensureActionPartition(
   assertValidPartitionKey(actionName, 'action_name');
 
   try {
-    const partitionTableName = await ensurePartitionForValue(
+    const partitionTableName = await ensurePartitionForValues(
       db,
       'item_actions',
-      actionName,
-      'action'
+      [actionName],
+      'a'
     );
-    await assertPartitionAttachedForValue(
+    await assertPartitionAttachedForValues(
       db,
       'item_actions',
       partitionTableName,
-      actionName
+      [actionName]
     );
   } catch (err) {
     handlePartitionError(err, `action partition "${actionName}"`);
@@ -47,62 +58,63 @@ export async function ensureActionPartition(
 
 export async function ensureActionEventPartition(
   db: NodePgDatabase<any>,
-  eventType: string
+  actionName: string
 ) {
-  assertValidPartitionKey(eventType, 'event_type');
+  assertValidPartitionKey(actionName, 'action_name');
 
   try {
-    const partitionTableName = await ensurePartitionForValue(
+    const partitionTableName = await ensurePartitionForValues(
       db,
       'action_events',
-      eventType,
-      'event'
+      [actionName],
+      'e'
     );
-    await assertPartitionAttachedForValue(
+    await assertPartitionAttachedForValues(
       db,
       'action_events',
       partitionTableName,
-      eventType
+      [actionName]
     );
   } catch (err) {
-    handlePartitionError(err, `event partition "${eventType}"`);
+    handlePartitionError(err, `event partition "${actionName}"`);
   }
 }
 
-async function ensurePartitionForValue(
+async function ensurePartitionForValues(
   db: NodePgDatabase<any>,
   parentTableName: 'items' | 'item_actions' | 'action_events',
-  partitionValue: string,
-  suffix: 'item' | 'action' | 'event'
+  partitionValues: string[],
+  kind: 'i' | 'a' | 'e'
 ) {
-  const existingPartitionTableName = await findPartitionTableNameByValue(
+  const existingPartitionTableName = await findPartitionTableNameByValues(
     db,
     parentTableName,
-    partitionValue
+    partitionValues
   );
 
   if (existingPartitionTableName) {
     return existingPartitionTableName;
   }
 
-  const partitionTableName = buildPartitionTableName(partitionValue, suffix);
+  const partitionTableName = buildPartitionTableName(partitionValues, kind);
+  const partitionBound = buildPartitionBoundExpression(partitionValues);
 
   await db.execute(
     sql.raw(`
       CREATE TABLE IF NOT EXISTS "${partitionTableName}"
       PARTITION OF ${parentTableName}
-      FOR VALUES IN ('${escapeSqlLiteral(partitionValue)}');
+      ${partitionBound};
     `)
   );
 
   return partitionTableName;
 }
 
-async function assertPartitionAttachedForValue(
+async function assertPartitionAttachedForValues(
   db: NodePgDatabase<any>,
   parentTableName: 'items' | 'item_actions' | 'action_events',
   childTableName: string,
-  partitionValue: string
+  partitionValues: string[]
 ) {
   const result = (await db.execute(
     sql.raw(`
@@ -141,7 +153,13 @@ async function assertPartitionAttachedForValue(
     );
   }
 
-  const expectedPartitionBound = buildPartitionBoundExpression(partitionValue);
+  const expectedPartitionBound = buildPartitionBoundExpression(partitionValues);
+  /**
+   * PostgreSQL normalization might add spaces or explicit type casts in pg_get_expr output.
+   * However, for simple LIST partitions with string literals, it usually matches the input format.
+   * We normalize both to increase robustness if needed, but for now we do an exact match check
+   * as previously implemented, updated for multi-column format.
+   */
   if (result.rows[0].partition_bound !== expectedPartitionBound) {
     throw new Error(
       `Partition table "${childTableName}" is attached to parent "${parentTableName}" but uses bound "${result.rows[0].partition_bound ?? 'unknown'}" instead of "${expectedPartitionBound}". Rename or drop the conflicting partition and retry.`
@@ -149,12 +167,12 @@ async function assertPartitionAttachedForValue(
   }
 }
 
-async function findPartitionTableNameByValue(
+async function findPartitionTableNameByValues(
   db: NodePgDatabase<any>,
   parentTableName: 'items' | 'item_actions' | 'action_events',
-  partitionValue: string
+  partitionValues: string[]
 ) {
-  const escapedPartitionValue = escapeSqlLiteral(partitionValue);
+  const expectedBound = buildPartitionBoundExpression(partitionValues);
   const result = (await db.execute(
     sql.raw(`
       SELECT child.relname AS partition_table_name
@@ -166,7 +184,7 @@ async function findPartitionTableNameByValue(
       WHERE child_ns.nspname = current_schema()
         AND parent_ns.nspname = current_schema()
         AND parent.relname = '${escapeSqlLiteral(parentTableName)}'
-        AND pg_get_expr(child.relpartbound, child.oid) = 'FOR VALUES IN (''${escapedPartitionValue}'')'
+        AND pg_get_expr(child.relpartbound, child.oid) = '${escapeSqlLiteral(expectedBound)}'
       LIMIT 1;
     `)
   )) as { rows?: Array<{ partition_table_name: string }> };
@@ -198,17 +216,29 @@ function assertValidPartitionKey(value: string, label: string) {
   }
 }
 
-function buildPartitionTableName(value: string, suffix: 'item' | 'action' | 'event') {
-  const normalized = value.toLowerCase().replace(/[^a-z0-9]+/g, '');
-  const base = normalized || 'value';
-  const maxBaseLength = 63 - suffix.length - 1;
+function buildPartitionTableName(values: string[], kind: 'i' | 'a' | 'e') {
+  const normalizedParts = values
+    .map((v) => v.toLowerCase().replace(/[^a-z0-9]+/g, ''))
+    .filter(Boolean);
+
+  const base = normalizedParts.join('_') || 'value';
+  const prefix = `${kind}_p_`;
+  const maxBaseLength = 63 - prefix.length;
   const truncated = base.slice(0, Math.max(1, maxBaseLength));
 
-  return `${truncated}_${suffix}`;
+  return `${prefix}${truncated}`;
 }
 
-function buildPartitionBoundExpression(value: string) {
-  return `FOR VALUES IN ('${escapeSqlLiteral(value)}')`;
+function buildPartitionBoundExpression(values: string[]) {
+  if (values.length === 1) {
+    return `FOR VALUES IN ('${escapeSqlLiteral(values[0])}')`;
+  }
+
+  const escapedValues = values
+    .map((v) => `'${escapeSqlLiteral(v)}'`)
+    .join(', ');
+
+  return `FOR VALUES IN ((${escapedValues}))`;
 }
 
 function escapeSqlLiteral(value: string) {

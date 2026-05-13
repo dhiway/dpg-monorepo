@@ -130,21 +130,14 @@ As a rule: if changing the field would change the meaning of the event, it belon
 
 ## Partition strategy
 
-The schema uses hierarchical list partitioning.
+The schema uses hierarchical list partitioning with strict domain separation for items.
 
 For `items`:
 
-- parent table partitions by `item_type`
-- partition tables are named as `<item_type>_item`
-This is the effective shape:
+- parent table partitions by `(item_network, item_domain, item_type)`
+- partition tables are named as `i_p_{network}_{domain}_{type}`
 
-```text
-items
-  -> profile_item
-  -> notify_event_item
-```
-
-This design keeps partition naming predictable and avoids partition explosion across network/domain combinations.
+This design ensures that items from different domains are stored in distinct tables even if they share the same item type.
 
 ## How the scripts work
 
@@ -161,10 +154,10 @@ It also creates shared indexes:
 The parent tables are defined with:
 
 ```sql
-PARTITION BY LIST (item_type)
+PARTITION BY LIST (item_network, item_domain, item_type)
 ```
 
-That means rows are routed only by `item_type`.
+That means rows are routed by the combination of network, domain, and type.
 
 ### `create_items_partitions.example.sql`
 
@@ -176,8 +169,8 @@ It first verifies that:
 
 Then it creates:
 
-- `profile_item`
-- `notify_event_item`
+- `i_p_yellowdot_student_profile10`
+- `i_p_yellowdot_tutor_profile10`
 
 ## Runtime partition helpers
 
@@ -191,46 +184,43 @@ This helper creates missing partitions lazily with `CREATE TABLE IF NOT EXISTS`.
 
 `ensureItemPartition()` creates:
 
-1. `<item_type>_item`
+1. `i_p_{network}_{domain}_{type}`
 
 `ensureActionPartition()` creates:
 
-1. `<action_name>_action`
+1. `a_p_{action_name}`
 
 `ensureActionEventPartition()` creates:
 
-1. `<action_name>_event`
+1. `e_p_{action_name}`
 
-The helper accepts any non-empty partition key up to 120 characters. It normalizes generated table names by lowercasing the key, removing non-alphanumeric characters, truncating to PostgreSQL's identifier limit, and appending `_item`, `_action`, or `_event`.
+The helper accepts any non-empty partition key up to 120 characters. It normalizes generated table names by lowercasing the keys, removing non-alphanumeric characters, joining with underscores, and prepending `i_p_`, `a_p_`, or `e_p_`.
 
 ## Why query filters matter
 
-Partition pruning only works well when the query includes the partition key.
+Partition pruning only works well when the query includes the partition key columns.
 
-For `items`, the most important partition filter is:
-
-- `item_type`
-
-These are still useful indexed filters:
+For `items`, the partition key consists of:
 
 - `item_network`
 - `item_domain`
+- `item_type`
 
-The fetch route already follows this pattern. It builds a `where` clause that includes these keys when present, which helps PostgreSQL avoid scanning unrelated partitions.
+All three should be included in `where` clauses to allow PostgreSQL to scan only the relevant partition.
 
 ## Example table layout
 
 If you support item types:
 
-- `profile`
-- `notify_event`
+- `yellow_dot/student/profile_1.0`
+- `yellow_dot/tutor/profile_1.0`
 
 you would expect tables like:
 
 ```text
 items
-profile_item
-notify_event_item
+i_p_yellowdot_student_profile10
+i_p_yellowdot_tutor_profile10
 ```
 
 ## Example Drizzle queries
@@ -243,14 +233,14 @@ This matches the API create flow: prepare the partition first, then insert throu
 import { db } from 'apps/api/db/postgres/drizzle_config';
 import { ensureItemPartition, items } from '@dpg/database';
 
-await ensureItemPartition(db, 'yellow_dot', 'student', 'profile');
+await ensureItemPartition(db, 'yellow_dot', 'student', 'profile_1.0');
 
 const created = await db
   .insert(items)
   .values({
     item_network: 'yellow_dot',
     item_domain: 'student',
-    item_type: 'profile',
+    item_type: 'profile_1.0',
     item_instance_url: 'student://123',
     item_schema_url: 'https://schemas.example.com/student_profile_v1.json',
     item_state: { name: 'Asha' },
@@ -275,7 +265,7 @@ const result = await db
     and(
       eq(items.item_network, 'yellow_dot'),
       eq(items.item_domain, 'student'),
-      eq(items.item_type, 'profile')
+      eq(items.item_type, 'profile_1.0')
     )
   )
   .orderBy(sql`${items.created_at} DESC`)
@@ -332,13 +322,13 @@ await db.insert(item_actions).values({
   update_count: 0,
   source_item_network: 'yellow_dot',
   source_item_domain: 'student',
-  source_item_type: 'profile',
+  source_item_type: 'profile_1.0',
   source_item_id: '11111111-1111-1111-1111-111111111111',
   source_item_instance_url: 'https://student.yellowdot.example.com',
   source_item_owner: 'student_user_id',
   target_item_network: 'yellow_dot',
   target_item_domain: 'tutor',
-  target_item_type: 'profile',
+  target_item_type: 'profile_1.0',
   target_item_id: '22222222-2222-2222-2222-222222222222',
   target_item_instance_url: 'https://tutor.yellowdot.example.com',
   target_item_owner: 'tutor_user_id',
@@ -361,13 +351,13 @@ await db.insert(action_events).values({
   update_count: 0,
   source_item_network: 'yellow_dot',
   source_item_domain: 'student',
-  source_item_type: 'profile',
+  source_item_type: 'profile_1.0',
   source_item_id: '11111111-1111-1111-1111-111111111111',
   source_item_instance_url: 'https://student.yellowdot.example.com',
   source_item_owner: 'student_user_id',
   target_item_network: 'yellow_dot',
   target_item_domain: 'tutor',
-  target_item_type: 'profile',
+  target_item_type: 'profile_1.0',
   target_item_id: '22222222-2222-2222-2222-222222222222',
   target_item_instance_url: 'https://tutor.yellowdot.example.com',
   target_item_owner: 'tutor_user_id',

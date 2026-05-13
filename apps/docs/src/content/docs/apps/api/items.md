@@ -80,4 +80,4 @@ The update body is partial but must contain at least one update field.
 
 The API writes through the `items` Drizzle reference table. The database package creates item partitions lazily with `ensureItemPartition()`.
 
-Partition keys are based on `item_type`, so queries should include `item_type` when possible.
+Partition keys are based on `(item_network, item_domain, item_type)`, so queries should include all three when possible to enable partition pruning. Partition tables are named following the `i_p_{network}_{domain}_{type}` schema.

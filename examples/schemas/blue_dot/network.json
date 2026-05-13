@@ -85,23 +85,58 @@
   "instances": [
     {
       "domain_name": "seeker",
-      "instance_name": "Blue Dot Seeker",
-      "instance_url": "https://seeker.bluedot.example.com",
+      "instance_name": "Blue Dot Seeker Localhost",
+      "instance_url": "http://localhost:2743",
       "custom_item_schema_urls": {}
     },
     {
       "domain_name": "provider",
-      "instance_name": "Blue Dot Provider",
-      "instance_url": "https://provider.bluedot.example.com",
-      "custom_item_schema_urls": {
-        "job_posting_1.1": "https://provider.bluedot.example.com/schemas/job_posting_1.1.json"
-      }
+      "instance_name": "Blue Dot Provider Localhost",
+      "instance_url": "http://localhost:2743",
+      "custom_item_schema_urls": {}
+    }
+  ],
+  "cross_network_origins": [
+    {
+      "name": "yellow_dot",
+      "display_name": "Yellow Dot",
+      "schema_url": "http://localhost:8080/yellow_dot/network.json"
     }
   ],
   "actions": {
     "apply": {
-      "description": "Lets a seeker apply to a provider's job posting.",
+      "description": "Lets a seeker apply to a provider's job posting. Also accepts yellow_dot students applying cross-network.",
       "interactions": [
+        {
+          "from_network": "yellow_dot",
+          "from_domain": "student",
+          "from_items": ["profile_1.0", "profile_1.1"],
+          "to_network": "blue_dot",
+          "to_domain": "provider",
+          "to_items": ["job_posting_1.0"],
+          "requirement_schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "title": "Cross-network Student Application Requirement",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["cover_note"],
+            "properties": {
+              "cover_note": { "type": "string", "minLength": 1 },
+              "expected_start": { "type": "string" }
+            }
+          },
+          "event_schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "title": "Cross-network Student Application Event",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["status", "remark"],
+            "properties": {
+              "status": { "type": "string", "enum": ["submitted", "shortlisted", "rejected"] },
+              "remark": { "type": "string" }
+            }
+          }
+        },
         {
           "from_network": "blue_dot",
           "from_domain": "seeker",
