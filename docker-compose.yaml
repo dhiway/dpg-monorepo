@@ -46,6 +46,50 @@ services:
       retries: 20
     networks:
       - dpg_internal
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    image: dpg-monorepo/api:local
+    container_name: dpg-api
+    restart: always
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      API_PORT: 2742
+    ports:
+      - '${API_PORT:-2742}:2742'
+    volumes:
+      - ./examples:/app/examples:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - dpg_internal
+  ui:
+    build:
+      context: .
+      dockerfile: apps/ui/Dockerfile
+      args:
+        VITE_DEFAULT_API_URL: ${VITE_DEFAULT_API_URL:-}
+        VITE_API_URL: ${VITE_API_URL:-}
+        VITE_API_URLS: ${VITE_API_URLS:-}
+    image: dpg-monorepo/ui:local
+    container_name: dpg-ui
+    restart: always
+    ports:
+      - '${UI_PORT:-8082}:80'
+    depends_on:
+      - api
+    networks:
+      - dpg_internal
 networks:
   dpg_internal:
     name: dpg_internal
