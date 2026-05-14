@@ -1,0 +1,299 @@
+{
+  "name": "blue_dot",
+  "display_name": "Blue Dot",
+  "description": "Jobs and hiring network with inter-network citizen actions.",
+  "schema_standard": "https://json-schema.org/draft/2020-12/schema",
+  "cross_network_origins": [
+    {
+      "name": "yellow_dot",
+      "display_name": "Yellow Dot",
+      "schema_url": "https://registry.example.com/schemas/inter-network-action/yellow_dot/network.json"
+    }
+  ],
+  "domains": [
+    {
+      "name": "seeker",
+      "description": "People looking for jobs.",
+      "minimum_cache_ttl_seconds": 300,
+      "item_schemas": {
+        "citizen_1.0": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "https://registry.example.com/schemas/inter-network-action/blue_dot/seeker/citizen_1.0.json",
+          "title": "Citizen 1.0",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "location"],
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "location": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["city", "state", "country"],
+              "properties": {
+                "city": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "state": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "country": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "postal_code": {
+                  "type": "string"
+                }
+              }
+            },
+            "email": {
+              "type": "string",
+              "format": "email"
+            },
+            "phone": {
+              "type": "string"
+            }
+          }
+        },
+        "profile_1.0": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Job Seeker Profile 1.0",
+          "unevaluatedProperties": false,
+          "allOf": [
+            {
+              "$ref": "#/$defs/citizen_1_0"
+            },
+            {
+              "type": "object",
+              "required": ["skills", "preferred_city", "experience_years"],
+              "properties": {
+                "skills": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "preferred_city": {
+                  "type": "string"
+                },
+                "experience_years": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "open_to_remote": {
+                  "type": "boolean"
+                }
+              }
+            }
+          ],
+          "$defs": {
+            "citizen_1_0": {
+              "type": "object",
+              "required": ["name", "location"],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "location": {
+                  "type": "object",
+                  "required": ["city", "state", "country"],
+                  "properties": {
+                    "city": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "state": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "country": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "postal_code": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "email": {
+                  "type": "string",
+                  "format": "email"
+                },
+                "phone": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "provider",
+      "description": "Employers and recruiters posting jobs.",
+      "minimum_cache_ttl_seconds": 300,
+      "item_schemas": {
+        "job_posting_1.0": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Job Posting 1.0",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["company_name", "role", "city", "employment_type"],
+          "properties": {
+            "company_name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "role": {
+              "type": "string",
+              "minLength": 1
+            },
+            "city": {
+              "type": "string"
+            },
+            "employment_type": {
+              "type": "string",
+              "enum": ["full_time", "part_time", "contract", "internship"]
+            },
+            "salary_range": {
+              "type": "string"
+            },
+            "required_skills": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "instances": [
+    {
+      "domain_name": "seeker",
+      "instance_name": "Blue Dot Seeker",
+      "instance_url": "https://seeker.bluedot.example.com",
+      "custom_item_schema_urls": {}
+    },
+    {
+      "domain_name": "provider",
+      "instance_name": "Blue Dot Provider",
+      "instance_url": "https://provider.bluedot.example.com",
+      "custom_item_schema_urls": {
+        "job_posting_1.1": "https://provider.bluedot.example.com/schemas/job_posting_1.1.json"
+      }
+    }
+  ],
+  "actions": {
+    "apply": {
+      "description": "Lets citizens and seekers apply to provider job postings, including citizens from Yellow Dot.",
+      "interactions": [
+        {
+          "from_network": "blue_dot",
+          "from_domain": "seeker",
+          "from_items": ["citizen_1.0", "profile_1.0"],
+          "to_network": "blue_dot",
+          "to_domain": "provider",
+          "to_items": ["job_posting_1.0", "job_posting_1.1"],
+          "requirement_schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "title": "Job Application Requirement",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["job_id", "cover_note"],
+            "properties": {
+              "job_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "cover_note": {
+                "type": "string",
+                "minLength": 1
+              },
+              "resume_url": {
+                "type": "string",
+                "format": "uri"
+              }
+            }
+          },
+          "event_schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "title": "Job Application Event",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["status", "remark"],
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": ["submitted", "shortlisted", "rejected"]
+              },
+              "remark": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "from_network": "yellow_dot",
+          "from_domain": "student",
+          "from_items": ["citizen_1.0", "profile_1.0", "profile_1.1"],
+          "to_network": "blue_dot",
+          "to_domain": "provider",
+          "to_items": ["job_posting_1.0", "job_posting_1.1"],
+          "requirement_schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "title": "Yellow Dot Citizen Job Application Requirement",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["job_id", "cover_note", "eligibility_confirmation"],
+            "properties": {
+              "job_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "cover_note": {
+                "type": "string",
+                "minLength": 1
+              },
+              "eligibility_confirmation": {
+                "type": "boolean",
+                "description": "Confirms the citizen meets the job eligibility requirements."
+              },
+              "resume_url": {
+                "type": "string",
+                "format": "uri"
+              },
+              "portfolio_url": {
+                "type": "string",
+                "format": "uri"
+              }
+            }
+          },
+          "event_schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "title": "Yellow Dot Citizen Job Application Event",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["status", "remark"],
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": ["submitted", "shortlisted", "rejected"]
+              },
+              "remark": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
