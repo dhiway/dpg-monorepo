@@ -46,14 +46,20 @@ export const update_item_handler = async (
 ) => {
   const { itemId } = request.params;
   const body = request.body;
-  const userId = request.user?.id;
+  const callerId = request.user?.id;
+  const callerRole = (request.user as { role?: string } | undefined)?.role;
+  const isAdmin = callerRole === 'admin';
 
-  if (!userId) {
+  if (!callerId) {
     return reply.code(401).send({
       error: 'UNAUTHORIZED',
       message: 'Authenticated user is required to update an item',
     });
   }
+
+  const ownershipFilter = isAdmin
+    ? eq(items.item_id, itemId)
+    : and(eq(items.item_id, itemId), eq(items.created_by, callerId));
 
   try {
     const updateValues: Record<string, unknown> = {
@@ -70,7 +76,7 @@ export const update_item_handler = async (
           item_schema_url: items.item_schema_url,
         })
         .from(items)
-        .where(and(eq(items.item_id, itemId), eq(items.created_by, userId)))
+        .where(ownershipFilter)
         .limit(1);
 
       if (!existingItem) {
@@ -99,7 +105,7 @@ export const update_item_handler = async (
     const result = await db
       .update(items)
       .set(updateValues)
-      .where(and(eq(items.item_id, itemId), eq(items.created_by, userId)))
+      .where(ownershipFilter)
       .returning({
         item_network: items.item_network,
         item_domain: items.item_domain,

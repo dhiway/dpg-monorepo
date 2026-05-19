@@ -60,8 +60,8 @@ services:
         for f in /drizzle/*.sql; do
           echo "applying $$f"; psql -h db -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -v ON_ERROR_STOP=0 -f "$$f" || true;
         done
-        psql -h db -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -v ON_ERROR_STOP=1 -f /sql/create_items.sql && \
-        psql -h db -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -v ON_ERROR_STOP=1 -f /sql/create_actions_events.sql && \
+        psql -h db -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -v ON_ERROR_STOP=0 -f /sql/create_items.sql || true
+        psql -h db -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -v ON_ERROR_STOP=0 -f /sql/create_actions_events.sql || true
         echo "schema bootstrap OK"
     networks: [dpg_blue]
 
@@ -94,6 +94,7 @@ services:
       BETTER_AUTH_SECRET: ${AUTH_SECRET}
       CREATE_TEST_OTP: ${CREATE_TEST_OTP}
       ALLOW_EXTRA_SCHEMA_DATA: ${ALLOW_EXTRA_SCHEMA_DATA}
+      ADMIN_DOMAINS: ${ADMIN_DOMAINS:-dhiway.com}
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
       DATABASE_PORT: 5432

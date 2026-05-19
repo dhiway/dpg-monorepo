@@ -27,6 +27,22 @@ export async function auth_middleware(
       });
     }
 
+    const keyUserId =
+      (verified.key as { userId?: string; referenceId?: string } | null)?.userId ??
+      (verified.key as { userId?: string; referenceId?: string } | null)?.referenceId;
+
+    if (keyUserId) {
+      const session = await authInstance.api.getSession({
+        headers: new Headers(request.headers as Record<string, string>),
+      });
+      if (session?.user) {
+        request.user = session.user;
+      } else {
+        // fallback: synthesise a minimal user object from key owner
+        request.user = { id: keyUserId } as typeof request.user;
+      }
+    }
+
     return;
   }
 
