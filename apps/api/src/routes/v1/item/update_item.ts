@@ -47,8 +47,7 @@ export const update_item_handler = async (
   const { itemId } = request.params;
   const body = request.body;
   const callerId = request.user?.id;
-  const callerRole = (request.user as { role?: string } | undefined)?.role;
-  const isAdmin = callerRole === 'admin';
+  const isAdmin = request.user?.role === 'admin';
 
   if (!callerId) {
     return reply.code(401).send({

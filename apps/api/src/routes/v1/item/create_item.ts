@@ -51,7 +51,7 @@ export const create_item_handler = async (
   reply: FastifyReply
 ) => {
   const callerId = request.user?.id;
-  const callerRole = (request.user as { role?: string } | undefined)?.role;
+  const callerRole = request.user?.role;
   const body = request.body;
   const submittedItemState = body.item_state ?? {};
   const itemInstanceUrl = getCurrentApiBaseUrl();
@@ -69,6 +69,13 @@ export const create_item_handler = async (
   }
 
   const isAdmin = callerRole === 'admin';
+
+  if (!isAdmin && body.created_by) {
+    return reply.code(403).send({
+      error: 'FORBIDDEN_CREATED_BY',
+      message: 'Only admin callers may set created_by',
+    });
+  }
 
   if (isAdmin && !body.created_by) {
     return reply.code(400).send({

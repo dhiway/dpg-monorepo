@@ -54,14 +54,19 @@ services:
       - sh
       - -c
       - |
+        set -e
         until pg_isready -h db -p 5432 -U "$$POSTGRES_USER"; do
           echo "waiting for db..."; sleep 2;
         done
+        # drizzle migrations: tolerate "already exists" on re-run (ON_ERROR_STOP=0)
+        # but fail loudly on connection / auth issues.
         for f in /drizzle/*.sql; do
-          echo "applying $$f"; psql -h db -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -v ON_ERROR_STOP=0 -f "$$f" || true;
+          echo "applying $$f";
+          psql -h db -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -v ON_ERROR_STOP=0 -f "$$f";
         done
-        psql -h db -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -v ON_ERROR_STOP=0 -f /sql/create_items.sql || true
-        psql -h db -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -v ON_ERROR_STOP=0 -f /sql/create_actions_events.sql || true
+        # idempotent bootstrap scripts: any error is a real bug, stop.
+        psql -h db -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -v ON_ERROR_STOP=1 -f /sql/create_items.sql
+        psql -h db -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -v ON_ERROR_STOP=1 -f /sql/create_actions_events.sql
         echo "schema bootstrap OK"
     networks: [dpg_blue]
 
