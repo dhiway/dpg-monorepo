@@ -16,11 +16,13 @@ CREATE TABLE "account" (
 --> statement-breakpoint
 CREATE TABLE "apikey" (
 	"id" text PRIMARY KEY NOT NULL,
+	"config_id" text DEFAULT 'default' NOT NULL,
 	"name" text,
 	"start" text,
+	"reference_id" text NOT NULL,
 	"prefix" text,
 	"key" text NOT NULL,
-	"user_id" text NOT NULL,
+	"user_id" text,
 	"refill_interval" integer,
 	"refill_amount" integer,
 	"last_refill_at" timestamp,
@@ -122,3 +124,11 @@ ALTER TABLE "member" ADD CONSTRAINT "member_organization_id_organization_id_fk" 
 ALTER TABLE "member" ADD CONSTRAINT "member_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "team" ADD CONSTRAINT "team_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "team_member" ADD CONSTRAINT "team_member_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;
+--> statement-breakpoint
+-- Idempotent upgrade for existing databases: bring the apikey table in line with
+-- the @better-auth/api-key 1.6.x schema. Safe to re-run; no-ops on fresh DBs.
+ALTER TABLE "apikey" ADD COLUMN IF NOT EXISTS "config_id" text DEFAULT 'default' NOT NULL;--> statement-breakpoint
+ALTER TABLE "apikey" ADD COLUMN IF NOT EXISTS "reference_id" text;--> statement-breakpoint
+UPDATE "apikey" SET "reference_id" = "user_id" WHERE "reference_id" IS NULL AND "user_id" IS NOT NULL;--> statement-breakpoint
+ALTER TABLE "apikey" ALTER COLUMN "reference_id" SET NOT NULL;--> statement-breakpoint
+ALTER TABLE "apikey" ALTER COLUMN "user_id" DROP NOT NULL;
