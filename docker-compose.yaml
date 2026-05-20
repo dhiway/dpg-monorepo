@@ -72,6 +72,8 @@ services:
         # idempotent bootstrap scripts: any error is a real bug, stop
         psql -h db -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -v ON_ERROR_STOP=1 -f /sql/create_items.sql
         psql -h db -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -v ON_ERROR_STOP=1 -f /sql/create_actions_events.sql
+        # idempotent seed: re-runs are no-ops via deterministic UUIDs + ON CONFLICT DO NOTHING
+        psql -h db -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -v ON_ERROR_STOP=1 -f /sql/seed_purple_dot.sql
         echo "schema bootstrap OK"
     networks:
       - dpg_internal
