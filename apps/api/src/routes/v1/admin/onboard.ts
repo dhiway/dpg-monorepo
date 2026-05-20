@@ -24,15 +24,17 @@ const OnboardUserSchema = z
     path: ['email'],
   });
 
-const OnboardProfileSchema = z.object({
-  profile_id: z.string().uuid().optional(),
-  item_network: z.string().min(1),
-  item_domain: z.string().min(1),
-  item_type: z.string().min(1),
-  item_state: z.record(z.string(), z.unknown()).optional(),
-  item_latitude: z.number().nullable().optional(),
-  item_longitude: z.number().nullable().optional(),
-});
+const OnboardProfileSchema = z
+  .object({
+    item_id: z.string().uuid().optional(),
+    item_network: z.string().min(1),
+    item_domain: z.string().min(1),
+    item_type: z.string().min(1),
+    item_state: z.record(z.string(), z.unknown()).optional(),
+    item_latitude: z.number().nullable().optional(),
+    item_longitude: z.number().nullable().optional(),
+  })
+  .strict();
 
 export const OnboardBodySchema = z.object({
   user: OnboardUserSchema,
@@ -88,7 +90,7 @@ export const onboard_handler = async (
     });
   }
 
-  if (profileInput && !profileInput.profile_id) {
+  if (profileInput && !profileInput.item_id) {
     try {
       await ensureItemPartition(
         db,
@@ -146,11 +148,11 @@ export const onboard_handler = async (
       let userExisted = Boolean(userRow);
 
       if (!userRow) {
-        if (profileInput?.profile_id) {
+        if (profileInput?.item_id) {
           throw new OnboardError(
             400,
             'PROFILE_UPDATE_REQUIRES_USER',
-            'profile_id provided but user does not exist'
+            'item_id provided but user does not exist'
           );
         }
 
@@ -177,21 +179,21 @@ export const onboard_handler = async (
       let profileUpdated = false;
 
       if (profileInput) {
-        if (profileInput.profile_id) {
+        if (profileInput.item_id) {
           const [existingProfile] = await tx
             .select({
               item_id: items.item_id,
               created_by: items.created_by,
             })
             .from(items)
-            .where(eq(items.item_id, profileInput.profile_id))
+            .where(eq(items.item_id, profileInput.item_id))
             .limit(1);
 
           if (!existingProfile) {
             throw new OnboardError(
               404,
               'PROFILE_NOT_FOUND',
-              'Profile with given profile_id not found'
+              'Profile with given item_id not found'
             );
           }
 
@@ -199,13 +201,13 @@ export const onboard_handler = async (
             throw new OnboardError(
               403,
               'PROFILE_OWNERSHIP_MISMATCH',
-              'profile_id belongs to a different user'
+              'item_id belongs to a different user'
             );
           }
 
           await updateItemInternal(
             tx,
-            profileInput.profile_id,
+            profileInput.item_id,
             userRow.id,
             true,
             {
