@@ -105,6 +105,38 @@ services:
       start_period: 10s
     networks:
       - dpg_internal
+  notification-service:
+    build:
+      context: ../notification-service
+      dockerfile: Dockerfile
+    image: dpg-monorepo/notification-service:local
+    container_name: dpg-notification-service
+    restart: always
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      SERVER_PORT: 3000
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      INTERNAL_SECRETS_JSON: /app/config/internal-secrets.json
+      SMTP_GMAIL: "true"
+      GMAIL_USER: ${GMAIL_USER}
+      GMAIL_PASS: ${GMAIL_PASS}
+      SMTP_AWS_SES: ""
+      SEND_WHATSAPP_NOTIFICATION: ""
+      MAIL_LOG: "true"
+      LOG_ACTIVITY: "true"
+    ports:
+      - '${NOTIFICATION_SERVICE_PORT:-3000}:3000'
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ../notification-service/config/internal-secrets.json:/app/config/internal-secrets.json:ro
+    networks:
+      - dpg_internal
   ui:
     build:
       context: .
