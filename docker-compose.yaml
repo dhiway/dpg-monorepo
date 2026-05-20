@@ -45,6 +45,36 @@ services:
       retries: 20
     networks:
       - dpg_internal
+  db-init:
+    image: postgres:18-alpine
+    container_name: dpg-db-init
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - ./packages/database/src/utils/sql_scripts:/sql:ro
+    entrypoint:
+      - sh
+      - -c
+      - |
+        set -e
+        until pg_isready -h db -p 5432 -U "$$POSTGRES_USER"; do
+          echo "waiting for db..."; sleep 2;
+        done
+        # better-auth drizzle migration: tolerate "already exists" on re-run
+        psql -h db -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -v ON_ERROR_STOP=0 -f /sql/create_auth_table.sql
+        # idempotent bootstrap scripts: any error is a real bug, stop
+        psql -h db -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -v ON_ERROR_STOP=1 -f /sql/create_items.sql
+        psql -h db -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -v ON_ERROR_STOP=1 -f /sql/create_actions_events.sql
+        echo "schema bootstrap OK"
+    networks:
+      - dpg_internal
   api:
     build:
       context: .
@@ -66,6 +96,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
       scoring:
