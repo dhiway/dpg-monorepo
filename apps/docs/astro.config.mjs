@@ -1,13 +1,27 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import mermaid from 'astro-mermaid';
 
 export default defineConfig({
   site: 'https://docs.example.com',
   integrations: [
+    mermaid({
+      autoTheme: true,
+    }),
     starlight({
       title: 'DPG Documentation',
       description:
         'Architecture, setup, and package documentation for the DPG backend monorepo.',
+      social: [
+        {
+          icon: 'github',
+          label: 'GitHub',
+          href: 'https://github.com/dhiway/dpg-monorepo',
+        },
+      ],
+      editLink: {
+        baseUrl: 'https://github.com/dhiway/dpg-monorepo/edit/main/apps/docs/',
+      },
       head: [
         {
           tag: 'meta',
@@ -30,6 +44,10 @@ export default defineConfig({
             { label: 'What Is DPG?', slug: 'index' },
             { label: 'Vocabulary', slug: 'concepts/vocabulary' },
             { label: 'Architecture', slug: 'concepts/architecture' },
+            {
+              label: 'Architecture Diagrams',
+              slug: 'concepts/architecture-diagrams',
+            },
             { label: 'Getting Started', slug: 'getting-started' },
             { label: 'Environment', slug: 'environment' },
           ],

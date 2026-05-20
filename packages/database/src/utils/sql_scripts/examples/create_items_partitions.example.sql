@@ -1,4 +1,4 @@
--- Example single-level item_type partitions.
+-- Example network/domain item partitions.
 -- This file is intentionally optional and should be adapted per deployment.
 -- Run `create_items.sql` first so the parent partitioned tables exist.
 
@@ -9,14 +9,18 @@ BEGIN
   END IF;
 END $$;
 
--- Updated to the new i_p_{network}_{domain}_{type} format
-CREATE TABLE IF NOT EXISTS i_p_yellowdot_student_profile10
+CREATE TABLE IF NOT EXISTS i_p_yellowdot
 PARTITION OF items
-FOR VALUES IN (('yellow_dot', 'student', 'profile_1.0'));
+FOR VALUES IN ('yellow_dot')
+PARTITION BY LIST (item_domain);
 
-CREATE TABLE IF NOT EXISTS i_p_yellowdot_tutor_profile10
-PARTITION OF items
-FOR VALUES IN (('yellow_dot', 'tutor', 'profile_1.0'));
+CREATE TABLE IF NOT EXISTS i_p_yellowdot_student
+PARTITION OF i_p_yellowdot
+FOR VALUES IN ('student');
+
+CREATE TABLE IF NOT EXISTS i_p_yellowdot_tutor
+PARTITION OF i_p_yellowdot
+FOR VALUES IN ('tutor');
 
 -- Default partition for items that don't match any specific domain partition
 CREATE TABLE IF NOT EXISTS items_default

@@ -1,6 +1,6 @@
 import { FastifyReply } from 'fastify';
-import { apiConfig } from '../config';
-import { getNetworkConfigs } from '../network_configs';
+import { apiConfig } from '@/config';
+import { getNetworkConfigs } from '@/network_configs';
 
 export function isServedDomainBinding(network: string, domain: string) {
   return apiConfig.served_domains.some(
@@ -16,10 +16,10 @@ export async function getServedDomainSummary() {
   const itemTypesByBinding = Object.fromEntries(
     apiConfig.served_domains.map((binding) => {
       const networkConfig = networkConfigs.find(
-        (config) => config.name === binding.network
+        (config) => config.id === binding.network
       );
       const domainConfig = networkConfig?.domains.find(
-        (domain) => domain.name === binding.domain
+        (domain) => domain.id === binding.domain
       );
 
       return [binding.key, Object.keys(domainConfig?.item_schemas ?? {})];

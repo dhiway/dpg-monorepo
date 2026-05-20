@@ -1,0 +1,1134 @@
+{
+  "info": {
+    "name": "Yellow Dot API",
+    "_postman_id": "7f0b5b7f-c2b5-4f7d-a472-44d64f820001",
+    "description": "Schema-specific Postman collection for examples/schemas/yellow_dot/network.json.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:2742"
+    },
+    {
+      "key": "email",
+      "value": "demo@example.com"
+    },
+    {
+      "key": "phone_number",
+      "value": "+911234567890"
+    },
+    {
+      "key": "user_name",
+      "value": "Demo User"
+    },
+    {
+      "key": "otp",
+      "value": "777666"
+    },
+    {
+      "key": "auth_token",
+      "value": ""
+    },
+    {
+      "key": "session_cookie",
+      "value": ""
+    },
+    {
+      "key": "user_id",
+      "value": ""
+    },
+    {
+      "key": "user_email",
+      "value": ""
+    },
+    {
+      "key": "user_phone",
+      "value": ""
+    },
+    {
+      "key": "user_display_name",
+      "value": ""
+    },
+    {
+      "key": "network",
+      "value": "onest_yellow_dot"
+    },
+    {
+      "key": "student_domain",
+      "value": "student"
+    },
+    {
+      "key": "student_domain_id",
+      "value": "Yellow Dot Student"
+    },
+    {
+      "key": "student_instance_name",
+      "value": "Yellow Dot Student Local"
+    },
+    {
+      "key": "student_instance_url",
+      "value": "http://127.0.0.1:2742"
+    },
+    {
+      "key": "student_instance_description",
+      "value": "Student-domain API instance. Change this when students are hosted on a separate deployment."
+    },
+    {
+      "key": "student_item_type",
+      "value": "profile_1.0"
+    },
+    {
+      "key": "student_item_id",
+      "value": ""
+    },
+    {
+      "key": "student_item_owner",
+      "value": ""
+    },
+    {
+      "key": "tutor_domain",
+      "value": "individual_tutor_weera_counsellor"
+    },
+    {
+      "key": "tutor_domain_id",
+      "value": "Yellow Dot Tutor"
+    },
+    {
+      "key": "tutor_instance_name",
+      "value": "Yellow Dot Tutor Local"
+    },
+    {
+      "key": "tutor_instance_url",
+      "value": "http://127.0.0.1:2742"
+    },
+    {
+      "key": "tutor_instance_description",
+      "value": "Tutor-domain API instance. Change this when tutors are hosted on a separate deployment."
+    },
+    {
+      "key": "tutor_item_type",
+      "value": "profile_1.0"
+    },
+    {
+      "key": "tutor_item_id",
+      "value": ""
+    },
+    {
+      "key": "tutor_item_owner",
+      "value": ""
+    },
+    {
+      "key": "domain",
+      "value": "student"
+    },
+    {
+      "key": "item_type",
+      "value": "profile_1.0"
+    },
+    {
+      "key": "item_id",
+      "value": ""
+    },
+    {
+      "key": "source_item_network",
+      "value": "onest_yellow_dot"
+    },
+    {
+      "key": "source_item_domain",
+      "value": "student"
+    },
+    {
+      "key": "source_item_type",
+      "value": "profile_1.0"
+    },
+    {
+      "key": "source_item_id",
+      "value": ""
+    },
+    {
+      "key": "source_instance_name",
+      "value": "Yellow Dot Student Local"
+    },
+    {
+      "key": "source_instance_url",
+      "value": "http://127.0.0.1:2742"
+    },
+    {
+      "key": "source_item_owner",
+      "value": ""
+    },
+    {
+      "key": "target_item_network",
+      "value": "onest_yellow_dot"
+    },
+    {
+      "key": "target_item_domain",
+      "value": "individual_tutor_weera_counsellor"
+    },
+    {
+      "key": "target_item_type",
+      "value": "profile_1.0"
+    },
+    {
+      "key": "target_item_id",
+      "value": ""
+    },
+    {
+      "key": "target_instance_name",
+      "value": "Yellow Dot Tutor Local"
+    },
+    {
+      "key": "target_instance_url",
+      "value": "http://127.0.0.1:2742"
+    },
+    {
+      "key": "target_item_owner",
+      "value": ""
+    },
+    {
+      "key": "target_base_url",
+      "value": "http://127.0.0.1:2742"
+    },
+    {
+      "key": "origin_instance_domain",
+      "value": "http://127.0.0.1:2742"
+    },
+    {
+      "key": "action_type",
+      "value": "connect"
+    },
+    {
+      "key": "action_id",
+      "value": ""
+    },
+    {
+      "key": "action_status",
+      "value": "created"
+    },
+    {
+      "key": "update_count",
+      "value": "0"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Unified OTP authentication requests. Run against the instance in base_url; when domains are hosted separately, authenticate against each host before creating or updating items there.",
+      "item": [
+        {
+          "name": "Check User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"phoneNumber\": \"{{phone_number}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/unified-otp/check-user",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "unified-otp",
+                "check-user"
+              ]
+            },
+            "description": "Checks whether the configured email or phone number already belongs to a user on the selected instance. Run this before requesting an OTP when exercising the auth flow."
+          }
+        },
+        {
+          "name": "Request OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"phoneNumber\": \"{{phone_number}}\",\n  \"name\": \"{{user_name}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/unified-otp/request",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "unified-otp",
+                "request"
+              ]
+            },
+            "description": "Requests a login or signup OTP for the configured identity. In local development with CREATE_TEST_OTP=true, use the otp collection variable in Verify OTP."
+          }
+        },
+        {
+          "name": "Verify OTP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Verify OTP returns 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const setCookie = pm.response.headers.get('set-cookie');",
+                  "if (setCookie) {",
+                  "  pm.collectionVariables.set('session_cookie', setCookie);",
+                  "}",
+                  "",
+                  "const data = pm.response.json();",
+                  "if (data.token) pm.collectionVariables.set('auth_token', data.token);",
+                  "if (data.user?.id) pm.collectionVariables.set('user_id', data.user.id);",
+                  "if (data.user?.id) pm.collectionVariables.set('source_item_owner', data.user.id);",
+                  "if (data.user?.email) pm.collectionVariables.set('user_email', data.user.email);",
+                  "if (data.user?.phoneNumber) pm.collectionVariables.set('user_phone', data.user.phoneNumber);",
+                  "if (data.user?.name) pm.collectionVariables.set('user_display_name', data.user.name);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"phoneNumber\": \"{{phone_number}}\",\n  \"name\": \"{{user_name}}\",\n  \"otp\": \"{{otp}}\",\n  \"rememberMe\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/unified-otp/verify",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "unified-otp",
+                "verify"
+              ]
+            },
+            "description": "Verifies the OTP, creates a Better Auth session on the selected host, and stores returned user/session fields into collection variables for later item/action calls."
+          }
+        },
+        {
+          "name": "Get Session",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/auth/get-session",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "get-session"
+              ]
+            },
+            "description": "Reads the current Better Auth session from the Postman cookie jar for the selected host. Use it to confirm that the instance has an authenticated session before creating or updating items."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Network Schemas",
+      "description": "Schema inspection and cache refresh calls for the configured network. Use these before editing example payloads.",
+      "item": [
+        {
+          "name": "Fetch Cached Schemas",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/network/schemas?network={{network}}&domain={{domain}}&item_type={{item_type}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "network",
+                "schemas"
+              ],
+              "query": [
+                {
+                  "key": "network",
+                  "value": "{{network}}"
+                },
+                {
+                  "key": "domain",
+                  "value": "{{domain}}"
+                },
+                {
+                  "key": "item_type",
+                  "value": "{{item_type}}"
+                }
+              ]
+            },
+            "description": "Returns cached schemas known to this API instance, filtered by the selected network, domain, and item type variables."
+          }
+        },
+        {
+          "name": "Fetch Student Item Schema",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{student_instance_url}}/api/v1/network/schema/{{network}}/{{student_domain}}/{{student_item_type}}",
+              "host": [
+                "{{student_instance_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "network",
+                "schema",
+                "{{network}}",
+                "{{student_domain}}",
+                "{{student_item_type}}"
+              ]
+            },
+            "description": "Fetches the concrete yellow_dot student profile schema used to validate Create Student Item and Update Student Item request bodies."
+          }
+        },
+        {
+          "name": "Fetch Tutor Item Schema",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{tutor_instance_url}}/api/v1/network/schema/{{network}}/{{tutor_domain}}/{{tutor_item_type}}",
+              "host": [
+                "{{tutor_instance_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "network",
+                "schema",
+                "{{network}}",
+                "{{tutor_domain}}",
+                "{{tutor_item_type}}"
+              ]
+            },
+            "description": "Fetches the concrete yellow_dot individual_tutor_weera_counsellor profile schema used to validate tutor item request bodies."
+          }
+        },
+        {
+          "name": "Refetch Schemas",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/api/v1/network/refetch_schemas",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "network",
+                "refetch_schemas"
+              ]
+            },
+            "description": "Refreshes network schema cache entries on the selected instance. Run after changing local or remote network schema configuration."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Items",
+      "description": "Client-facing item APIs separated by yellow_dot domain. Each create/update request uses that domain instance URL so student and tutor domains can be hosted on different deployments.",
+      "item": [
+        {
+          "name": "Create Student Item",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Create student item returns 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (data.item_id) {",
+                  "  pm.collectionVariables.set('student_item_id', data.item_id);",
+                  "  pm.collectionVariables.set('item_id', data.item_id);",
+                  "  pm.collectionVariables.set('source_item_network', pm.collectionVariables.get('network'));",
+                  "  pm.collectionVariables.set('source_item_domain', pm.collectionVariables.get('student_domain'));",
+                  "  pm.collectionVariables.set('source_item_type', pm.collectionVariables.get('student_item_type'));",
+                  "  pm.collectionVariables.set('source_item_id', data.item_id);",
+                  "  pm.collectionVariables.set('source_instance_url', pm.collectionVariables.get('student_instance_url'));",
+                  "  pm.collectionVariables.set('source_instance_name', pm.collectionVariables.get('student_instance_name'));",
+                  "}",
+                  "const userId = pm.collectionVariables.get('user_id');",
+                  "if (userId) {",
+                  "  pm.collectionVariables.set('student_item_owner', userId);",
+                  "  pm.collectionVariables.set('source_item_owner', userId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"item_network\": \"{{network}}\",\n  \"item_domain\": \"{{student_domain}}\",\n  \"item_type\": \"{{student_item_type}}\",\n  \"item_state\": {\n    \"Student ID\": \"stu-001\",\n    \"Full Name\": \"{{user_display_name}}\",\n    \"Phone Number\": \"9876543210\",\n    \"Email Address\": \"{{email}}\",\n    \"Location\": \"Bengaluru\",\n    \"Grade\": \"Class XI\",\n    \"Academic Stream\": \"Science\",\n    \"Service Looking For\": \"Subject Tutoring\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{student_instance_url}}/api/v1/item/create",
+              "host": [
+                "{{student_instance_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "item",
+                "create"
+              ]
+            },
+            "description": "Creates a student profile item on the configured student instance. The test script stores student_item_id and also updates the generic source item variables so this new student can initiate actions."
+          }
+        },
+        {
+          "name": "Update Student Item",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"item_state\": {\n    \"Student ID\": \"stu-001\",\n    \"Full Name\": \"{{user_display_name}} Updated\",\n    \"Phone Number\": \"9876543210\",\n    \"Email Address\": \"{{email}}\",\n    \"Location\": \"Bengaluru\",\n    \"Grade\": \"Class XII\",\n    \"Academic Stream\": \"Science\",\n    \"Service Looking For\": \"Subject Tutoring\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{student_instance_url}}/api/v1/item/{{student_item_id}}",
+              "host": [
+                "{{student_instance_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "item",
+                "{{student_item_id}}"
+              ]
+            },
+            "description": "Updates the student item identified by student_item_id on the configured student instance. Use this after Create Student Item, or replace student_item_id with an existing item id."
+          }
+        },
+        {
+          "name": "Fetch My Student Items",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{student_instance_url}}/api/v1/item/fetch?item_network={{network}}&item_domain={{student_domain}}&item_type={{student_item_type}}&limit=20&offset=0",
+              "host": [
+                "{{student_instance_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "item",
+                "fetch"
+              ],
+              "query": [
+                {
+                  "key": "item_network",
+                  "value": "{{network}}"
+                },
+                {
+                  "key": "item_domain",
+                  "value": "{{student_domain}}"
+                },
+                {
+                  "key": "item_type",
+                  "value": "{{student_item_type}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "Fetches authenticated user-owned student items from the configured student instance. This is the client-facing, user-scoped item fetch API."
+          }
+        },
+        {
+          "name": "Create Tutor Item",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Create tutor item returns 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (data.item_id) {",
+                  "  pm.collectionVariables.set('tutor_item_id', data.item_id);",
+                  "  pm.collectionVariables.set('target_item_network', pm.collectionVariables.get('network'));",
+                  "  pm.collectionVariables.set('target_item_domain', pm.collectionVariables.get('tutor_domain'));",
+                  "  pm.collectionVariables.set('target_item_type', pm.collectionVariables.get('tutor_item_type'));",
+                  "  pm.collectionVariables.set('target_item_id', data.item_id);",
+                  "  pm.collectionVariables.set('target_instance_url', pm.collectionVariables.get('tutor_instance_url'));",
+                  "  pm.collectionVariables.set('target_instance_name', pm.collectionVariables.get('tutor_instance_name'));",
+                  "  pm.collectionVariables.set('target_base_url', pm.collectionVariables.get('tutor_instance_url'));",
+                  "}",
+                  "const userId = pm.collectionVariables.get('user_id');",
+                  "if (userId) {",
+                  "  pm.collectionVariables.set('tutor_item_owner', userId);",
+                  "  pm.collectionVariables.set('target_item_owner', userId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"item_network\": \"{{network}}\",\n  \"item_domain\": \"{{tutor_domain}}\",\n  \"item_type\": \"{{tutor_item_type}}\",\n  \"item_state\": {\n    \"Tutor ID\": \"tutor-001\",\n    \"Full Name\": \"Ravi Kumar\",\n    \"Phone Number\": \"9123456780\",\n    \"Email Address\": \"ravi.tutor@example.com\",\n    \"Location\": \"Bengaluru\",\n    \"Coverage Radius (km)\": 12,\n    \"Service Offered\": \"Subject Tutoring\",\n    \"Grade Bands Served\": [\n      \"Class XI\",\n      \"Class XII\"\n    ],\n    \"Academic Streams Served\": [\n      \"Science\"\n    ]\n  }\n}"
+            },
+            "url": {
+              "raw": "{{tutor_instance_url}}/api/v1/item/create",
+              "host": [
+                "{{tutor_instance_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "item",
+                "create"
+              ]
+            },
+            "description": "Creates an individual tutor / WEERA / counsellor profile item on the configured tutor instance. The test script stores tutor_item_id and updates generic target item variables so this tutor can receive actions."
+          }
+        },
+        {
+          "name": "Update Tutor Item",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"item_state\": {\n    \"Tutor ID\": \"tutor-001\",\n    \"Full Name\": \"Ravi Kumar\",\n    \"Phone Number\": \"9123456780\",\n    \"Email Address\": \"ravi.tutor@example.com\",\n    \"Location\": \"Bengaluru\",\n    \"Coverage Radius (km)\": 15,\n    \"Service Offered\": \"Career Counseling\",\n    \"Grade Bands Served\": [\n      \"Class XI\",\n      \"Class XII\"\n    ],\n    \"Academic Streams Served\": [\n      \"Science\"\n    ]\n  }\n}"
+            },
+            "url": {
+              "raw": "{{tutor_instance_url}}/api/v1/item/{{tutor_item_id}}",
+              "host": [
+                "{{tutor_instance_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "item",
+                "{{tutor_item_id}}"
+              ]
+            },
+            "description": "Updates the tutor item identified by tutor_item_id on the configured tutor instance. Use this after Create Tutor Item, or replace tutor_item_id with an existing item id."
+          }
+        },
+        {
+          "name": "Fetch My Tutor Items",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{tutor_instance_url}}/api/v1/item/fetch?item_network={{network}}&item_domain={{tutor_domain}}&item_type={{tutor_item_type}}&limit=20&offset=0",
+              "host": [
+                "{{tutor_instance_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "item",
+                "fetch"
+              ],
+              "query": [
+                {
+                  "key": "item_network",
+                  "value": "{{network}}"
+                },
+                {
+                  "key": "item_domain",
+                  "value": "{{tutor_domain}}"
+                },
+                {
+                  "key": "item_type",
+                  "value": "{{tutor_item_type}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "Fetches authenticated user-owned tutor items from the configured tutor instance. This is the client-facing, user-scoped item fetch API."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Actions",
+      "description": "Client-facing action APIs for both allowed yellow_dot directions. Replace student_item_id or tutor_item_id with existing item IDs when testing against pre-existing records.",
+      "item": [
+        {
+          "name": "Fetch My Actions",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/action/fetch?ownership_role=all&limit=20&offset=0",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "action",
+                "fetch"
+              ],
+              "query": [
+                {
+                  "key": "ownership_role",
+                  "value": "all"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "Returns actions visible to the authenticated user on the selected instance. Use ownership_role=initiated, received, or all depending on the perspective being inspected."
+          }
+        },
+        {
+          "name": "Student Connects To Tutor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Student to tutor action returns 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (data.action_id) pm.collectionVariables.set('action_id', data.action_id);",
+                  "if (data.action_status) pm.collectionVariables.set('action_status', data.action_status);",
+                  "if (typeof data.update_count === 'number') pm.collectionVariables.set('update_count', String(data.update_count));",
+                  "pm.collectionVariables.set('source_item_domain', pm.collectionVariables.get('student_domain'));",
+                  "pm.collectionVariables.set('source_item_type', pm.collectionVariables.get('student_item_type'));",
+                  "pm.collectionVariables.set('source_item_id', pm.collectionVariables.get('student_item_id'));",
+                  "pm.collectionVariables.set('source_instance_url', pm.collectionVariables.get('student_instance_url'));",
+                  "pm.collectionVariables.set('target_item_domain', pm.collectionVariables.get('tutor_domain'));",
+                  "pm.collectionVariables.set('target_item_type', pm.collectionVariables.get('tutor_item_type'));",
+                  "pm.collectionVariables.set('target_item_id', pm.collectionVariables.get('tutor_item_id'));",
+                  "pm.collectionVariables.set('target_instance_url', pm.collectionVariables.get('tutor_instance_url'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action_type\": \"{{action_type}}\",\n  \"source_item\": {\n    \"item_network\": \"{{network}}\",\n    \"item_domain\": \"{{student_domain}}\",\n    \"item_type\": \"{{student_item_type}}\",\n    \"item_id\": \"{{student_item_id}}\"\n  },\n  \"target_item\": {\n    \"item_network\": \"{{network}}\",\n    \"item_domain\": \"{{tutor_domain}}\",\n    \"item_type\": \"{{tutor_item_type}}\",\n    \"item_id\": \"{{tutor_item_id}}\",\n    \"item_instance_url\": \"{{tutor_instance_url}}\"\n  },\n  \"requirements_snapshot\": {\n    \"Service Looking For\": \"Subject Tutoring\",\n    \"Grade\": \"Class XI\",\n    \"Academic Stream\": \"Science\",\n    \"What are you looking to achieve?\": \"Prepare for board exams with a local subject tutor.\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{student_instance_url}}/api/v1/action/perform",
+              "host": [
+                "{{student_instance_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "action",
+                "perform"
+              ]
+            },
+            "description": "Public source-instance action API for a student connecting to a tutor. It calls the student instance and forwards to the target tutor instance using tutor_instance_url."
+          }
+        },
+        {
+          "name": "Tutor Connects To Student",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Tutor to student action returns 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (data.action_id) pm.collectionVariables.set('action_id', data.action_id);",
+                  "if (data.action_status) pm.collectionVariables.set('action_status', data.action_status);",
+                  "if (typeof data.update_count === 'number') pm.collectionVariables.set('update_count', String(data.update_count));",
+                  "pm.collectionVariables.set('source_item_domain', pm.collectionVariables.get('tutor_domain'));",
+                  "pm.collectionVariables.set('source_item_type', pm.collectionVariables.get('tutor_item_type'));",
+                  "pm.collectionVariables.set('source_item_id', pm.collectionVariables.get('tutor_item_id'));",
+                  "pm.collectionVariables.set('source_instance_url', pm.collectionVariables.get('tutor_instance_url'));",
+                  "pm.collectionVariables.set('target_item_domain', pm.collectionVariables.get('student_domain'));",
+                  "pm.collectionVariables.set('target_item_type', pm.collectionVariables.get('student_item_type'));",
+                  "pm.collectionVariables.set('target_item_id', pm.collectionVariables.get('student_item_id'));",
+                  "pm.collectionVariables.set('target_instance_url', pm.collectionVariables.get('student_instance_url'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action_type\": \"{{action_type}}\",\n  \"source_item\": {\n    \"item_network\": \"{{network}}\",\n    \"item_domain\": \"{{tutor_domain}}\",\n    \"item_type\": \"{{tutor_item_type}}\",\n    \"item_id\": \"{{tutor_item_id}}\"\n  },\n  \"target_item\": {\n    \"item_network\": \"{{network}}\",\n    \"item_domain\": \"{{student_domain}}\",\n    \"item_type\": \"{{student_item_type}}\",\n    \"item_id\": \"{{student_item_id}}\",\n    \"item_instance_url\": \"{{student_instance_url}}\"\n  },\n  \"requirements_snapshot\": {\n    \"Introduction Message\": \"I can help with the requested learning goal and would like to connect.\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{tutor_instance_url}}/api/v1/action/perform",
+              "host": [
+                "{{tutor_instance_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "action",
+                "perform"
+              ]
+            },
+            "description": "Public source-instance action API for a tutor connecting to a student. It calls the tutor instance and forwards to the target student instance using student_instance_url."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Events",
+      "description": "Client-facing event inspection APIs for authenticated users.",
+      "item": [
+        {
+          "name": "Fetch My Events",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/event/fetch?ownership_role=all&limit=20&offset=0",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "event",
+                "fetch"
+              ],
+              "query": [
+                {
+                  "key": "ownership_role",
+                  "value": "all"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "Returns events visible to the authenticated user on the selected instance. Use this after a connect action to inspect mirrored or locally stored action events."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Instance-to-Instance Network Calls",
+      "description": "Direct diagnostics for APIs normally called between DPG instances. These requests use explicit source/target instance variables so deployments can run student and tutor domains on different hosts.",
+      "item": [
+        {
+          "name": "Fetch Network Items",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/network/item/fetch?item_network={{network}}&item_domain={{domain}}&item_type={{item_type}}&limit=20&offset=0",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "network",
+                "item",
+                "fetch"
+              ],
+              "query": [
+                {
+                  "key": "item_network",
+                  "value": "{{network}}"
+                },
+                {
+                  "key": "item_domain",
+                  "value": "{{domain}}"
+                },
+                {
+                  "key": "item_type",
+                  "value": "{{item_type}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            },
+            "description": "Aggregates matching items across configured instances for the selected network/domain. This is useful for finding existing target items before performing an action."
+          }
+        },
+        {
+          "name": "Count Local Items On Instance",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"item_network\": \"{{target_item_network}}\",\n  \"item_domain\": \"{{target_item_domain}}\",\n  \"item_type\": \"{{target_item_type}}\"\n}"
+            },
+            "url": {
+              "raw": "{{target_instance_url}}/api/v1/network/item/count_local",
+              "host": [
+                "{{target_instance_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "network",
+                "item",
+                "count_local"
+              ]
+            },
+            "description": "Internal instance-to-instance API that counts matching items on one concrete instance. It is normally called by aggregate network fetch, but is included for direct diagnostics."
+          }
+        },
+        {
+          "name": "Fetch Local Items On Instance",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"item_network\": \"{{target_item_network}}\",\n  \"item_domain\": \"{{target_item_domain}}\",\n  \"item_type\": \"{{target_item_type}}\",\n  \"limit\": 20,\n  \"offset\": 0\n}"
+            },
+            "url": {
+              "raw": "{{target_instance_url}}/api/v1/network/item/fetch_local",
+              "host": [
+                "{{target_instance_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "network",
+                "item",
+                "fetch_local"
+              ]
+            },
+            "description": "Internal instance-to-instance API that fetches matching items from one concrete instance. It is normally called by aggregate network fetch, but is included for direct diagnostics."
+          }
+        },
+        {
+          "name": "Perform Network Action Student To Tutor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Perform Network Action Student To Tutor returns 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (data.action_id) pm.collectionVariables.set('action_id', data.action_id);",
+                  "if (data.action_status) pm.collectionVariables.set('action_status', data.action_status);",
+                  "if (typeof data.update_count === 'number') pm.collectionVariables.set('update_count', String(data.update_count));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action_type\": \"{{action_type}}\",\n  \"source_item\": {\n    \"item_network\": \"{{network}}\",\n    \"item_domain\": \"{{student_domain}}\",\n    \"item_type\": \"{{student_item_type}}\",\n    \"item_id\": \"{{student_item_id}}\",\n    \"item_instance_url\": \"{{student_instance_url}}\"\n  },\n  \"target_item\": {\n    \"item_network\": \"{{network}}\",\n    \"item_domain\": \"{{tutor_domain}}\",\n    \"item_type\": \"{{tutor_item_type}}\",\n    \"item_id\": \"{{tutor_item_id}}\",\n    \"item_instance_url\": \"{{tutor_instance_url}}\"\n  },\n  \"source_item_owner\": \"{{student_item_owner}}\",\n  \"requirements_snapshot\": {\n    \"Service Looking For\": \"Subject Tutoring\",\n    \"Grade\": \"Class XI\",\n    \"Academic Stream\": \"Science\",\n    \"What are you looking to achieve?\": \"Prepare for board exams with a local subject tutor.\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{tutor_instance_url}}/api/v1/network/action/perform",
+              "host": [
+                "{{tutor_instance_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "network",
+                "action",
+                "perform"
+              ]
+            },
+            "description": "Direct server-to-server target-instance action API for a student-originated connect request. It writes the action on the tutor instance and mirrors the event back to the student instance when configured."
+          }
+        },
+        {
+          "name": "Perform Network Action Tutor To Student",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Perform Network Action Tutor To Student returns 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (data.action_id) pm.collectionVariables.set('action_id', data.action_id);",
+                  "if (data.action_status) pm.collectionVariables.set('action_status', data.action_status);",
+                  "if (typeof data.update_count === 'number') pm.collectionVariables.set('update_count', String(data.update_count));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action_type\": \"{{action_type}}\",\n  \"source_item\": {\n    \"item_network\": \"{{network}}\",\n    \"item_domain\": \"{{tutor_domain}}\",\n    \"item_type\": \"{{tutor_item_type}}\",\n    \"item_id\": \"{{tutor_item_id}}\",\n    \"item_instance_url\": \"{{tutor_instance_url}}\"\n  },\n  \"target_item\": {\n    \"item_network\": \"{{network}}\",\n    \"item_domain\": \"{{student_domain}}\",\n    \"item_type\": \"{{student_item_type}}\",\n    \"item_id\": \"{{student_item_id}}\",\n    \"item_instance_url\": \"{{student_instance_url}}\"\n  },\n  \"source_item_owner\": \"{{tutor_item_owner}}\",\n  \"requirements_snapshot\": {\n    \"Introduction Message\": \"I can help with the requested learning goal and would like to connect.\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{student_instance_url}}/api/v1/network/action/perform",
+              "host": [
+                "{{student_instance_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "network",
+                "action",
+                "perform"
+              ]
+            },
+            "description": "Direct server-to-server target-instance action API for a tutor-originated connect request. It writes the action on the student instance and mirrors the event back to the tutor instance when configured."
+          }
+        },
+        {
+          "name": "Store Mirrored Event On Source Instance",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"origin_instance_domain\": \"{{origin_instance_domain}}\",\n  \"action_type\": \"{{action_type}}\",\n  \"action_id\": \"{{action_id}}\",\n  \"action_status\": \"{{action_status}}\",\n  \"update_count\": {{update_count}},\n  \"source_item\": {\n    \"item_network\": \"{{source_item_network}}\",\n    \"item_domain\": \"{{source_item_domain}}\",\n    \"item_type\": \"{{source_item_type}}\",\n    \"item_id\": \"{{source_item_id}}\",\n    \"item_instance_url\": \"{{source_instance_url}}\"\n  },\n  \"target_item\": {\n    \"item_network\": \"{{target_item_network}}\",\n    \"item_domain\": \"{{target_item_domain}}\",\n    \"item_type\": \"{{target_item_type}}\",\n    \"item_id\": \"{{target_item_id}}\",\n    \"item_instance_url\": \"{{target_instance_url}}\"\n  },\n  \"source_item_owner\": \"{{source_item_owner}}\",\n  \"target_item_owner\": \"{{target_item_owner}}\",\n  \"source_item_latitude\": null,\n  \"source_item_longitude\": null,\n  \"target_item_latitude\": null,\n  \"target_item_longitude\": null,\n  \"event_payload\": {\n    \"status\": \"accepted\",\n    \"remark\": \"Connect request accepted\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{source_instance_url}}/api/v1/event/store",
+              "host": [
+                "{{source_instance_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "event",
+                "store"
+              ]
+            },
+            "description": "Stores or mirrors an action event on the source-side instance. This is included with the instance-to-instance calls because target instances use it to mirror action lifecycle events back to the source instance."
+          }
+        }
+      ]
+    }
+  ]
+}

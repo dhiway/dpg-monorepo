@@ -1,4 +1,4 @@
--- Example action and event partitions.
+-- Example network/action partitions.
 -- Run `create_actions_events.sql` first.
 
 DO $$
@@ -11,11 +11,20 @@ BEGIN
   END IF;
 END $$;
 
--- Updated to a_p_{action_name} and e_p_{action_name} format
-CREATE TABLE IF NOT EXISTS a_p_connect
+CREATE TABLE IF NOT EXISTS a_p_yellowdot
 PARTITION OF item_actions
+FOR VALUES IN ('yellow_dot')
+PARTITION BY LIST (action_type);
+
+CREATE TABLE IF NOT EXISTS a_p_yellowdot_connect
+PARTITION OF a_p_yellowdot
 FOR VALUES IN ('connect');
 
-CREATE TABLE IF NOT EXISTS e_p_connect
+CREATE TABLE IF NOT EXISTS e_p_yellowdot
 PARTITION OF action_events
+FOR VALUES IN ('yellow_dot')
+PARTITION BY LIST (action_type);
+
+CREATE TABLE IF NOT EXISTS e_p_yellowdot_connect
+PARTITION OF e_p_yellowdot
 FOR VALUES IN ('connect');

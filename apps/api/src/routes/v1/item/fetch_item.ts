@@ -1,16 +1,16 @@
 import z, {
   FetchItemsQuerySchema,
-  ItemSelectSchema,
+  ItemResponseSchema,
 } from '@dpg/schemas';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { type FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
-import { auth_middleware_if_enabled } from '../../../../plugins/auth/auth_middleware';
+import { auth_middleware_if_enabled } from '@api/plugins/auth/auth_middleware';
 import {
   isServedDomainBinding,
   replyForUnservedDomain,
-} from '../../../utils/served_domain_guard';
-import { fetchLocalItems } from '../../../utils/item_fetch_runtime';
-import { getCachedLocalItemFetch } from '../../../utils/item_fetch_cache';
+} from '@/utils/served_domain_guard';
+import { fetchLocalItems } from '@/utils/item_fetch_runtime';
+import { getCachedLocalItemFetch } from '@/utils/item_fetch_cache';
 
 type FetchItemsRequest = FastifyRequest<{
   Querystring: z.infer<typeof FetchItemsQuerySchema>;
@@ -31,7 +31,7 @@ export const fetch_items: FastifyPluginAsyncZod = async function (fastify) {
             limit: z.number(),
             offset: z.number(),
           }),
-          items: ItemSelectSchema.array(),
+          items: ItemResponseSchema.array(),
         }),
       },
     },
@@ -87,6 +87,7 @@ const fetch_items_handler = async (
       radius_meters,
       limit,
       offset,
+      includePrivateState: true,
     };
     const result = await getCachedLocalItemFetch(filters, () =>
       fetchLocalItems(filters)

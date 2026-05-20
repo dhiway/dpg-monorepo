@@ -34,6 +34,8 @@ That package provides:
 
 The API runtime creates the client from environment configuration and passes it into the auth package instead of letting route handlers call the provider directly.
 
+Service source: [dhiway/notification-service on GitHub](https://github.com/dhiway/notification-service.git).
+
 ## Why It Is Treated As A Service
 
 Although this project currently uses a Dhiway-specific provider, notification is not a DPG-specific primitive.

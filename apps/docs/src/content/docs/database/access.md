@@ -72,6 +72,8 @@ The base SQL script creates the partitioned parent tables only.
 Files:
 
 - `packages/database/src/utils/sql_scripts/create_items.sql`
-- `packages/database/src/utils/sql_scripts/create_items_partitions.example.sql`
+- `packages/database/src/utils/sql_scripts/examples/create_items_partitions.example.sql`
+- `packages/database/src/utils/sql_scripts/create_actions_events.sql`
+- `packages/database/src/utils/sql_scripts/examples/create_actions_events_partitions.example.sql`
 
-Use the example file only as a template. Real partitions should be created per network/domain/type deployment needs.
+Use the example files only as templates. Real item partitions should be created per network/domain, and real action/event partitions should be created per network/action.

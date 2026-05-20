@@ -25,6 +25,10 @@ export const items = pgTable(
       .$type<Record<string, unknown>>()
       .notNull()
       .default(sql`'{}'::jsonb`),
+    item_private_state: jsonb('item_private_state')
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     item_latitude: doublePrecision('item_latitude'),
     item_longitude: doublePrecision('item_longitude'),
     created_by: text('created_by').notNull(),

@@ -1,0 +1,445 @@
+{
+  "info": {
+    "name": "Inter-Network Action API",
+    "_postman_id": "inter-network-action-api-collection",
+    "description": "Postman collection for examples/schemas/inter-network-action Yellow Dot to Blue Dot calls.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:2742"
+    },
+    {
+      "key": "yellow_base_url",
+      "value": "http://127.0.0.1:2742"
+    },
+    {
+      "key": "blue_base_url",
+      "value": "http://127.0.0.1:2742"
+    },
+    {
+      "key": "email",
+      "value": "demo@example.com"
+    },
+    {
+      "key": "phone_number",
+      "value": "+911234567890"
+    },
+    {
+      "key": "user_name",
+      "value": "Demo User"
+    },
+    {
+      "key": "otp",
+      "value": "777666"
+    },
+    {
+      "key": "auth_token",
+      "value": ""
+    },
+    {
+      "key": "session_cookie",
+      "value": ""
+    },
+    {
+      "key": "user_id",
+      "value": ""
+    },
+    {
+      "key": "yellow_network",
+      "value": "yellow_dot"
+    },
+    {
+      "key": "blue_network",
+      "value": "blue_dot"
+    },
+    {
+      "key": "yellow_student_domain",
+      "value": "student"
+    },
+    {
+      "key": "yellow_student_item_type",
+      "value": "profile_1.0"
+    },
+    {
+      "key": "yellow_student_item_id",
+      "value": ""
+    },
+    {
+      "key": "yellow_student_instance_url",
+      "value": "http://127.0.0.1:2742"
+    },
+    {
+      "key": "blue_provider_domain",
+      "value": "provider"
+    },
+    {
+      "key": "blue_provider_item_type",
+      "value": "job_posting_1.0"
+    },
+    {
+      "key": "blue_provider_item_id",
+      "value": ""
+    },
+    {
+      "key": "blue_provider_instance_url",
+      "value": "http://127.0.0.1:2742"
+    },
+    {
+      "key": "action_type",
+      "value": "apply"
+    },
+    {
+      "key": "action_id",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Unified OTP flow. Run against the instance you are about to create or update items on.",
+      "item": [
+        {
+          "name": "Check User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"phoneNumber\": \"{{phone_number}}\"\n}"
+            },
+            "url": {
+              "raw": "{{yellow_base_url}}/api/auth/unified-otp/check-user",
+              "host": [
+                "{{yellow_base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "unified-otp",
+                "check-user"
+              ]
+            },
+            "description": "Checks whether a user exists for the configured email or phone number."
+          }
+        },
+        {
+          "name": "Request OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"phoneNumber\": \"{{phone_number}}\",\n  \"name\": \"{{user_name}}\"\n}"
+            },
+            "url": {
+              "raw": "{{yellow_base_url}}/api/auth/unified-otp/request",
+              "host": [
+                "{{yellow_base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "unified-otp",
+                "request"
+              ]
+            },
+            "description": "Requests an OTP for login or signup."
+          }
+        },
+        {
+          "name": "Verify OTP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Verify OTP returns 200', function () { pm.response.to.have.status(200); });",
+                  "const setCookie = pm.response.headers.get('set-cookie');",
+                  "if (setCookie) pm.collectionVariables.set('session_cookie', setCookie);",
+                  "const data = pm.response.json();",
+                  "if (data.token) pm.collectionVariables.set('auth_token', data.token);",
+                  "if (data.user?.id) pm.collectionVariables.set('user_id', data.user.id);",
+                  "if (data.user?.email) pm.collectionVariables.set('user_email', data.user.email);",
+                  "if (data.user?.phoneNumber) pm.collectionVariables.set('user_phone', data.user.phoneNumber);",
+                  "if (data.user?.name) pm.collectionVariables.set('user_display_name', data.user.name);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"phoneNumber\": \"{{phone_number}}\",\n  \"name\": \"{{user_name}}\",\n  \"otp\": \"{{otp}}\",\n  \"rememberMe\": true\n}"
+            },
+            "url": {
+              "raw": "{{yellow_base_url}}/api/auth/unified-otp/verify",
+              "host": [
+                "{{yellow_base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "unified-otp",
+                "verify"
+              ]
+            },
+            "description": "Verifies OTP and stores useful auth variables."
+          }
+        },
+        {
+          "name": "Get Session",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{yellow_base_url}}/api/auth/get-session",
+              "host": [
+                "{{yellow_base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "get-session"
+              ]
+            },
+            "description": "Returns the current Better Auth session for the selected instance."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Inter-Network Schemas",
+      "description": "Inspect yellow_dot and blue_dot schemas used by this inter-network example.",
+      "item": [
+        {
+          "name": "Fetch Yellow Student Schema",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{yellow_base_url}}/api/v1/network/schema/{{yellow_network}}/{{yellow_student_domain}}/{{yellow_student_item_type}}",
+              "host": [
+                "{{yellow_base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "network",
+                "schema",
+                "{{yellow_network}}",
+                "{{yellow_student_domain}}",
+                "{{yellow_student_item_type}}"
+              ]
+            },
+            "description": "Fetches the Yellow Dot student profile schema."
+          }
+        },
+        {
+          "name": "Fetch Blue Provider Schema",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{blue_base_url}}/api/v1/network/schema/{{blue_network}}/{{blue_provider_domain}}/{{blue_provider_item_type}}",
+              "host": [
+                "{{blue_base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "network",
+                "schema",
+                "{{blue_network}}",
+                "{{blue_provider_domain}}",
+                "{{blue_provider_item_type}}"
+              ]
+            },
+            "description": "Fetches the Blue Dot provider job posting schema."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Inter-Network Items",
+      "description": "Create source and target items used by the cross-network action.",
+      "item": [
+        {
+          "name": "Create Yellow Student",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Create yellow student returns 201', function () { pm.response.to.have.status(201); });",
+                  "const data = pm.response.json(); if (data.item_id) pm.collectionVariables.set('yellow_student_item_id', data.item_id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"item_network\": \"{{yellow_network}}\",\n  \"item_domain\": \"{{yellow_student_domain}}\",\n  \"item_type\": \"{{yellow_student_item_type}}\",\n  \"item_state\": {\n    \"name\": \"Asha Student\",\n    \"location\": {\n      \"city\": \"Bengaluru\",\n      \"state\": \"Karnataka\",\n      \"country\": \"India\",\n      \"postal_code\": \"560001\"\n    },\n    \"email\": \"asha@example.com\",\n    \"phone\": \"9876543210\",\n    \"grade\": \"11\",\n    \"preferred_subject\": \"career readiness\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{yellow_student_instance_url}}/api/v1/item/create",
+              "host": [
+                "{{yellow_student_instance_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "item",
+                "create"
+              ]
+            },
+            "description": "Creates the Yellow Dot student item that applies to a Blue Dot job."
+          }
+        },
+        {
+          "name": "Create Blue Provider Job",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Create blue provider job returns 201', function () { pm.response.to.have.status(201); });",
+                  "const data = pm.response.json(); if (data.item_id) pm.collectionVariables.set('blue_provider_item_id', data.item_id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"item_network\": \"{{blue_network}}\",\n  \"item_domain\": \"{{blue_provider_domain}}\",\n  \"item_type\": \"{{blue_provider_item_type}}\",\n  \"item_state\": {\n    \"company_name\": \"Blue Jobs Pvt Ltd\",\n    \"role\": \"Apprentice associate\",\n    \"city\": \"Bengaluru\",\n    \"employment_type\": \"internship\",\n    \"salary_range\": \"15000-22000\",\n    \"required_skills\": [\n      \"communication\",\n      \"basic computer skills\"\n    ]\n  }\n}"
+            },
+            "url": {
+              "raw": "{{blue_provider_instance_url}}/api/v1/item/create",
+              "host": [
+                "{{blue_provider_instance_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "item",
+                "create"
+              ]
+            },
+            "description": "Creates the Blue Dot provider job posting target item."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Inter-Network Actions",
+      "description": "Cross-network action calls between Yellow Dot and Blue Dot.",
+      "item": [
+        {
+          "name": "Yellow Student Applies To Blue Provider",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Cross-network action returns 201', function () { pm.response.to.have.status(201); });",
+                  "const data = pm.response.json(); if (data.action_id) pm.collectionVariables.set('action_id', data.action_id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action_type\": \"apply\",\n  \"source_item\": {\n    \"item_network\": \"{{yellow_network}}\",\n    \"item_domain\": \"{{yellow_student_domain}}\",\n    \"item_type\": \"{{yellow_student_item_type}}\",\n    \"item_id\": \"{{yellow_student_item_id}}\"\n  },\n  \"target_item\": {\n    \"item_network\": \"{{blue_network}}\",\n    \"item_domain\": \"{{blue_provider_domain}}\",\n    \"item_type\": \"{{blue_provider_item_type}}\",\n    \"item_id\": \"{{blue_provider_item_id}}\",\n    \"item_instance_url\": \"{{blue_provider_instance_url}}\"\n  },\n  \"requirements_snapshot\": {\n    \"job_id\": \"job-001\",\n    \"cover_note\": \"I am interested in this role and meet the eligibility criteria.\",\n    \"eligibility_confirmation\": true,\n    \"resume_url\": \"https://example.com/resume.pdf\",\n    \"portfolio_url\": \"https://example.com/portfolio\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{yellow_student_instance_url}}/api/v1/action/perform",
+              "host": [
+                "{{yellow_student_instance_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "action",
+                "perform"
+              ]
+            },
+            "description": "Public source-instance API for a Yellow Dot student applying to a Blue Dot provider job posting."
+          }
+        },
+        {
+          "name": "Direct Network Action Yellow To Blue",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action_type\": \"apply\",\n  \"source_item\": {\n    \"item_network\": \"{{yellow_network}}\",\n    \"item_domain\": \"{{yellow_student_domain}}\",\n    \"item_type\": \"{{yellow_student_item_type}}\",\n    \"item_id\": \"{{yellow_student_item_id}}\",\n    \"item_instance_url\": \"{{yellow_student_instance_url}}\"\n  },\n  \"target_item\": {\n    \"item_network\": \"{{blue_network}}\",\n    \"item_domain\": \"{{blue_provider_domain}}\",\n    \"item_type\": \"{{blue_provider_item_type}}\",\n    \"item_id\": \"{{blue_provider_item_id}}\",\n    \"item_instance_url\": \"{{blue_provider_instance_url}}\"\n  },\n  \"source_item_owner\": \"{{user_id}}\",\n  \"requirements_snapshot\": {\n    \"job_id\": \"job-001\",\n    \"cover_note\": \"Direct server-to-server diagnostic request.\",\n    \"eligibility_confirmation\": true\n  }\n}"
+            },
+            "url": {
+              "raw": "{{blue_provider_instance_url}}/api/v1/network/action/perform",
+              "host": [
+                "{{blue_provider_instance_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "network",
+                "action",
+                "perform"
+              ]
+            },
+            "description": "Internal target-instance API for diagnosing the Yellow Dot to Blue Dot apply action."
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -2,7 +2,7 @@
 node_modules/
 v10/
 .codacy
-
+.pnpm-store
 # Build Outputs
 dist/
 build/

@@ -1,11 +1,9 @@
 {
-  "name": "blue_dot",
   "display_name": "Blue Dot",
   "description": "Jobs and hiring network.",
   "schema_standard": "https://json-schema.org/draft/2020-12/schema",
   "domains": [
     {
-      "name": "seeker",
       "description": "People looking for jobs.",
       "minimum_cache_ttl_seconds": 300,
       "item_schemas": {
@@ -14,35 +12,94 @@
           "title": "Job Seeker Profile 1.0",
           "type": "object",
           "additionalProperties": false,
-          "required": ["name", "skills", "preferred_city", "experience_years"],
+          "required": [
+            "name",
+            "gender",
+            "location",
+            "age",
+            "phone"
+          ],
           "properties": {
             "name": {
               "type": "string",
               "minLength": 1
             },
-            "skills": {
-              "type": "array",
-              "minItems": 1,
-              "items": {
-                "type": "string"
-              }
+            "gender": {
+              "type": "string",
+              "minItems": 1
             },
-            "preferred_city": {
+            "location": {
               "type": "string"
             },
-            "experience_years": {
-              "type": "integer",
-              "minimum": 0
+            "phone": {
+              "type": "string",
+              "minimum": 10
             },
-            "open_to_remote": {
-              "type": "boolean"
+            "age": {
+              "type": "integer",
+              "minimum": 14,
+              "maximum": 65
+            },
+            "workExperience": {
+              "type": "string",
+              "enum": [
+                "Fresher",
+                "Worked before",
+                "Returning after a break"
+              ]
+            },
+            "workExperienceYearsConditional": {
+              "type": "string",
+              "enum": [
+                "0",
+                "< 1 Year",
+                "1 Year",
+                "2 Years",
+                "3 Years",
+                "3-5 Years",
+                "5-10 Years",
+                "10-15 Years",
+                "15+ Years",
+                "Other"
+              ]
+            },
+            "highestQualificationOrSkill": {
+              "type": "string",
+              "enum": [
+                "School",
+                "College",
+                "ITI / Other Vocational Trainings",
+                "Certification / Learned on the job"
+              ]
+            },
+            "natureOfJobsInterestedIn": {
+              "type": "string",
+              "enum": [
+                "Internship",
+                "Apprenticeship",
+                "Full-time",
+                "Flexible"
+              ]
+            },
+            "nameOfJobRolesInterestedIn": {
+              "type": "string",
+              "minLength": 1
+            },
+            "otherHelpNeeded": {
+              "type": "string",
+              "enum": [
+                "Training",
+                "Accommodation",
+                "Travel",
+                "Other"
+              ]
             }
           }
         }
-      }
+      },
+      "id": "seeker"
     },
     {
-      "name": "provider",
       "description": "Employers and recruiters posting jobs.",
       "minimum_cache_ttl_seconds": 300,
       "item_schemas": {
@@ -51,166 +108,187 @@
           "title": "Job Posting 1.0",
           "type": "object",
           "additionalProperties": false,
-          "required": ["company_name", "role", "city", "employment_type"],
+          "required": [
+            "jobProviderName",
+            "role",
+            "jobProviderLocation",
+            "hiringManagerName",
+            "hiringManagerPhoneNumber",
+            "hiringManagerEmail",
+            "positions",
+            "natureOfJob"
+          ],
           "properties": {
-            "company_name": {
+            "jobProviderName": {
               "type": "string",
               "minLength": 1
+            },
+            "jobProviderLocation": {
+              "type": "string"
+            },
+            "hiringManagerName": {
+              "type": "string",
+              "minLength": 1
+            },
+            "hiringManagerPhoneNumber": {
+              "type": "string"
+            },
+            "hiringManagerEmail": {
+              "type": "string"
             },
             "role": {
               "type": "string",
               "minLength": 1
             },
-            "city": {
-              "type": "string"
+            "positions": {
+              "type": "integer",
+              "minimum": 1
             },
-            "employment_type": {
+            "natureOfJob": {
               "type": "string",
-              "enum": ["full_time", "part_time", "contract", "internship"]
+              "enum": [
+                "Internship",
+                "Apprenticeship",
+                "Full-time",
+                "Flexible"
+              ]
             },
-            "salary_range": {
-              "type": "string"
+            "stipendMin": {
+              "type": "number",
+              "title": "Monthly In-hand Stipend (INR) min",
+              "minimum": 0
             },
-            "required_skills": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
+            "stipendMax": {
+              "type": "number",
+              "title": "Monthly In-hand Stipend (INR) max",
+              "minimum": 0
+            },
+            "salaryMin": {
+              "type": "number",
+              "title": "Monthly In-hand Salary (INR) min",
+              "minimum": 0
+            },
+            "salaryMax": {
+              "type": "number",
+              "title": "Monthly In-hand Salary (INR) max",
+              "minimum": 0
+            },
+            "taskRateMin": {
+              "type": "number",
+              "title": "Per Task (INR) min",
+              "minimum": 0
+            },
+            "taskRateMax": {
+              "type": "number",
+              "title": "Per Task (INR) max",
+              "minimum": 0
+            },
+            "candidateExperienceType": {
+              "type": "string",
+              "enum": [
+                "Fresher",
+                "Worked before",
+                "Returning after a break"
+              ]
+            },
+            "minEducationalInstitute": {
+              "type": "string",
+              "enum": [
+                "School",
+                "College",
+                "ITI",
+                "Other Vocational Training",
+                "Certifications",
+                "None"
+              ]
+            },
+            "workExperienceYears": {
+              "type": "string",
+              "enum": [
+                "0",
+                "< 1 Year",
+                "1 Year",
+                "2 Years",
+                "3 Years",
+                "3-5 Years",
+                "5-10 Years",
+                "10-15 Years",
+                "15+ Years",
+                "Other"
+              ]
+            },
+            "lastRoleHeld": {
+              "type": "string",
+              "minLength": 1
             }
           }
         }
-      }
+      },
+      "id": "provider"
     }
   ],
   "instances": [
     {
-      "domain_name": "seeker",
-      "instance_name": "Blue Dot Seeker Localhost",
+      "instance_name": "Blue Dot Seeker Local",
       "instance_url": "__PUBLIC_API_URL__",
-      "custom_item_schema_urls": {}
+      "custom_item_schema_urls": {},
+      "domain_id": "seeker"
     },
     {
-      "domain_name": "provider",
-      "instance_name": "Blue Dot Provider Localhost",
+      "instance_name": "Blue Dot Provider Local",
       "instance_url": "__PUBLIC_API_URL__",
-      "custom_item_schema_urls": {}
-    }
-  ],
-  "cross_network_origins": [
+      "custom_item_schema_urls": {},
+      "domain_id": "provider"
+    },
     {
-      "name": "yellow_dot",
-      "display_name": "Yellow Dot",
-      "schema_url": "http://localhost:8080/yellow_dot/network.json"
+      "instance_name": "Blue Dot Seeker",
+      "instance_url": "https://ubi-backend.onest.dhiway.net",
+      "custom_item_schema_urls": {},
+      "domain_id": "seeker"
+    },
+    {
+      "instance_name": "Blue Dot Provider",
+      "instance_url": "https://ubi-backend.onest.dhiway.net",
+      "custom_item_schema_urls": {},
+      "domain_id": "provider"
     }
   ],
   "actions": {
-    "invite": {
-      "description": "Lets a provider invite a seeker to apply to one of their job postings.",
-      "interactions": [
-        {
-          "from_network": "blue_dot",
-          "from_domain": "provider",
-          "from_items": ["job_posting_1.0"],
-          "to_network": "blue_dot",
-          "to_domain": "seeker",
-          "to_items": ["profile_1.0"],
-          "requirement_schema": {
-            "$schema": "https://json-schema.org/draft/2020-12/schema",
-            "title": "Job Invitation Requirement",
-            "type": "object",
-            "additionalProperties": false,
-            "required": ["role", "message"],
-            "properties": {
-              "role": {
-                "type": "string",
-                "minLength": 1
-              },
-              "message": {
-                "type": "string",
-                "minLength": 1
-              },
-              "salary_range": {
-                "type": "string"
-              }
-            }
-          },
-          "event_schema": {
-            "$schema": "https://json-schema.org/draft/2020-12/schema",
-            "title": "Job Invitation Event",
-            "type": "object",
-            "additionalProperties": false,
-            "required": ["status", "remark"],
-            "properties": {
-              "status": {
-                "type": "string",
-                "enum": ["sent", "accepted", "declined"]
-              },
-              "remark": {
-                "type": "string"
-              }
-            }
-          }
-        }
-      ]
-    },
     "apply": {
-      "description": "Lets a seeker apply to a provider's job posting. Also accepts yellow_dot students applying cross-network.",
+      "description": "Lets a seeker and provider to invite each other.",
       "interactions": [
-        {
-          "from_network": "yellow_dot",
-          "from_domain": "student",
-          "from_items": ["profile_1.0", "profile_1.1"],
-          "to_network": "blue_dot",
-          "to_domain": "provider",
-          "to_items": ["job_posting_1.0"],
-          "requirement_schema": {
-            "$schema": "https://json-schema.org/draft/2020-12/schema",
-            "title": "Cross-network Student Application Requirement",
-            "type": "object",
-            "additionalProperties": false,
-            "required": ["cover_note"],
-            "properties": {
-              "cover_note": { "type": "string", "minLength": 1 },
-              "expected_start": { "type": "string" }
-            }
-          },
-          "event_schema": {
-            "$schema": "https://json-schema.org/draft/2020-12/schema",
-            "title": "Cross-network Student Application Event",
-            "type": "object",
-            "additionalProperties": false,
-            "required": ["status", "remark"],
-            "properties": {
-              "status": { "type": "string", "enum": ["submitted", "shortlisted", "rejected"] },
-              "remark": { "type": "string" }
-            }
-          }
-        },
         {
           "from_network": "blue_dot",
           "from_domain": "seeker",
-          "from_items": ["profile_1.0"],
           "to_network": "blue_dot",
           "to_domain": "provider",
-          "to_items": ["job_posting_1.0", "job_posting_1.1"],
           "requirement_schema": {
             "$schema": "https://json-schema.org/draft/2020-12/schema",
             "title": "Job Application Requirement",
             "type": "object",
             "additionalProperties": false,
-            "required": ["job_id", "cover_note"],
+            "required": [
+              "role",
+              "workExperience",
+              "age"
+            ],
             "properties": {
-              "job_id": {
+              "role": {
                 "type": "string",
                 "minLength": 1
               },
-              "cover_note": {
-                "type": "string",
-                "minLength": 1
+              "age": {
+                "type": "integer",
+                "minimum": 14,
+                "maximum": 65
               },
-              "resume_url": {
+              "workExperience": {
                 "type": "string",
-                "format": "uri"
+                "enum": [
+                  "Fresher",
+                  "Worked before",
+                  "Returning after a break"
+                ]
               }
             }
           },
@@ -219,11 +297,81 @@
             "title": "Job Application Event",
             "type": "object",
             "additionalProperties": false,
-            "required": ["status", "remark"],
+            "required": [
+              "status",
+              "remark"
+            ],
             "properties": {
               "status": {
                 "type": "string",
-                "enum": ["submitted", "shortlisted", "rejected"]
+                "enum": [
+                  "created",
+                  "submitted",
+                  "shortlisted",
+                  "rejected"
+                ]
+              },
+              "remark": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "from_network": "blue_dot",
+          "from_domain": "provider",
+          "to_network": "blue_dot",
+          "to_domain": "seeker",
+          "requirement_schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "title": "Interview Invitation Requirement",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "role",
+              "interview_time",
+              "interview_mode"
+            ],
+            "properties": {
+              "role": {
+                "type": "string",
+                "minLength": 1
+              },
+              "interview_time": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "interview_mode": {
+                "type": "string",
+                "enum": [
+                  "in_person",
+                  "online",
+                  "phone"
+                ]
+              },
+              "message_to_candidate": {
+                "type": "string"
+              }
+            }
+          },
+          "event_schema": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "title": "Interview Invitation Event",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "status",
+              "remark"
+            ],
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "created",
+                  "invited",
+                  "accepted",
+                  "rejected"
+                ]
               },
               "remark": {
                 "type": "string"
@@ -233,5 +381,6 @@
         }
       ]
     }
-  }
+  },
+  "id": "blue_dot"
 }

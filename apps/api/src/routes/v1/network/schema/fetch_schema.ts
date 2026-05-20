@@ -3,13 +3,13 @@ import z, {
   getInstanceCustomItemSchemaUrl,
 } from '@dpg/schemas';
 import { type FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
-import { getCurrentApiBaseUrl } from '../../../../config';
-import { getNetworkConfigByName } from '../../../../network_configs';
-import { getOrFetchSchemaByUrl } from '../../../../network_schema_cache';
+import { getCurrentApiBaseUrl } from '@/config';
+import { getNetworkConfigById } from '@/network_configs';
+import { getOrFetchSchemaByUrl } from '@/network_schema_cache';
 import {
   isServedDomainBinding,
   replyForUnservedDomain,
-} from '../../../../utils/served_domain_guard';
+} from '@/utils/served_domain_guard';
 
 const ReadSchemaParamsSchema = z.object({
   network: z.string().min(1),
@@ -36,7 +36,7 @@ export const fetch_schema: FastifyPluginAsyncZod = async function (fastify) {
         );
       }
 
-      const networkConfig = await getNetworkConfigByName(params.network);
+      const networkConfig = await getNetworkConfigById(params.network);
       const currentInstanceUrl = getCurrentApiBaseUrl();
       const customSchemaUrl = getInstanceCustomItemSchemaUrl(networkConfig, {
         domain: params.domain,

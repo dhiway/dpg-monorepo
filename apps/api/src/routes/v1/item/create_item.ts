@@ -4,23 +4,24 @@ import z, {
   getDomainItemSchema,
   getDomainItemTypes,
   getInstanceCustomItemSchemaUrl,
+  splitItemStateByPrivacy,
   validateAgainstJsonSchema,
 } from '@dpg/schemas';
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { db } from '../../../../db/postgres/drizzle_config';
+import { db } from '@api/db/postgres/drizzle_config';
 import { DrizzleQueryError } from 'drizzle-orm';
 import { DatabaseError, ensureItemPartition, items } from '@dpg/database';
-import { auth_middleware_if_enabled } from '../../../../plugins/auth/auth_middleware';
+import { auth_middleware_if_enabled } from '@api/plugins/auth/auth_middleware';
 import {
   isServedDomainBinding,
   replyForUnservedDomain,
-} from '../../../utils/served_domain_guard';
-import { getNetworkConfigByName } from '../../../network_configs';
+} from '@/utils/served_domain_guard';
+import { getNetworkConfigById } from '@/network_configs';
 import {
   buildNetworkItemSchemaUrl,
   getOrFetchSchemaByUrl,
-} from '../../../network_schema_cache';
-import { apiConfig, getCurrentApiBaseUrl } from '../../../config';
+} from '@/network_schema_cache';
+import { apiConfig, getCurrentApiBaseUrl } from '@/config';
 
 type CreateItemRequest = FastifyRequest<{
   Body: z.infer<typeof CreateItemBodySchema>;
@@ -49,17 +50,41 @@ export const create_item_handler = async (
   request: CreateItemRequest,
   reply: FastifyReply
 ) => {
-  const userId = request.user?.id;
+  const callerId = request.user?.id;
+  const callerRole = request.user?.role;
   const body = request.body;
+  const submittedItemState = body.item_state ?? {};
   const itemInstanceUrl = getCurrentApiBaseUrl();
   let itemSchemaUrl = `${itemInstanceUrl}/api/v1/network/schema/${encodeURIComponent(body.item_network)}/${encodeURIComponent(body.item_domain)}/${encodeURIComponent(body.item_type)}`;
+  let itemState = {
+    publicState: submittedItemState,
+    privateState: {},
+  };
 
-  if (!userId) {
+  if (!callerId) {
     return reply.code(401).send({
       error: 'UNAUTHORIZED',
       message: 'Authenticated user is required to create an item',
     });
   }
+
+  const isAdmin = callerRole === 'admin';
+
+  if (!isAdmin && body.created_by) {
+    return reply.code(403).send({
+      error: 'FORBIDDEN_CREATED_BY',
+      message: 'Only admin callers may set created_by',
+    });
+  }
+
+  if (isAdmin && !body.created_by) {
+    return reply.code(400).send({
+      error: 'CREATED_BY_REQUIRED',
+      message: 'created_by is required when an admin creates an item',
+    });
+  }
+
+  const userId = isAdmin ? (body.created_by as string) : callerId;
 
   if (!isServedDomainBinding(body.item_network, body.item_domain)) {
     return await replyForUnservedDomain(
@@ -70,7 +95,7 @@ export const create_item_handler = async (
   }
 
   try {
-    const networkConfig = await getNetworkConfigByName(body.item_network);
+    const networkConfig = await getNetworkConfigById(body.item_network);
     const supportedItemTypes = getDomainItemTypes(
       networkConfig,
       body.item_domain
@@ -115,9 +140,10 @@ export const create_item_handler = async (
         }) ?? itemSchemaUrl;
     }
 
-    validateAgainstJsonSchema(itemSchema, body.item_state, 'item_state', {
+    validateAgainstJsonSchema(itemSchema, submittedItemState, 'item_state', {
       allowAdditionalProperties: apiConfig.allow_extra_schema_data,
     });
+    itemState = splitItemStateByPrivacy(itemSchema, submittedItemState);
   } catch (err) {
     return reply.code(400).send({
       error: 'INVALID_ITEM_STATE',
@@ -129,8 +155,7 @@ export const create_item_handler = async (
     await ensureItemPartition(
       db,
       body.item_network,
-      body.item_domain,
-      body.item_type
+      body.item_domain
     );
   } catch (err) {
     request.log.error(
@@ -161,7 +186,8 @@ export const create_item_handler = async (
 
         item_schema_url: itemSchemaUrl,
 
-        item_state: body.item_state,
+        item_state: itemState.publicState,
+        item_private_state: itemState.privateState,
         item_latitude: body.item_latitude ?? null,
         item_longitude: body.item_longitude ?? null,
         created_by: userId,

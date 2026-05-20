@@ -3,7 +3,7 @@ import {
   parseNetworkConfigDocument,
 } from '@dpg/schemas';
 import { loadNetworkConfigs } from '@dpg/config';
-import { apiConfig } from './config';
+import { apiConfig } from '@/config';
 
 let networkConfigsPromise: Promise<NetworkConfigDocument[]> | null = null;
 
@@ -32,14 +32,14 @@ export async function refreshNetworkConfigs(): Promise<NetworkConfigDocument[]> 
   return networkConfigsPromise;
 }
 
-export async function getNetworkConfigByName(
-  networkName: string
+export async function getNetworkConfigById(
+  networkId: string
 ): Promise<NetworkConfigDocument> {
   const configs = await getNetworkConfigs();
-  const config = configs.find((entry) => entry.name === networkName);
+  const config = configs.find((entry) => entry.id === networkId);
 
   if (!config) {
-    throw new Error(`Network "${networkName}" is not configured.`);
+    throw new Error(`Network "${networkId}" is not configured.`);
   }
 
   return config;

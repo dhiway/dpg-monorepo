@@ -1,67 +1,40 @@
 # Postman Files
 
-Files:
+`examples/postman` contains only the schema-agnostic collection:
 
 - `dpg.postman_collection.json`
 - `dpg.local.postman_environment.json`
 
-## What This Collection Does
+Use it when one API instance serves one configured `network/domain` and you want a neutral request template. The request bodies intentionally contain placeholder JSON for `item_state` and `requirements_snapshot`; fill those fields from the schema returned by `Network Schemas / Fetch Item Schema`.
 
-- runs the unified OTP auth flow
-- stores the returned session token in `auth_token`
-- stores the raw `set-cookie` header in `session_cookie`
-- stores user fields in variables:
-  - `user_id`
-  - `user_email`
-  - `user_phone`
-  - `user_display_name`
-- includes item, action, event, ownership fetch, and network schema requests
+## Schema-Specific Collections
 
-Postman should also keep the Better Auth session cookie in its cookie jar automatically for the same host.
+Concrete example schemas keep their own collections next to the schema they exercise:
 
-## Recommended Order
+- `examples/schemas/yellow_dot/postman/yellow_dot.postman_collection.json`
+- `examples/schemas/yellow_dot/postman/yellow_dot.local.postman_environment.json`
+- `examples/schemas/blue_dot/postman/blue_dot.postman_collection.json`
+- `examples/schemas/blue_dot/postman/blue_dot.local.postman_environment.json`
+- `examples/schemas/inter-network-action/postman/inter_network_action.postman_collection.json`
+- `examples/schemas/inter-network-action/postman/inter_network_action.local.postman_environment.json`
 
-1. `Auth / Check User`
-2. `Auth / Request OTP`
-3. `Auth / Verify OTP`
-4. `Auth / Get Session`
-5. `Network Schemas / Fetch Concrete Item Schema`
-6. `Items / Create Item`
-7. `Items / Fetch My Local Items`
-8. `Actions / Fetch My Actions`
-9. `Actions / Perform Action`
-10. `Actions / Perform Network Action` for internal target-instance testing only
-11. `Events / Fetch My Events`
-12. `Events / Store Event`
+Use those collections when you want prefilled schema-valid payloads for the example network.
 
-## About Schema Import
+## Generic Collection Flow
 
-Partially possible.
+1. Import `dpg.postman_collection.json`.
+2. Import `dpg.local.postman_environment.json`.
+3. Select `DPG Single Domain Local` in Postman.
+4. Set `base_url`, `network`, `domain`, and `item_type`.
+5. Run `Auth / Check User`, `Request OTP`, `Verify OTP`, and `Get Session`.
+6. Run `Network Schemas / Fetch Item Schema`.
+7. Replace placeholder request bodies in `Items` and `Actions And Events` with schema-valid data.
 
-What works well:
+The `Instance-to-Instance Diagnostics` folder is for direct testing of APIs normally called by DPG instances. Normal client flows should use `Items`, `Actions And Events`, and `Network Schemas`.
 
-- you can call `GET /api/v1/network/schema/:network/:domain/:itemType`
-- you can call `GET /api/v1/network/schemas`
-- those responses help the user inspect the schema before filling payloads
+## Choosing A Collection
 
-What Postman does not do well by default:
-
-- it does not automatically turn your runtime JSON Schema into a live request form for `item_state`, `requirements_snapshot`, or `event_payload`
-
-So in the current collection:
-
-- schema fetch requests are included
-- request bodies are prefilled with example payloads
-- variables are used where possible
-
-## Action Payload Notes
-
-- `Actions / Perform Action` is the public source-instance API
-- `Actions / Fetch My Actions` filters directly on stored `source_item_owner` and `target_item_owner`
-- it sends the selected target item's `item_instance_url`
-- it does not send `source_instance_url`; the service derives that from its own runtime config
-- `Actions / Perform Network Action` is the internal target-instance API for direct server-to-server testing
-- `Events / Fetch My Events` filters directly on stored `source_item_owner` and `target_item_owner`
-- `Events / Store Event` now uses the latest event contract with owner ids, `origin_instance_domain`, `action_status`, `update_count`, and item instance URLs
-
-If you want, a next step is to generate a second collection variant that embeds more concrete payload examples for `yellow_dot` and `blue_dot`.
+- Use `examples/postman` for a generic single-domain API instance.
+- Use `examples/schemas/yellow_dot/postman` for the current Yellow Dot schema.
+- Use `examples/schemas/blue_dot/postman` for the current Blue Dot schema.
+- Use `examples/schemas/inter-network-action/postman` for Yellow Dot to Blue Dot cross-network action calls.

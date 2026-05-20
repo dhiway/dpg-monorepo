@@ -2,8 +2,11 @@ import { items } from '@dpg/database';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import z from 'zod';
 export const ItemSelectSchema = createSelectSchema(items);
+export const ItemResponseSchema = ItemSelectSchema.omit({
+  item_private_state: true,
+});
 export const ItemInsertSchema = createInsertSchema(items);
-export const ItemSnapshotSchema = ItemSelectSchema.omit({
+export const ItemSnapshotSchema = ItemResponseSchema.omit({
   created_by: true,
   created_at: true,
   updated_at: true,
@@ -14,8 +17,11 @@ export const CreateItemBodySchema = ItemInsertSchema.omit({
   item_id: true,
   item_instance_url: true,
   item_schema_url: true,
+  item_private_state: true,
   created_at: true,
   updated_at: true,
+}).extend({
+  created_by: z.string().min(1).optional(),
 });
 
 const FetchItemsSchemaBase = z.object({
@@ -91,6 +97,7 @@ export const UpdateItemBodySchema = ItemInsertSchema.omit({
   item_domain: true,
   item_type: true,
   item_id: true,
+  item_private_state: true,
   created_at: true,
   updated_at: true,
 })

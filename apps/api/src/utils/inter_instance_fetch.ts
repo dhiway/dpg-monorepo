@@ -2,14 +2,14 @@ import {
   getDomainMinimumCacheTtlSeconds,
   type NetworkConfigDocument,
 } from '@dpg/schemas';
-import { redis } from '../../db/secondary/redis';
-import { getCurrentApiBaseUrl } from '../config';
-import { isServedDomainBinding } from './served_domain_guard';
+import { redis } from '@api/db/secondary/redis';
+import { getCurrentApiBaseUrl } from '@/config';
+import { isServedDomainBinding } from '@/utils/served_domain_guard';
 import {
   countLocalItems,
   fetchLocalItems,
   type ItemFetchFilters,
-} from './item_fetch_runtime';
+} from '@/utils/item_fetch_runtime';
 
 type InstanceCount = {
   instanceUrl: string;
@@ -80,7 +80,7 @@ export async function fetchItemsAcrossInstances(input: {
   }
 
   const domainInstances = input.networkConfig.instances.filter(
-    (instance) => instance.domain_name === input.filters.item_domain
+    (instance) => instance.domain_id === input.filters.item_domain
   );
 
   const counts = await Promise.all(

@@ -5,21 +5,21 @@ import z, {
 } from '@dpg/schemas';
 import { type FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { db } from '../../../../db/postgres/drizzle_config';
-import { auth_middleware_if_enabled } from '../../../../plugins/auth/auth_middleware';
+import { db } from '@api/db/postgres/drizzle_config';
+import { auth_middleware_if_enabled } from '@api/plugins/auth/auth_middleware';
 import {
   ensureActionEventPartition,
   item_actions,
 } from '@dpg/database';
-import { getCurrentApiBaseUrl } from '../../../config';
-import { getNetworkConfigByName } from '../../../network_configs';
+import { getCurrentApiBaseUrl } from '@/config';
+import { getNetworkConfigById } from '@/network_configs';
 import {
   buildActionEventPayload,
   fetchLocalItemSnapshot,
   insertActionEvent,
   mirrorActionEventToSourceInstance,
   validateActionEventPayload,
-} from '../../../utils/action_event_runtime';
+} from '@/utils/action_event_runtime';
 
 type UpdateActionStatusRequest = FastifyRequest<{
   Body: z.infer<typeof UpdateActionStatusBodySchema>;
@@ -27,7 +27,7 @@ type UpdateActionStatusRequest = FastifyRequest<{
 
 const UpdateActionStatusResponseSchema = z.object({
   action_id: z.string(),
-  action_name: z.string(),
+  action_type: z.string(),
   action_status: z.string(),
   update_count: z.number().int().nonnegative(),
 });
@@ -69,9 +69,9 @@ export const update_action_status_handler = async (
   let interaction: ReturnType<typeof getActionInteraction>;
 
   try {
-    const networkConfig = await getNetworkConfigByName(existingAction.target_item_network);
+    const networkConfig = await getNetworkConfigById(existingAction.target_item_network);
     interaction = getActionInteraction(networkConfig, {
-      actionName: existingAction.action_name,
+      actionType: existingAction.action_type,
       fromNetwork: existingAction.source_item_network,
       fromDomain: existingAction.source_item_domain,
       fromItemType: existingAction.source_item_type,
@@ -91,7 +91,7 @@ export const update_action_status_handler = async (
     action_status: body.action_status,
     remarks: body.remarks,
     context: {
-      action_name: existingAction.action_name,
+      action_type: existingAction.action_type,
       source_item: {
         item_network: existingAction.source_item_network,
         item_domain: existingAction.source_item_domain,
@@ -123,13 +123,17 @@ export const update_action_status_handler = async (
   }
 
   try {
-    await ensureActionEventPartition(db, existingAction.action_name);
+    await ensureActionEventPartition(
+      db,
+      existingAction.target_item_network,
+      existingAction.action_type
+    );
   } catch (err) {
     request.log.error(
       {
         err,
         action_id: existingAction.action_id,
-        action_name: existingAction.action_name,
+        action_type: existingAction.action_type,
       },
       'Failed to ensure action event partition'
     );
@@ -152,7 +156,7 @@ export const update_action_status_handler = async (
     .where(eq(item_actions.action_id, existingAction.action_id))
     .returning({
       action_id: item_actions.action_id,
-      action_name: item_actions.action_name,
+      action_type: item_actions.action_type,
       action_status: item_actions.action_status,
       update_count: item_actions.update_count,
       source_item_network: item_actions.source_item_network,
@@ -190,7 +194,7 @@ export const update_action_status_handler = async (
 
   const storedEvent = {
     origin_instance_domain: getCurrentApiBaseUrl(),
-    action_name: updatedAction.action_name,
+    action_type: updatedAction.action_type,
     action_id: updatedAction.action_id,
     action_status: updatedAction.action_status,
     update_count: updatedAction.update_count,
@@ -225,7 +229,7 @@ export const update_action_status_handler = async (
 
   return reply.code(200).send({
     action_id: updatedAction.action_id,
-    action_name: updatedAction.action_name,
+    action_type: updatedAction.action_type,
     action_status: updatedAction.action_status,
     update_count: updatedAction.update_count,
   });

@@ -6,8 +6,8 @@ import z, {
 } from '@dpg/schemas';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { type FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
-import { auth_middleware_if_enabled } from '../../../../plugins/auth/auth_middleware';
-import { db } from '../../../../db/postgres/drizzle_config';
+import { auth_middleware_if_enabled } from '@api/plugins/auth/auth_middleware';
+import { db } from '@api/db/postgres/drizzle_config';
 
 type FetchOwnedActionsRequest = FastifyRequest<{
   Querystring: z.infer<typeof FetchOwnedActionsQuerySchema>;
@@ -53,7 +53,7 @@ const fetch_actions_handler = async (
 
   const {
     action_id,
-    action_name,
+    action_type,
     action_status,
     item_id,
     ownership_role,
@@ -67,8 +67,8 @@ const fetch_actions_handler = async (
     conditions.push(eq(item_actions.action_id, action_id));
   }
 
-  if (action_name) {
-    conditions.push(eq(item_actions.action_name, action_name));
+  if (action_type) {
+    conditions.push(eq(item_actions.action_type, action_type));
   }
 
   if (action_status) {

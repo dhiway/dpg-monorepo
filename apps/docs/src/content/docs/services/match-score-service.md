@@ -34,6 +34,8 @@ That package provides:
 
 The API runtime creates the client from environment configuration and uses it in the match score route instead of letting route handlers call the provider directly.
 
+Source: [packages/match_score on GitHub](https://github.com/dhiway/dpg-monorepo/tree/main/packages/match_score).
+
 ## Why It Is Treated As A Service
 
 Although this project currently uses a Dhiway-specific provider, match scoring is not a DPG-specific primitive.

@@ -24,6 +24,8 @@ This repository contains the current DPG API runtime, schema-driven UI app, docs
 - `packages/database`: database helpers and partitioning
 - `packages/schemas`: API request schemas and network schema parsing
 - `packages/auth`: auth integration
+- `packages/notification`: notification service client for OTP and outbound messages
+- `packages/match_score`: match score service client for item comparison
 
 ## Current API Shape
 
@@ -48,6 +50,8 @@ Item typing is schema-driven. `item_type` is not arbitrary; it should be a schem
 ## UI App
 
 The UI app lives in `apps/ui`. It is a React 19 + Vite frontend that renders pages from network and item schemas instead of hard-coding per-domain forms and cards.
+
+Source: [`apps/ui` on GitHub](https://github.com/dhiway/dpg-monorepo/tree/main/apps/ui). Documentation: `/apps/ui` in the docs app.
 
 Current UI responsibilities:
 
@@ -118,6 +122,13 @@ pnpm db:migrate:api
 pnpm dev:api
 ```
 
+To run the API itself as a container against the Compose PostgreSQL and Redis services:
+
+```bash
+docker compose up -d db redis
+DOCKER_NETWORK=dpg_internal pnpm docker:api
+```
+
 Optional:
 
 ```bash
@@ -165,6 +176,13 @@ API payload examples:
 
 - `examples/api/yellow_dot.md`
 - `examples/api/blue_dot.md`
+
+## Service Integrations
+
+DPG treats notification delivery and match scoring as replaceable service integrations behind package-level clients.
+
+- Notification service: [dhiway/notification-service](https://github.com/dhiway/notification-service.git)
+- Match score service client: [`packages/match_score`](https://github.com/dhiway/dpg-monorepo/tree/main/packages/match_score)
 
 ## Fetch Model
 

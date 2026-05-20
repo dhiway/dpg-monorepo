@@ -32,9 +32,9 @@ The API uses:
 ## SQL files
 
 - `create_items.sql` contains generic parent table DDL
-- `create_items_partitions.example.sql` contains example partition definitions only
+- `examples/create_items_partitions.example.sql` contains example partition definitions only
 - `create_actions_events.sql` contains generic parent table DDL for action and event runtime tables
-- `create_actions_events_partitions.example.sql` contains example action and event partitions only
+- `examples/create_actions_events_partitions.example.sql` contains example action and event partitions only
 - `add_action_owner_columns.sql` upgrades older action/event tables with owner snapshot columns
 
 ## Postgres setup flow
@@ -45,7 +45,7 @@ The database setup is split into two parts on purpose:
 2. Run your partition creation SQL
 3. Start the API, which can create missing runtime partitions through the helpers
 
-The first script creates the parent partitioned tables and shared indexes. The second script creates deployment-specific item-type partitions.
+The first scripts create the parent partitioned tables and shared indexes. The example scripts create deployment-specific partitions.
 
 If your database already has action/event tables from an earlier version, run `add_action_owner_columns.sql` before using the ownership-enforced action and event fetch APIs.
 
@@ -81,7 +81,8 @@ Important columns in `items`:
 
 Important columns in `item_actions`:
 
-- action identity: `action_name`, `action_id`
+- partition owner: `partition_network`
+- action identity: `action_type`, `action_id`
 - action state: `action_status`, `update_count`, `requirements_snapshot`, `remarks`
 - source item reference: `source_item_network`, `source_item_domain`, `source_item_type`, `source_item_id`, `source_item_instance_url`
 - source owner snapshot: `source_item_owner`
@@ -91,7 +92,8 @@ Important columns in `item_actions`:
 
 Important columns in `action_events`:
 
-- event identity: `action_name`, `event_id`
+- partition owner: `partition_network`
+- event identity: `action_type`, `event_id`
 - origin and action state: `origin_instance_domain`, `action_id`, `action_status`, `update_count`
 - source item reference: `source_item_network`, `source_item_domain`, `source_item_type`, `source_item_id`, `source_item_instance_url`
 - source owner and geo snapshots: `source_item_owner`, `source_item_latitude`, `source_item_longitude`
@@ -103,14 +105,6 @@ Important columns in `action_events`:
 `source_item_owner` and `target_item_owner` are denormalized snapshots. They let the API answer `GET /api/v1/action/fetch` and `GET /api/v1/event/fetch` for the authenticated user without joining back through remote instances.
 
 `item_actions` has foreign keys back to `items` for both source and target items.
-
-`action_events` has a foreign key back to `item_actions` on:
-
-```sql
-(action_name, action_id)
-```
-
-That keeps every event tied to the runtime action that emitted it.
 
 ## Event payload and remarks
 
@@ -130,14 +124,21 @@ As a rule: if changing the field would change the meaning of the event, it belon
 
 ## Partition strategy
 
-The schema uses hierarchical list partitioning with strict domain separation for items.
+The schema uses hierarchical list partitioning.
 
 For `items`:
 
-- parent table partitions by `(item_network, item_domain, item_type)`
-- partition tables are named as `i_p_{network}_{domain}_{type}`
+- root table partitions by `item_network`
+- network partitions subpartition by `item_domain`
+- leaf partition tables are named as `i_p_{network}_{domain}`
 
-This design ensures that items from different domains are stored in distinct tables even if they share the same item type.
+For `item_actions` and `action_events`:
+
+- root tables partition by `partition_network`
+- network partitions subpartition by `action_type`
+- leaf partition tables are named as `a_p_{network}_{action}` and `e_p_{network}_{action}`
+
+This design keeps item rows grouped by network/domain and runtime action/event rows grouped by network/action.
 
 ## How the scripts work
 
@@ -154,14 +155,14 @@ It also creates shared indexes:
 The parent tables are defined with:
 
 ```sql
-PARTITION BY LIST (item_network, item_domain, item_type)
+PARTITION BY LIST (item_network)
 ```
 
-That means rows are routed by the combination of network, domain, and type.
+That means rows first route by network. Each network partition then routes by domain.
 
 ### `create_items_partitions.example.sql`
 
-This is an example deployment script. It shows concrete item-type partitions.
+This is an example deployment script. It shows concrete network/domain partitions.
 
 It first verifies that:
 
@@ -169,30 +170,34 @@ It first verifies that:
 
 Then it creates:
 
-- `i_p_yellowdot_student_profile10`
-- `i_p_yellowdot_tutor_profile10`
+- `i_p_yellowdot`
+- `i_p_yellowdot_student`
+- `i_p_yellowdot_tutor`
 
 ## Runtime partition helpers
 
 The package exports:
 
-- `ensureItemPartition(db, network, domain, type)`
-- `ensureActionPartition(db, actionName)`
-- `ensureActionEventPartition(db, actionName)`
+- `ensureItemPartition(db, network, domain)`
+- `ensureActionPartition(db, network, actionType)`
+- `ensureActionEventPartition(db, network, actionType)`
 
 This helper creates missing partitions lazily with `CREATE TABLE IF NOT EXISTS`.
 
 `ensureItemPartition()` creates:
 
-1. `i_p_{network}_{domain}_{type}`
+1. `i_p_{network}`
+2. `i_p_{network}_{domain}`
 
 `ensureActionPartition()` creates:
 
-1. `a_p_{action_name}`
+1. `a_p_{network}`
+2. `a_p_{network}_{action_type}`
 
 `ensureActionEventPartition()` creates:
 
-1. `e_p_{action_name}`
+1. `e_p_{network}`
+2. `e_p_{network}_{action_type}`
 
 The helper accepts any non-empty partition key up to 120 characters. It normalizes generated table names by lowercasing the keys, removing non-alphanumeric characters, joining with underscores, and prepending `i_p_`, `a_p_`, or `e_p_`.
 
@@ -204,23 +209,25 @@ For `items`, the partition key consists of:
 
 - `item_network`
 - `item_domain`
-- `item_type`
 
-All three should be included in `where` clauses to allow PostgreSQL to scan only the relevant partition.
+For `item_actions` and `action_events`, include `partition_network` and `action_type` when possible.
+
+These keys should be included in `where` clauses to allow PostgreSQL to scan only the relevant partition.
 
 ## Example table layout
 
-If you support item types:
+If you support these network/domain paths:
 
-- `yellow_dot/student/profile_1.0`
-- `yellow_dot/tutor/profile_1.0`
+- `yellow_dot/student`
+- `yellow_dot/tutor`
 
 you would expect tables like:
 
 ```text
 items
-i_p_yellowdot_student_profile10
-i_p_yellowdot_tutor_profile10
+i_p_yellowdot
+i_p_yellowdot_student
+i_p_yellowdot_tutor
 ```
 
 ## Example Drizzle queries
@@ -233,7 +240,7 @@ This matches the API create flow: prepare the partition first, then insert throu
 import { db } from 'apps/api/db/postgres/drizzle_config';
 import { ensureItemPartition, items } from '@dpg/database';
 
-await ensureItemPartition(db, 'yellow_dot', 'student', 'profile_1.0');
+await ensureItemPartition(db, 'yellow_dot', 'student');
 
 const created = await db
   .insert(items)
@@ -314,10 +321,11 @@ const result = await db
 ```ts
 import { ensureActionPartition, item_actions } from '@dpg/database';
 
-await ensureActionPartition(db, 'connect');
+await ensureActionPartition(db, 'yellow_dot', 'connect');
 
 await db.insert(item_actions).values({
-  action_name: 'connect',
+  partition_network: 'yellow_dot',
+  action_type: 'connect',
   action_status: 'created',
   update_count: 0,
   source_item_network: 'yellow_dot',
@@ -341,10 +349,11 @@ await db.insert(item_actions).values({
 ```ts
 import { action_events, ensureActionEventPartition } from '@dpg/database';
 
-await ensureActionEventPartition(db, 'connect');
+await ensureActionEventPartition(db, 'yellow_dot', 'connect');
 
 await db.insert(action_events).values({
-  action_name: 'connect',
+  partition_network: 'yellow_dot',
+  action_type: 'connect',
   origin_instance_domain: 'https://tutor.yellowdot.example.com',
   action_id: '33333333-3333-3333-3333-333333333333',
   action_status: 'created',
@@ -376,7 +385,8 @@ const events = await db
   .from(action_events)
   .where(
     and(
-      eq(action_events.action_name, 'connect'),
+      eq(action_events.action_type, 'connect'),
+      eq(action_events.partition_network, 'yellow_dot'),
       eq(action_events.action_id, '33333333-3333-3333-3333-333333333333')
     )
   )
@@ -387,5 +397,5 @@ const events = await db
 
 - Always run `create_items.sql` before creating partitions
 - Include partition keys in queries whenever possible
-- Call `ensureItemPartition()` before inserting items into a new path
+- Call `ensureItemPartition()` before inserting items into a new network/domain path
 - Treat the Drizzle tables in the package as reference tables for the partitioned parents, not as migration-managed tables

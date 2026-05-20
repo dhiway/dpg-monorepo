@@ -26,6 +26,11 @@ For this project, a service belongs in this section when all of the following ar
 | DigiLocker pull service | Pulls credentials from DigiLocker through an external flow | Dhiway DigiLocker integration | Yes |
 | Match score service | Compares two items and returns a score, band, reasoning, and match signals | DPG Scoring | Yes |
 
+## Source Links
+
+- [Notification service on GitHub](https://github.com/dhiway/notification-service.git)
+- [Match score service client on GitHub](https://github.com/dhiway/dpg-monorepo/tree/main/packages/match_score)
+
 ## Relationship To DPG Core
 
 The DPG core remains responsible for:
