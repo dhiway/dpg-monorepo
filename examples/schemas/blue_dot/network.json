@@ -239,18 +239,6 @@
       "instance_url": "__PUBLIC_API_URL__",
       "custom_item_schema_urls": {},
       "domain_id": "provider"
-    },
-    {
-      "instance_name": "Blue Dot Seeker",
-      "instance_url": "https://ubi-backend.onest.dhiway.net",
-      "custom_item_schema_urls": {},
-      "domain_id": "seeker"
-    },
-    {
-      "instance_name": "Blue Dot Provider",
-      "instance_url": "https://ubi-backend.onest.dhiway.net",
-      "custom_item_schema_urls": {},
-      "domain_id": "provider"
     }
   ],
   "actions": {
