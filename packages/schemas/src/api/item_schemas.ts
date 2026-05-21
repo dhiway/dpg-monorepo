@@ -4,6 +4,10 @@ import z from 'zod';
 export const ItemSelectSchema = createSelectSchema(items);
 export const ItemResponseSchema = ItemSelectSchema.omit({
   item_private_state: true,
+}).extend({
+  // aggregator_id is nullable in the DB and absent from responses of pre-aggregator
+  // peer instances; accept both null and undefined during cross-instance rollout.
+  aggregator_id: z.uuid().nullish(),
 });
 export const ItemInsertSchema = createInsertSchema(items);
 export const ItemSnapshotSchema = ItemResponseSchema.omit({
@@ -29,6 +33,7 @@ const FetchItemsSchemaBase = z.object({
   item_network: z.string().min(1),
   item_domain: z.string().min(1),
   item_type: z.string().min(1).optional(),
+  aggregator_id: z.uuid().optional(),
 
   item_instance_url: z.url().nullable().optional(),
 
