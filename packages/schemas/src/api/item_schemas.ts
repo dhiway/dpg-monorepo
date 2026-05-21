@@ -33,7 +33,6 @@ const FetchItemsSchemaBase = z.object({
   item_network: z.string().min(1),
   item_domain: z.string().min(1),
   item_type: z.string().min(1).optional(),
-  aggregator_id: z.uuid().optional(),
 
   item_instance_url: z.url().nullable().optional(),
 
