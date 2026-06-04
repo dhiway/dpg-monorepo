@@ -1,0 +1,50 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+  "ignorePatterns": [
+    "apps/schema-builder/**"
+  ],
+  "entry": [
+    "src/index.{ts,tsx,js,jsx}",
+    "src/main.{ts,tsx,js,jsx}"
+  ],
+  "workspaces": {
+    "packages": [
+      "packages/*",
+      "apps/*"
+    ]
+  },
+  "duplicates": {
+    "minOccurrences": 3
+  },
+  "ignoreExports": [
+    {
+      "file": "apps/ui/src/components/**",
+      "exports": ["*"]
+    },
+    {
+      "file": "apps/ui/src/engine/**",
+      "exports": ["*"]
+    },
+    {
+      "file": "apps/ui/src/hooks/**",
+      "exports": ["*"]
+    },
+    {
+      "file": "apps/ui/src/lib/**",
+      "exports": ["*"]
+    },
+    {
+      "file": "apps/ui/src/utils/**",
+      "exports": ["*"]
+    },
+    {
+      "file": "packages/**",
+      "exports": ["*"]
+    }
+  ],
+  "rules": {
+    "unused-dependencies": "off",
+    "unused-dev-dependencies": "off",
+    "unused-optional-dependencies": "off"
+  }
+}

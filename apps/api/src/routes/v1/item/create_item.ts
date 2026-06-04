@@ -46,7 +46,7 @@ export const create_item: FastifyPluginAsyncZod = async function (fastify) {
   });
 };
 
-export const create_item_handler = async (
+const create_item_handler = async (
   request: CreateItemRequest,
   reply: FastifyReply
 ) => {

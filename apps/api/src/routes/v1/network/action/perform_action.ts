@@ -56,7 +56,7 @@ export const perform_network_action: FastifyPluginAsyncZod = async function (
   });
 };
 
-export const perform_network_action_handler = async (
+const perform_network_action_handler = async (
   request: PerformNetworkActionRequest,
   reply: FastifyReply
 ) => {

@@ -16,7 +16,7 @@ type FetchItemsRequest = FastifyRequest<{
   Querystring: z.infer<typeof FetchItemsQuerySchema>;
 }>;
 
-export const fetch_items: FastifyPluginAsyncZod = async function (fastify) {
+const fetch_items: FastifyPluginAsyncZod = async function (fastify) {
   fastify.route({
     url: '/fetch',
     method: 'GET',

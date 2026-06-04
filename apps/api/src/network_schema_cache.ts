@@ -218,7 +218,7 @@ export async function refreshConsumedSchemas() {
   return getCachedSchemas();
 }
 
-export async function getCachedSchemas(filters?: {
+async function getCachedSchemas(filters?: {
   network?: string;
   domain?: string;
   itemType?: string;
@@ -376,7 +376,7 @@ export async function getConfiguredNetworkSchemas() {
   return getCachedSchemas();
 }
 
-export async function getCachedSchemaForItemType(input: {
+async function getCachedSchemaForItemType(input: {
   network: string;
   domain: string;
   itemType: string;
@@ -407,12 +407,12 @@ export async function getCachedSchemaForItemType(input: {
   return matchingDomainSchema?.schema ?? null;
 }
 
-export async function hasCachedSchemaUrl(schemaUrl: string) {
+async function hasCachedSchemaUrl(schemaUrl: string) {
   const index = await readIndex();
   return index.entries.some((entry) => entry.schema_url === schemaUrl);
 }
 
-export async function getItemSchemasForInstance(input: {
+async function getItemSchemasForInstance(input: {
   network: string;
   domain: string;
   instanceUrl: string;

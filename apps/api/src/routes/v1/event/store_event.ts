@@ -45,7 +45,7 @@ export const store_event: FastifyPluginAsyncZod = async function (fastify) {
   });
 };
 
-export const store_event_handler = async (
+const store_event_handler = async (
   request: StoreEventRequest,
   reply: FastifyReply
 ) => {

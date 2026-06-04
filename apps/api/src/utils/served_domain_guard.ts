@@ -8,7 +8,7 @@ export function isServedDomainBinding(network: string, domain: string) {
   );
 }
 
-export async function getServedDomainSummary() {
+async function getServedDomainSummary() {
   const bindings = apiConfig.served_domains.map((binding) => binding.key);
   const networks = [...new Set(apiConfig.served_domains.map((b) => b.network))];
   const domains = [...new Set(apiConfig.served_domains.map((b) => b.domain))];

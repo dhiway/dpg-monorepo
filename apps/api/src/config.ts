@@ -1,7 +1,6 @@
 import { parseServedDomains } from '@dpg/config';
 import { loadEnv } from '@/env';
-
-export const {
+const {
   instance,
   api,
   auth,
@@ -11,6 +10,8 @@ export const {
   networkRuntime,
   schemaRegistry,
 } = loadEnv();
+
+export { instance, api, auth, notification };
 
 export const apiConfig = {
   domain: api.API_DOMAIN,

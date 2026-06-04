@@ -33,3 +33,4 @@ data/
 #Ignore cursor AI rules
 .fastembed_cache
 .cursor/rules/codacy.mdc
+.fallow/

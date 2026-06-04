@@ -50,7 +50,7 @@ export const perform_action: FastifyPluginAsyncZod = async function (fastify) {
   });
 };
 
-export const perform_action_handler = async (
+const perform_action_handler = async (
   request: PerformActionRequest,
   reply: FastifyReply
 ) => {

@@ -40,7 +40,7 @@ export const update_item: FastifyPluginAsyncZod = async function (fastify) {
   });
 };
 
-export const update_item_handler = async (
+const update_item_handler = async (
   request: UpdateItemRequest,
   reply: FastifyReply
 ) => {

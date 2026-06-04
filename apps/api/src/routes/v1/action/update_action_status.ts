@@ -48,7 +48,7 @@ export const update_action_status: FastifyPluginAsyncZod = async function (fasti
   });
 };
 
-export const update_action_status_handler = async (
+const update_action_status_handler = async (
   request: UpdateActionStatusRequest,
   reply: FastifyReply
 ) => {

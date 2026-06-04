@@ -25,7 +25,7 @@ type PageSlice = {
 type FetchItemsResponse = Awaited<ReturnType<typeof fetchLocalItems>>;
 type FetchItemsResponseItem = FetchItemsResponse['items'][number];
 
-export function buildPagePlan(
+function buildPagePlan(
   counts: InstanceCount[],
   offset: number,
   limit: number
